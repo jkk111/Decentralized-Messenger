@@ -1,0 +1,24 @@
+{
+  "name": "decentralized-messenger",
+  "version": "0.0.1",
+  "description": "",
+  "main": "app.js",
+  "dependencies": {
+    "express": "^4.13.3",
+    "request": "^2.67.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jkk111/Decentralized-Messenger.git"
+  },
+  "author": "jkk111",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jkk111/Decentralized-Messenger/issues"
+  },
+  "homepage": "https://github.com/jkk111/Decentralized-Messenger#readme"
+}

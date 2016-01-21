@@ -1,0 +1,7 @@
+{
+ "Message_Store": "mysql",
+ "Location": "localhost:3306",
+ "DBName": "Messages",
+ "DBUser": "root",
+ "DBPass": "root"
+}
