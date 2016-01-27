@@ -1,13 +1,19 @@
 <link rel="import" href="bower_components/polymer/polymer.html">
-<dom-module id="hello-world">
+<dom-module id="messages-view">
   <style>
   </style>
   <template>
-    <script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
-    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
     <div id="messagesDiv"></div>
     <input type='text' id='userID' placeholder='your name'>
     <input type='text' id='mess' placeholder='send message'>
+  </template>
+  <script>
+    Polymer({
+      is: "messages-view"
+    })
+  </script>
+  <script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
+  <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
     <script>
       var messDB = new Firebase('https://decent-mess.firebaseio.com/');
       $('#mess').keypress(function (e) {
@@ -27,10 +33,4 @@
         $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight;
       };
     </script>
-  </template>
-  <script>
-    Polymer({
-      is: "hello-world"
-    })
-  </script>
 </dom-module>
