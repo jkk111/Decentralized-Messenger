@@ -1,5 +1,8 @@
 <link rel="import" href="bower_components/polymer/polymer.html">
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/master
 <dom-module id="messages-view">
   <style>
   </style>
@@ -34,4 +37,28 @@
       is: "messages-view"
     })
   </script>
+<<<<<<< HEAD
+=======
+  <script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
+  <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
+    <script>
+      var messDB = new Firebase('https://decent-mess.firebaseio.com/');
+      $('#mess').keypress(function (e) {
+        if (e.keyCode == 13) {
+          var name = $('#userID').val();
+          var text = $('#mess').val();
+          messDB.push({name: name, text: text});
+          $('#mess').val('');
+        }
+      });
+      myDataRef.on('child_added', function(snapshot) {
+        var message = snapshot.val();
+        displayChatMessage(message.name, message.text);
+      });
+      function displayChatMessage(name, text) {
+        $('<div/>').text(text).prepend($('<em/>').text(name+': ')).appendTo($('#messagesDiv'));
+        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight;
+      };
+    </script>
+>>>>>>> origin/master
 </dom-module>
