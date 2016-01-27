@@ -1,7 +1,6 @@
 {
   "name": "decentralized-messenger",
   "version": "0.0.1",
-  "description": "",
   "main": "app.js",
   "dependencies": {
     "express": "^4.13.3",
@@ -20,5 +19,6 @@
   "bugs": {
     "url": "https://github.com/jkk111/Decentralized-Messenger/issues"
   },
-  "homepage": "https://github.com/jkk111/Decentralized-Messenger#readme"
+  "homepage": "https://github.com/jkk111/Decentralized-Messenger#readme",
+  "description": ""
 }
