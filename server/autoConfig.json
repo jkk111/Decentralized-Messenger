@@ -1,0 +1,9 @@
+{
+	"databaseType": "mysql",
+	"databaseUser": "root",
+	"databasePassword": "root",
+	"databaseHost": "localhost",
+	"databasePort": "3306",
+	"databaseName": "dm",
+	"salt": "PMNa1p1jEuGF/v9j6pb7Sk5e8TIvdQ6A8FI/uiKVXT0BBq0rLDjBrtIKRNq58kptOWq98t2viK8vz+lTv+OWO1WambJ6r+qMCTUxP9qHZsecsTfOx481wWw5ArOZtH3ySpviQQRmnWI3AWFs9l0cBxpwShlMHX/h55o5vTFv3Jc="
+}

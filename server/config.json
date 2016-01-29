@@ -1,7 +1,9 @@
 {
- "Message_Store": "mysql",
- "Location": "localhost:3306",
- "DBName": "Messages",
- "DBUser": "root",
- "DBPass": "root"
+	"databaseType": "mysql",
+	"databaseUser": "root",
+	"databasePassword": "root",
+	"databaseHost": "localhost",
+	"databasePort": "3306",
+	"databaseName": "dm",
+	"salt": "cn/MKkdn+Yy+AvxMPB0gubEP82yjxZEbntII26w8Htcvi8XoaJz3hyloHBli78Lb4IINEiqLfs4A332sm0KfzVzW86F20T5YWplUm2+xrvqlGOO5LRLxWVWjaVshgD4hGT0Fxq7kzqwOm8iEwwYxBBshFMhOEn4aHQhWf2hrC+E="
 }

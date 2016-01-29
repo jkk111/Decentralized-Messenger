@@ -1,5 +1,8 @@
 module.exports = function(app) {
   // Verify the client is who they say they are
+  app.get("/key", function(req, res) {
+    res.send(/*public key */"hello world");
+  });
 }
 
 /*
