@@ -1,94 +1,95 @@
 package com.maximus.dm.decentralizedmessenger;
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.content.Context;
+import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.os.Bundle;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.TabHost;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+import com.maximus.dm.decentralizedmessenger.tabs.DialogsTab;
+import com.maximus.dm.decentralizedmessenger.tabs.ProfileTab;
+import com.maximus.dm.decentralizedmessenger.tabs.TabPagerAdapter;
 
-    TextView tvWelcomeMessage;
-    EditText etUsername, etEmail;
-    Button bLogout;
-    UserLocalStore userLocalStore;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MainActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener, TabHost.OnTabChangeListener {
+
+    ViewPager viewPager;
+    TabHost tabHost;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //assign variables
-        tvWelcomeMessage = (TextView) findViewById(R.id.tvWelcomeMessage);
-        etUsername = (EditText) findViewById(R.id.etUsername);
-        etEmail = (EditText) findViewById(R.id.etEmail);
-        bLogout = (Button) findViewById(R.id.bLogout);
+        //create tab host (holds tabs)
+        tabHost = (TabHost) findViewById(R.id.tabHost);
+        tabHost.setup();
 
-        bLogout.setOnClickListener(this);
+        //create tabs one by one (to populate tab host)
+        String[] tabName = {ProfileTab.TAB_NAME, DialogsTab.TAB_NAME};
+        for(int i = 0; i < tabName.length; i++) {
+            TabHost.TabSpec tabSpec;
+            tabSpec = tabHost.newTabSpec(tabName[i]);
+            tabSpec.setIndicator(tabName[i]);
+            tabSpec.setContent(new TabContent(getApplicationContext()));
+            tabHost.addTab(tabSpec);
+        }
+        tabHost.setOnTabChangedListener(this);
 
-        userLocalStore = new UserLocalStore(this);
+        //create tabs for viewpager
+        List<Fragment> tabList = new ArrayList<Fragment>();
+        tabList.add(new ProfileTab());
+        tabList.add(new DialogsTab());
+
+        //view pager create
+        viewPager = (ViewPager) findViewById(R.id.view_pager);
+
+        TabPagerAdapter tabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), tabList);
+
+        viewPager.setAdapter(tabPagerAdapter);
+        viewPager.setOnPageChangeListener(this);
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if(authenticate()) {
-            displayUserData();
+    public class TabContent implements TabHost.TabContentFactory {
+        Context context;
+        public TabContent(Context mContext) {
+            context = mContext;
+        }
+
+        @Override
+        public View createTabContent(String tag) {
+
+            View tabView = new View(context);
+            tabView.setMinimumHeight(0);
+            tabView.setMinimumWidth(0);
+
+            return tabView;
         }
     }
 
-    private boolean authenticate() {
-        return userLocalStore.getUserLoggedIn();
-    }
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-    private void displayUserData() {
-        User user = userLocalStore.getLoggedInUser();
-        String toDisplay = "Welcome " + user.getUsername();
-        tvWelcomeMessage.setText(toDisplay);
-
-        etUsername.setText(user.getUsername());
-        etEmail.setText(user.getEmail());
     }
 
     @Override
-    public void onClick(View v) {
-        switch(v.getId()) {
-            case R.id.bLogout:
-                //register clicked
-                userLocalStore.clearUserData();
-                userLocalStore.setUserLoggedIn(false);
-
-                startActivity(new Intent(this, Login.class));
-                break;
-        }
+    public void onPageSelected(int selectedPage) {
+        tabHost.setCurrentTab(selectedPage);
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    public void onPageScrollStateChanged(int state) {
+
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
+    public void onTabChanged(String tabId) {
+        int selectedPage = tabHost.getCurrentTab();
+        viewPager.setCurrentItem(selectedPage);
     }
+
 }
