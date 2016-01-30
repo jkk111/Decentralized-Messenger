@@ -16,6 +16,8 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     TextView tvSignUp;
     EditText etEmailOrUsername, etPassword;
     Button bLogin;
+    UserLocalStore userLocalStore;
+    UserDatabase userDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +32,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
         bLogin.setOnClickListener(this);
         tvSignUp.setOnClickListener(this);
+
+        userLocalStore = new UserLocalStore(this);
+        userDatabase = new UserDatabase(this);
     }
 
     @Override
@@ -37,6 +42,21 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         switch(v.getId()) {
             case R.id.bLogin:
                 //login clicked
+                String enteredEmailOrUsername = etEmailOrUsername.getText().toString();
+                String enteredPassword = etPassword.getText().toString();
+
+                User userDB = userDatabase.getUser(UserDatabase.USER_ID);
+                String usernameDB = userDB.getUsername();
+                String emailDB = userDB.getEmail();
+                String passwordDB = userDB.getPassword();
+
+                if(enteredEmailOrUsername.equals(usernameDB) || enteredEmailOrUsername.equals(emailDB)) {
+                    if(enteredPassword.equals(passwordDB)) {
+                        userLocalStore.storeUserData(userDB);
+                        userLocalStore.setUserLoggedIn(true);
+                        startActivity(new Intent(this, MainActivity.class));
+                    }
+                }
 
                 break;
             case R.id.tvSignUp:

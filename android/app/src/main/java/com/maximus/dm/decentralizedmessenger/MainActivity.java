@@ -18,6 +18,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView tvWelcomeMessage;
     EditText etUsername, etEmail;
     Button bLogout;
+    UserLocalStore userLocalStore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +33,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         bLogout.setOnClickListener(this);
 
+        userLocalStore = new UserLocalStore(this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(authenticate()) {
+            displayUserData();
+        }
+    }
+
+    private boolean authenticate() {
+        return userLocalStore.getUserLoggedIn();
+    }
+
+    private void displayUserData() {
+        User user = userLocalStore.getLoggedInUser();
+        String toDisplay = "Welcome " + user.getUsername();
+        tvWelcomeMessage.setText(toDisplay);
+
+        etUsername.setText(user.getUsername());
+        etEmail.setText(user.getEmail());
     }
 
     @Override
@@ -39,6 +62,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch(v.getId()) {
             case R.id.bLogout:
                 //register clicked
+                userLocalStore.clearUserData();
+                userLocalStore.setUserLoggedIn(false);
 
                 startActivity(new Intent(this, Login.class));
                 break;
