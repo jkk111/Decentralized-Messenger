@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "main": "app.js",
   "dependencies": {
+    "body-parser": "^1.14.2",
     "express": "^4.13.3",
     "mysql": "^2.10.2",
     "node-rsa": "^0.3.2",
