@@ -48,28 +48,28 @@ module.exports = function(app, storage) {
     })
   })
 
-  app.post("/messages", function(req, res) {
-    var id = req.body.id;
-    var token = req.body.token;
-    storage.verifyToken(id, token, function(success) {
-      if(success) {
-        storage.getMessages(id)
-      } else {
-        res.send({ error: "ERROR_BAD_TOKEN" })
-      }
-    })
-    storage.getMessages(u, t, function(messages) {
-      res.send(messages);
-    })
-  });
+  // app.post("/messages", function(req, res) {
+  //   var id = req.body.id;
+  //   var token = req.body.token;
+  //   storage.verifyToken(id, token, function(success) {
+  //     if(success) {
+  //       storage.getMessages(id)
+  //     } else {
+  //       res.send({ error: "ERROR_BAD_TOKEN" })
+  //     }
+  //   })
+  //   storage.getMessages(u, t, function(messages) {
+  //     res.send(messages);
+  //   })
+  // });
 
 
   app.post("/login", function(req, res) {
     var user = req.body.user;
     var password = req.body.password;
     storage.userExists(user, function(exists) {
-      if(exists) {
-        res.send({ error: "ERROR_USER_EXISTS" });
+      if(!exists) {
+        res.send({ error: "ERROR_BAD_LOGIN" });
       } else {
         storage.login(user, password, function(success) {
           if(typeof success == "boolean") {
@@ -101,12 +101,33 @@ module.exports = function(app, storage) {
   });
 
   app.post("/messages", function(req, res) {
-    var id = req.body.id;
+    var sender = req.body.sender;
     var token = req.body.token;
-    storage.verifyToken(id, token, function(success) {
+    storage.verifyToken(sender, token, function(success) {
       if(success) {
-        storage.getMessages(id, token, function(messages) {
+        console.log("getting messages");
+        storage.getMessages(sender, function(messages) {
+          console.log(messages);
           res.send(messages);
+        })
+      } else {
+        res.send({ error: "ERROR_BAD_TOKEN" })
+      }
+    });
+  })
+
+  app.post("/received", function(req, res) {
+    var sender = req.body.sender;
+    var token = req.body.token;
+    var highest = req.body.highest;
+    storage.verifyToken(sender, token, function(success) {
+      if(success) {
+        storage.receivedMessages(sender, highest, function(success) {
+          if(typeof success == "boolean") {
+            res.send({ success: success });
+          } else {
+            res.send(success);
+          }
         })
       } else {
         res.send({ error: "ERROR_BAD_TOKEN" })

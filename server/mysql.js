@@ -34,7 +34,7 @@ module.exports = function(config) {
       if(tokenCache[token].expiry <= new Date().getTime()) {
         tokenCache[token] = undefined;
       }
-      cb(tokenCache[token] && tokenCache[token].user == user);
+      return cb(tokenCache[token] && tokenCache[token].user == user);
     }
     var q = "SELECT expiry FROM tokens WHERE user = ? AND token = ? \
              AND expiry > NOW() ORDER BY expiry DESC;";
@@ -60,8 +60,9 @@ module.exports = function(config) {
   }
 
   connector.userIdExists = function(user, cb) {
+    console.log(user);
     var q = "SELECT id FROM users WHERE id = ?";
-    conn.query(q, user, function(err, results) {
+    conn.query(q, [user], function(err, results) {
       console.log(results)
       cb(!err && results != undefined && results.length > 0);
     })
@@ -94,6 +95,7 @@ module.exports = function(config) {
   connector.addMessage = function(sender, dest, message, cb) {
     connector.userIdExists(dest, function(exists) {
       if(exists) {
+        var q = "INSERT INTO messages (sender, recipient, message) VALUES(?, ?, ?)";
         conn.query(q, [sender, dest, message], function(err, results) {
           if(err) {
             console.log(err);
@@ -107,18 +109,19 @@ module.exports = function(config) {
 
 
 
-    console.log("Adding message %s for client %s from client %s", message, dest, sender);
-    var q = "INSERT INTO messages (sender, recipient, message) VALUES(?, ?, ?)";
-    conn.query(q, [sender, dest, message], function(err, results) {
-      if(err) {
-        console.log(err);
-      }
-      cb(err == undefined);
-    });
+    // console.log("Adding message %s for client %s from client %s", message, dest, sender);
+    // conn.query(q, [sender, dest, message], function(err, results) {
+    //   if(err) {
+    //     console.log(err);
+    //   }
+    //   cb(err == undefined);
+    // });
   }
 
-  connector.recievedMessages = function(sender, token, highest, cb) {
-    var q = "DELETE FROM messages WHERE user = ? AND id <= ?";
+  connector.receivedMessages = function(sender, highest, cb) {
+    var q = "DELETE FROM messages WHERE recipient = ? AND id <= ?";
+    console.log(sender + highest);
+    console.log("DELETE FROM messages WHERE recipient = %s AND id <= %s", sender, highest);
     conn.query(q, [sender, highest], function(err, results) {
       if(err) {
         console.log(err);
@@ -157,6 +160,7 @@ module.exports = function(config) {
           messages[item.sender].push({id: item.id, message: item.message});
         }
       }
+      console.log("im here");
       cb(messages);
     })
   }
@@ -190,7 +194,7 @@ function addToken(user, token, cb) {
       console.log(err);
       return cb({ success: false, error: "Storing token failed" });
     }
-    cb({ success: true, token: token });
+    cb({ success: true, id: user, token: token });
   })
 }
 

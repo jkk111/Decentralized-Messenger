@@ -1,7 +1,9 @@
 var express = require("express");
-var fs = require("fs");
 var app = express();
+var bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("static"));
+var fs = require("fs");
 var request = require("request");
 var conf;
 try {
@@ -26,7 +28,7 @@ if(cluster.isMaster) {
     cluster.fork();
   });
 } else {
+  app.listen(8080);
   var storage = require("./storage.js")(conf);
   var routes  = require("./routes.js")(app, storage, conf);
-  app.listen(80);
 }

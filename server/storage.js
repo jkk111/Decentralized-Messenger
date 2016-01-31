@@ -35,14 +35,15 @@ module.exports = function(config) {
   }
 
   this.addMessage = function(sender, dest, message, cb) {
-    storageEngine.addMessage(sender, token, dest, message, cb);
+    storageEngine.addMessage(sender, dest, message, cb);
   }
 
-  this.receivedMessages = function(sender, token, highest, cb) {
-    storageEngine.receivedMessages(sender, token, highest, cb);
+  this.receivedMessages = function(sender, highest, cb) {
+    storageEngine.receivedMessages(sender, highest, cb);
   }
 
   this.getMessages = function(sender, cb) {
+    console.log("called getMessages")
     storageEngine.getMessages(sender, cb);
   }
 

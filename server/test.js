@@ -1,25 +1,104 @@
-var mysql = require("mysql");
-var app = require("express")();
-var crypto = require("crypto")
+var request = require("request");
+var nodeRSA = require("node-rsa");
+// var key = new nodeRSA({ b: 2048 });
+// var pub = key.exportKey('pkcs1-public');
 
-var conn = mysql.createConnection({
-  user: "root",
-  password: "root",
-  host: "localhost",
-  port: 3306,
-  database: "dm"
-});
+var host = "http://" + (process.argv[2] || "localhost");
 
+// https://github.com/jkk111/Decentralized-Messenger.git
 
-function generateHash(pass) {
-  return crypto.pbkdf2Sync(pass, "9mcCpxNrgSlbuhZwJ6bWSHt/nvGOO6ZabI+xCAtavLy5y0pEOBDDj2C7T4MR8egjLf5u0KOAFuHbfxlrd8lQdg==", 1000, 512, "sha512");
+startTest();
+
+function startTest() {
+  console.log("starting i guess")
+  var opt = {
+    url: host + "/register",
+    form: {
+      user: "test",
+      password: "password"
+    }
+  }
+  request.post(opt, function(err, data, body) {
+    if(err)
+      console.log(err);
+    login();
+  })
 }
 
-var pass = generateHash("hello world");
-var q = "INSERT INTO users (username, password) VALUES(?, ?)";
-conn.query(q, ["test", pass], function(err, res) {
-  if(err)
-    console.log(err);
-  else
-    console.log("success");
-});
+function login() {
+  console.log("starting login")
+  var opt = {
+    url:  host + "/login",
+    form: {
+      user: "test",
+      password: "password"
+    }
+  }
+  request.post(opt, function(err, data, body) {
+    if(err)
+      console.log(err);
+    body = JSON.parse(body);
+    if(body.success) {
+        sendMessage(body);
+    } else {
+      console.log(body)
+    }
+  })
+}
+
+function sendMessage(self) {
+  var opt = {
+    url:  host + "/message",
+    form: {
+      sender: self.id,
+      dest: self.id,
+      message: "hello world",
+      token: self.token
+    }
+  }
+  request.post(opt, function(err, data, body) {
+    if(err)
+      console.log(err);
+    console.log(body);
+    getMessages(self);
+  })
+}
+
+function getMessages(self) {
+  var opt = {
+    url:  host + "/messages",
+    form: {
+      sender: self.id,
+      token: self.token
+    }
+  }
+  request.post(opt, function(err, data, body) {
+    if(err)
+      console.log(err);
+    console.log(body);
+    body = JSON.parse(body);
+    clearMessages(self, body);
+  });
+}
+
+function clearMessages(self, messages) {
+  var highest = 0;
+  var keys = Object.keys(messages);
+  for(var i = 0 ; i < keys.length; i++) {
+    for(var j = 0 ; j < messages[keys[i]].length; j++) {
+      highest = Math.max(highest, messages[keys[i]][j].id);
+    }
+  }
+  var opt = {
+    url:  host + "/received",
+    form: {
+      sender: self.id,
+      token: self.token,
+      highest: highest
+    }
+  }
+  request.post(opt, function(err, data, body) {
+    console.log(body);
+    console.log("Testing complete");
+  })
+}
