@@ -42,8 +42,16 @@ module.exports = function(config) {
     storageEngine.receivedMessages(sender, token, highest, cb);
   }
 
-  this.getMessages = function(sender, token, cb) {
-    storageEngine.getMessages(sender, token, cb);
+  this.getMessages = function(sender, cb) {
+    storageEngine.getMessages(sender, cb);
+  }
+
+  this.userExists = function(user, cb) {
+    storageEngine.userExists(user, cb);
+  }
+
+  this.refreshToken = function(token, cb) {
+    storageEngine.refreshToken(token, cb);
   }
   return this;
 }

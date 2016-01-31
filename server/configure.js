@@ -28,7 +28,9 @@ module.exports = function(data) {
   dbaddr = data.databaseHost;
   dbname = data.databaseName;
   dbport = data.databasePort || 3306;
-  buildDatabase();
+  buildDatabase(function() {
+    // can't quite recall what my goal was here, probably gonna do something when everything was initialized, 3am coding at its finest
+  });
 }
 
 function buildDatabase() {

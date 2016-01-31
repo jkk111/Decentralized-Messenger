@@ -25,13 +25,94 @@ module.exports = function(app, storage) {
     })
   });
 
-  app.get("/messages", function(req, res) {
-    var u = req.query.u;
+  app.get("/refreshToken", function(req, res) {
     var t = req.query.t;
+    t = t.replace(/\s/g, "+");
+    storage.refreshToken(t, function(success) {
+      if(typeof success == "boolean") {
+        res.send({ success: success });
+      } else {
+        res.send(token);
+      }
+    })
+  })
+
+  app.post("/refreshToken", function(req, res) {
+    var token = req.body.token;
+    storage.refreshToken(token, function(success) {
+      if(typeof success == "boolean") {
+        res.send({ success: success });
+      } else {
+        res.send(token);
+      }
+    })
+  })
+
+  app.post("/messages", function(req, res) {
+    var id = req.body.id;
+    var token = req.body.token;
+    storage.verifyToken(id, token, function(success) {
+      if(success) {
+        storage.getMessages(id)
+      } else {
+        res.send({ error: "ERROR_BAD_TOKEN" })
+      }
+    })
     storage.getMessages(u, t, function(messages) {
       res.send(messages);
     })
   });
+
+
+  app.post("/login", function(req, res) {
+    var user = req.body.user;
+    var password = req.body.password;
+    storage.userExists(user, function(exists) {
+      if(exists) {
+        res.send({ error: "ERROR_USER_EXISTS" });
+      } else {
+        storage.login(user, password, function(success) {
+          if(typeof success == "boolean") {
+            res.send({ success: success });
+          } else {
+            res.send(success);
+          }
+        });
+      }
+    });
+  })
+
+  app.post("/register", function(req, res) {
+    var user = req.body.user;
+    var password = req.body.password;
+    storage.userExists(user, function(exists) {
+      if(exists) {
+        res.send({ error: "ERROR_USER_EXISTS" });
+      } else {
+        storage.register(user, password, function(success) {
+          if(typeof success == "boolean") {
+            res.send({ success: success });
+          } else {
+            res.send(success);
+          }
+        });
+      }
+    });
+  });
+
+  app.post("/messages", function(req, res) {
+    var id = req.body.id;
+    var token = req.body.token;
+    storage.verifyToken(id, token, function(success) {
+      if(success) {
+        storage.getMessages(id, token, function(messages) {
+          res.send(messages);
+        })
+      } else {
+        res.send({ error: "ERROR_BAD_TOKEN" })
+      }
+    });
+  })
 
   app.post("/message", function(req, res) {
     var sender = req.body.sender;
@@ -41,10 +122,14 @@ module.exports = function(app, storage) {
     storage.verifyToken(sender, token, function(success) {
       if(success) {
         storage.addMessage(sender, dest, message, function(success) {
-          // TODO (john): Inform client the message was successfully received.
+          if(typeof success == "boolean") {
+            res.send({ success: success });
+          } else {
+            res.send(success);
+          }
         });
       } else {
-        // TODO (john): Add error handling. Inform client of failure to verify.
+        res.send({ error: "ERROR_BAD_TOKEN" });
       }
     })
   })

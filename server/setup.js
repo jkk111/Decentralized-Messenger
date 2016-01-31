@@ -31,6 +31,14 @@ var options = {
     databaseName: {
       message: "Enter database name",
       default: "dm"
+    },
+    serverAdnin: {
+      message: "Enter a username for the administrator",
+      default: "admin"
+    },
+    serverPassword: {
+      message: "Enter a password for the administrator",
+      default: "PLEASE USE A GOOD PASSWORD"
     }
   }
 }
