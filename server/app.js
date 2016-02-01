@@ -15,7 +15,6 @@ try {
 }
 
 const cluster = require('cluster');
-const http = require('http');
 const numCPUs = conf.threads || require('os').cpus().length;
 
 if(cluster.isMaster) {
@@ -28,7 +27,7 @@ if(cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  app.listen(8080);
+  app.listen(80);
   var storage = require("./storage.js")(conf);
   var routes  = require("./routes.js")(app, storage, conf);
 }
