@@ -1,0 +1,36 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="/bower_components/iron-flex-layout/classes/iron-flex-layout.hmtl">
+<link rel="import" href="/bower_components/paper-input/paper-input.html">
+<dom-module id="contact-element">
+  <template >
+    <table>
+      <tr>
+        <td>
+          <img width="48px" src={{img}}>
+        </td>
+        <td>
+          <p>{{name}}</p>
+        </td>
+        <td>
+          <template float="right" is="dom-if" if="{{online}}">
+            <iron-icon icon="communication:chat-bubble"></iron-icon>
+          </template>
+          <template is="dom-if" if="{{!online}}">
+            <iron-icon icon="communication:chat-bubble-outline"></iron-icon>
+          </template>
+        </td>
+      </tr>
+    </table>
+  </template>
+  <script>
+    Polymer({
+      is: 'contact-element',
+      properties: {
+        name: String,
+        online: Boolean,
+        img: String
+      }
+    });
+  </script>
+</dom-module>

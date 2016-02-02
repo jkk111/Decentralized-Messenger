@@ -1,0 +1,47 @@
+<link rel="import" href="contact-element.html">
+<dom-module id="contact-list">
+  <style>
+
+  </style>
+  <template>
+    <template is="dom-repeat" items="{{contacts}}">
+      <contact-element name="{{item.name}}" image="{{item.image}}" timestamp="{{item.timestamp}}"></contact-element>
+    </template>
+  </template>
+  <script>
+    Polymer({
+      is: 'contact-list',
+      properties: {
+        contacts: {
+          type: Array,
+          value: [
+            {
+              name: "John",
+              image: "img/user.png",
+              timestamp: "15:98",
+              online: "true"
+            },
+            {
+              name: "Tom",
+              image: "img/user.png",
+              timestamp: "25:23",
+              online: "false"
+            },
+            {
+              name: "person 3",
+              image: "img/user.png",
+              timestamp: "yesterday",
+              online: "true"
+            },
+            {
+              name: "person D",
+              image: "img/user.png",
+              timestamp: "tomorrow",
+              online: "false"
+            }
+          ]
+        }
+      }
+    })
+  </script>
+</dom-module>

@@ -13,6 +13,7 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#1.2.0"
+    "polymer": "Polymer/polymer#1.2.0",
+    "iron-icon": "PolymerElements/iron-icon#^1.0.7"
   }
 }
