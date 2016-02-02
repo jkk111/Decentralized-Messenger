@@ -1,27 +1,25 @@
 <link rel="import" href="/bower_components/polymer/polymer.html">
 <link rel="import" href="/bower_components/iron-icons/communication-icons.html">
-<link rel="import" href="/bower_components/iron-flex-layout/classes/iron-flex-layout.hmtl">
 <link rel="import" href="/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/bower_components/iron-flex-layout/classes/iron-flex-layout.html">
 <dom-module id="contact-element">
-  <template >
-    <table>
-      <tr>
-        <td>
-          <img width="48px" src={{img}}>
-        </td>
-        <td>
-          <p>{{name}}</p>
-        </td>
-        <td>
-          <template float="right" is="dom-if" if="{{online}}">
-            <iron-icon icon="communication:chat-bubble"></iron-icon>
-          </template>
-          <template is="dom-if" if="{{!online}}">
-            <iron-icon icon="communication:chat-bubble-outline"></iron-icon>
-          </template>
-        </td>
-      </tr>
-    </table>
+  <template>
+    <div class="horizontal layout">
+      <div>
+        <img width="48px" src={{img}}>
+      </div>
+      <div class="flex">
+        {{name}}
+      </div>
+      <div>
+        <template float="right" is="dom-if" if="{{online}}">
+          <iron-icon style="fill:#4CAF50" icon="communication:chat-bubble"></iron-icon>
+        </template>
+        <template is="dom-if" if="{{!online}}">
+          <iron-icon style="fill:#9E9E9E" icon="communication:chat-bubble-outline"></iron-icon>
+        </template>
+      </div>
+    </div>
   </template>
   <script>
     Polymer({
