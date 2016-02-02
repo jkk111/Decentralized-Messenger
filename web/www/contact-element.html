@@ -2,6 +2,7 @@
 <link rel="import" href="/bower_components/iron-icons/communication-icons.html">
 <link rel="import" href="/bower_components/paper-input/paper-input.html">
 <link rel="import" href="/bower_components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
 <dom-module id="contact-element">
   <style>
     img {
@@ -9,14 +10,14 @@
     }
   </style>
   <template>
-    <div class="horizontal layout">
-      <div>
-        <img width="48px" src={{img}}>
-      </div>
+    <div class="horizontal layout center">
       <div class="flex">
+        <img width="72px" src={{img}}>
+      </div>
+      <div class="flex-6">
         {{name}}
       </div>
-      <div>
+      <div class="flex">
         <template float="right" is="dom-if" if="{{online}}">
           <iron-icon style="fill:#4CAF50" icon="communication:chat-bubble"></iron-icon>
         </template>
