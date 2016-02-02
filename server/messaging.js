@@ -8,35 +8,6 @@ module.exports = function(app, storage) {
       recipient: "The id of the recipient for the server"
     }
   */
-
-  app.get("/login", function(req, res) {
-    var u = req.query.u;
-    var p = req.query.p;
-    storage.login(u, p, function(result) {
-      res.send(result);
-    })
-  });
-
-  app.get("/register", function(req, res) {
-    var u = req.query.u;
-    var p = req.query.p;
-    storage.register(u, p, function(result) {
-      res.send(result);
-    })
-  });
-
-  app.get("/refreshToken", function(req, res) {
-    var t = req.query.t;
-    t = t.replace(/\s/g, "+");
-    storage.refreshToken(t, function(success) {
-      if(typeof success == "boolean") {
-        res.send({ success: success });
-      } else {
-        res.send(token);
-      }
-    })
-  })
-
   app.post("/refreshToken", function(req, res) {
     var token = req.body.token;
     storage.refreshToken(token, function(success) {
