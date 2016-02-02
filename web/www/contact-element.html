@@ -4,16 +4,24 @@
 <link rel="import" href="/bower_components/iron-flex-layout/classes/iron-flex-layout.html">
 <dom-module id="contact-element">
   <style>
+    :host {
+      width: 100%;
+    }
     img {
       border-radius: 50%;
+      width: 72px;
+      height: 72px;
+    }
+    #name {
+      padding-left: 12px;
     }
   </style>
   <template>
-    <div class="horizontal layout">
+    <div horizontal layout center class="horizontal layout center">
       <div>
         <img width="48px" src={{img}}>
       </div>
-      <div class="flex">
+      <div id="name" class="flex">
         {{name}}
       </div>
       <div>
@@ -30,7 +38,11 @@
     Polymer({
       is: 'contact-element',
       properties: {
-        name: String,
+        name: {
+          type: String,
+          value: "",
+          observer: ''
+        },
         online: Boolean,
         img: String
       }
