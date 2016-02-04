@@ -46,23 +46,7 @@ module.exports = function(app, storage) {
         res.send(token);
       }
     })
-  })
-
-  // app.post("/messages", function(req, res) {
-  //   var id = req.body.id;
-  //   var token = req.body.token;
-  //   storage.verifyToken(id, token, function(success) {
-  //     if(success) {
-  //       storage.getMessages(id)
-  //     } else {
-  //       res.send({ error: "ERROR_BAD_TOKEN" })
-  //     }
-  //   })
-  //   storage.getMessages(u, t, function(messages) {
-  //     res.send(messages);
-  //   })
-  // });
-
+  });
 
   app.post("/login", function(req, res) {
     var user = req.body.user;
