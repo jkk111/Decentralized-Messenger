@@ -8,30 +8,29 @@
   <style>
     paper-material {
       max-width:400px;
-      margin:100px auto;
+      margin: 80px auto;
+      border-radius: 15px;
+      overflow: hidden;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 10px;
+    }
+    paper-input {
+      text-align: initial;
     }
     .green {
         background-color:#4CAF50;
     }
+    paper-input {
+      padding: 0 10px 0 10px;
+    }
   </style>
   <template>
-    <paper-material elevation="5">
-      <paper-listbox>
-        <paper-item>
-          Enter your credentials to login
-        </paper-item>
-        <paper-item>
-          <paper-input placeholder="username"></paper-input>
-        </paper-item>
-        <paper-item>
-          <paper-input placeholder="password"></paper-input>
-        </paper-item>
-        <paper-item class="login">
-          <a href="index.html">
-          <paper-button raised class="green">Login</paper-button>
-          <a/>
-        </paper-item>
-      </paper-listbox>
+    <paper-material elevation="2">
+      Enter your credentials to login
+      <paper-input placeholder="username"></paper-input>
+      <paper-input placeholder="password"></paper-input>
+      <paper-button raised class="green">Login</paper-button>
     </paper-material>
   </template>
   <script>
