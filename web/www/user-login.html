@@ -20,9 +20,7 @@
     paper-input {
       text-align: initial;
     }
-    .green {
-      background: #4CAF50;
-    }
+    
     paper-input {
       padding: 0 10px 0 10px;
     }
@@ -32,17 +30,19 @@
     <iron-ajax id="secretAjax" url="{{secretUrl}}" handle-as="json" on-response="secretReceived" method="GET"></iron-ajax>
     <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <paper-material elevation="2">
-      <b>Enter your credentials to login:</b>
+      <!--<b>Enter your credentials to login:</b>-->
       <paper-input value="{{loginUser}}" placeholder="username"></paper-input>
       <paper-input value="{{loginPassword}}" type="password" placeholder="password"></paper-input>
-      <paper-button raised on-tap="doLogin" class="green">Login</paper-button>
+      <paper-button raised on-tap="doLogin" class="green">Sign In</paper-button>
       <br/>
       <br/>
-      <b>Register a new account:</b>
+      <!--<br/>
+      <b>Register a new account:</b>-->
       <paper-input value="{{registerUser}}" placeholder="username"></paper-input>
-      <paper-input value="{{registerPassword}}" type="password" placeholder="password"></paper-input>
       <paper-input value="{{registerEmail}}" placeholder="email"></paper-input>
-      <paper-button raised on-tap="doRegister" class="green">Register</paper-button>
+      <paper-input value="{{registerPassword}}" type="password" placeholder="password"></paper-input>
+      <paper-input value="{{confirmPassword}}" type="password" placeholder="confirm password"></paper-input><!--add appropriate changes in script-->
+      <paper-button raised on-tap="doRegister" class="green">Sign Up</paper-button>
     </paper-material>
   </template>
   <script>
@@ -62,6 +62,10 @@
           value: ""
         },
         registerPassword: {
+          type: String,
+          value: ""
+        },
+        confirmPassword: {
           type: String,
           value: ""
         },
