@@ -1,0 +1,42 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/paper-material/paper-material.html">
+<link rel="import" href="/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="/bower-components/paper-item/paper-item.html">
+<link rel="import" href="/bower_components/paper-button/paper-button.html">
+<dom-module id="user-login">
+  <style>
+    paper-material {
+      max-width:400px;
+      margin:100px auto;
+    }
+    .green {
+        background-color:#4CAF50;
+    }
+  </style>
+  <template>
+    <paper-material elevation="5">
+      <paper-listbox>
+        <paper-item>
+          Enter your credentials to login
+        </paper-item>
+        <paper-item>
+          <paper-input placeholder="username"></paper-input>
+        </paper-item>
+        <paper-item>
+          <paper-input placeholder="password"></paper-input>
+        </paper-item>
+        <paper-item class="login">
+          <a href="index.html">
+          <paper-button raised class="green">Login</paper-button>
+          <a/>
+        </paper-item>
+      </paper-listbox>
+    </paper-material>
+  </template>
+  <script>
+    Polymer({
+      is: 'user-login'
+    });
+  </script>
+</dom-module>

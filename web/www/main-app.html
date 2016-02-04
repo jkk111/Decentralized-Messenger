@@ -2,11 +2,13 @@
 <link rel="import" href="/bower_components/paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="/bower_components/paper-header-panel/paper-header-panel.html">
 <link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html">
-<link rel="import" href="/bower_components/paper-item/paper-item.html">
 <link rel="import" href="/bower_components/paper-menu/paper-menu.html">
-<link rel="improt" href="/bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="/bower_components/paper-input/paper-input.html">
 <link rel="import" href="/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/bower_components/paper-material/paper-material.html">
+<link rel="import" href="/bower_components/paper-input/paper-textarea.html">
+<link re;="import" href="/bower_components/iron-pages/iron-pages/html">
+<link rel="improt" href="/bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="contact-element.html">
 
 <dom-module id="main-app">
@@ -14,6 +16,10 @@
     paper-menu {
       padding-top: 0;
     }
+    paper-toolbar {
+      background-color: #4CAF50;
+  };
+}
   </style>
   <template>
     <paper-drawer-panel>
@@ -40,14 +46,23 @@
           <div class="title">{{generateContactName(selectedContact)}}</div>
         </paper-toolbar>
         <div id="mainContent">
+          <template is="dom-if" if="{{noneSelected(selectedContact)}}">
+            <div>
+              <paper-material>
+                  Choose a contact to view or send messages.
+              </paper-material>
+            </div>
+          </template>
           <div>
             <template is="dom-repeat" items="{{getMessages(selectedContact)}}">
               <paper-item>{{item}}</paper-item>
             </template>
+            <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
+              <div>
+                <paper-textarea label="send a message"></paper-textarea>
+              </div>
+            </template>
           </div>
-          <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
-            <paper-input></paper-input>
-          </template>
         </div>
       </paper-header-panel>
     </paper-drawer-panel>
@@ -67,15 +82,15 @@
           type: Array,
           value: [
             {
-              name: "one",
+              name: "Mr. One",
               online: true,
               img: "img/one.png"
             },{
-              name: "two",
+              name: "Mr. Two",
               online: true,
               img: "img/two.png"
             },{
-              name: "three",
+              name: "Mr. Three",
               online: false,
               img: "img/three.png"
             }
@@ -99,7 +114,11 @@
             [
               "Test message",
               "here",
-              "You there?"
+              "You there?",
+              "nope",
+              "yeah",
+              "haha",
+              "lol"
             ]
           ]
         }
