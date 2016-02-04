@@ -1,8 +1,8 @@
 <link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="/bower_components/paper-material/paper-material.html">
 <link rel="import" href="/bower_components/paper-input/paper-input.html">
 <link rel="import" href="/bower_components/paper-listbox/paper-listbox.html">
-<link rel="import" href="/bower-components/paper-item/paper-item.html">
 <link rel="import" href="/bower_components/paper-button/paper-button.html">
 <dom-module id="user-login">
   <style>
@@ -28,23 +28,111 @@
     }
   </style>
   <template>
+    <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
+    <iron-ajax id="secretAjax" url="{{secretUrl}}" handle-as="json" on-response="secretReceived" method="GET"></iron-ajax>
+    <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <paper-material elevation="2">
-      Enter your credentials to login:
-      <paper-input placeholder="username"></paper-input>
-      <paper-input type="password" placeholder="password"></paper-input>
-      <paper-button raised class="green">Login</paper-button>
+      <b>Enter your credentials to login:</b>
+      <paper-input value="{{loginUser}}" placeholder="username"></paper-input>
+      <paper-input value="{{loginPassword}}" type="password" placeholder="password"></paper-input>
+      <paper-button raised on-tap="doLogin" class="green">Login</paper-button>
       <br/>
       <br/>
-      Register a new account:
-      <paper-input placeholder="username"></paper-input>
-      <paper-input type="password" placeholder="password"></paper-input>
-      <paper-input placeholder="email"></paper-input>
-      <paper-button raised class="green">Register</paper-button>
+      <b>Register a new account:</b>
+      <paper-input value="{{registerUser}}" placeholder="username"></paper-input>
+      <paper-input value="{{registerPassword}}" type="password" placeholder="password"></paper-input>
+      <paper-input value="{{registerEmail}}" placeholder="email"></paper-input>
+      <paper-button raised on-tap="doRegister" class="green">Register</paper-button>
     </paper-material>
   </template>
   <script>
     Polymer({
-      is: 'user-login'
+      is: 'user-login',
+      properties: {
+        loginUser: {
+          type: String,
+          value: ""
+        },
+        loginPassword: {
+          type: String,
+          value: ""
+        },
+        registerUser: {
+          type: String,
+          value: ""
+        },
+        registerPassword: {
+          type: String,
+          value: ""
+        },
+        registerEmail: {
+          type: String,
+          value: ""
+        },
+        serverSecret: {
+          type: String,
+          value: ""
+        },
+        registerUrl: {
+          type: String,
+          value: "/register"
+        },
+        registerBody: {
+          type: Object,
+          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword)'
+        },
+        loginUrl: {
+          type: String,
+          value: "/login"
+        },
+        loginBody: {
+          type: Object,
+          computed: 'computeLoginBody(loginUser, loginPassword)'
+        },
+        secretUrl: {
+          type: String,
+          value: "/secret"
+        },
+        secretBody: {
+          type: Object,
+          value: function() { return {}; }
+        }
+      },
+
+      registered: function(e, response) {
+
+      },
+
+      loggedIn: function(e, response) {
+        console.log(response.response);
+      },
+
+      secretReceived: function(e, response) {
+        console.log("Received key: %s", response.response.key);
+      },
+
+      doLogin: function() {
+        if(this.loginUser == "" || this.loginPassword == "")
+          return;
+        this.$.loginAjax.generateRequest();
+      },
+
+      doRegister: function() {
+        console.log(this.registerUser + ":" + this.registerPassword + ":" + this.registerEmail);
+      },
+
+      computeRegisterBody: function(email, user, pass) {
+        return { user: user, password: pass, email: email };
+      },
+
+      computeLoginBody: function(user, pass) {
+        return { user: user, password: pass };
+      },
+
+      attached: function() {
+        console.log("ready");
+        this.$.secretAjax.generateRequest();
+      }
     });
   </script>
 </dom-module>

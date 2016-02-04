@@ -5,3 +5,23 @@ var express = require("express");
 var app = express();
 app.use(express.static("www"));
 app.listen(80);
+var id = 0;
+var bp = require("body-parser");
+app.use(bp.urlencoded({extended: true}));
+var messages = [];
+var users = {
+
+}
+
+app.get("/secret", function(req, res) {
+  res.send({ key: "Hello world", secret: "sample secret" });
+})
+
+app.post("/register", function(req, res) {
+  users[req.body.user] = id;
+  res.send({success: true, token: "sample token", id: id++ })
+});
+
+app.post("/login", function(req, res) {
+  res.send({success: true, token: "sample token", id: users[req.body.user] });
+});

@@ -74,8 +74,10 @@ module.exports = function(app, storage) {
         res.send({ error: "ERROR_USER_EXISTS" });
       } else {
         storage.register(user, password, function(success) {
-          if(typeof success == "boolean") {
-            res.send({ success: success });
+          if(typeof success == "boolean" && success) {
+            storage.login(user, password, function(success) {
+              res.send(success);
+            });
           } else {
             res.send(success);
           }
