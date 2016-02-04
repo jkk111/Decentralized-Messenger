@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:background="@color/primary_color"
+    android:background="@drawable/img_login_bg"
     tools:context="com.maximus.dm.decentralizedmessenger.Login">
 
     <EditText
@@ -17,10 +17,11 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginTop="250dp"
-        android:layout_marginLeft="15dp"
-        android:layout_marginRight="15dp"
+        android:layout_marginLeft="50dp"
+        android:layout_marginRight="50dp"
         android:gravity="center_horizontal"
-        android:textSize="20dp"
+        android:textSize="25dp"
+        android:textColorHint="@color/white"
         android:hint="Email or Username"
         android:imeOptions="actionDone"
         android:singleLine="true"/>
@@ -31,13 +32,14 @@
         android:layout_height="wrap_content"
         android:layout_alignTop="@+id/etEmailOrUsername"
         android:layout_marginTop="60dp"
-        android:layout_marginLeft="15dp"
-        android:layout_marginRight="15dp"
+        android:layout_marginLeft="50dp"
+        android:layout_marginRight="50dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginBottom="100dp"
         android:gravity="center_horizontal"
-        android:textSize="20dp"
+        android:textSize="25dp"
+        android:textColorHint="@color/white"
         android:hint="Password"
         android:imeOptions="actionDone"
         android:singleLine="true"/>

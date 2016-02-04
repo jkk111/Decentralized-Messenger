@@ -32,14 +32,13 @@ public class DialogsTab extends Fragment {
         super.onStart();
         View v = this.getView();
 
-        String[] listData = {"shoutout", "to", "whoeverz", "readn", "this", "you're beautiful"};
+        String[] listData = {"shoutout", "to", "whoeverz", "readn", "this", "you're beautiful", "1", "3", "2", "four", "5ive"};
         ArrayAdapter<String> dialogAdapter = new ArrayAdapter<String>(
                 getContext(), R.layout.listelement_dialog, R.id.tvListString, listData);
 
         dialogList = (ListView) v.findViewById(R.id.list_dialog);
         dialogList.setAdapter(dialogAdapter);
     }
-
 
 
 }
