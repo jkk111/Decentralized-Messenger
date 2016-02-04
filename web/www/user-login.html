@@ -104,7 +104,9 @@
       },
 
       registered: function(e, response) {
-
+        if(!response)
+          return;
+        console.log(response.response);
       },
 
       loggedIn: function(e, response) {
@@ -122,7 +124,9 @@
       },
 
       doRegister: function() {
-        console.log(this.registerUser + ":" + this.registerPassword + ":" + this.registerEmail);
+        if(this.registerUser == "" || this.registerPassword == "" || this.registerEmail == "")
+          return;
+        this.$.registerAjax.generateRequest();
       },
 
       computeRegisterBody: function(email, user, pass) {
