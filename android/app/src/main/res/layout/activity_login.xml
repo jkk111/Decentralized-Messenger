@@ -3,64 +3,46 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
+    android:screenOrientation="portrait"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:background="@drawable/img_login_bg"
+    android:background="@drawable/img_login_bg2"
     tools:context="com.maximus.dm.decentralizedmessenger.Login">
 
-    <EditText
+    <EditText style="@style/WhisperLogin.ET"
         android:id="@+id/etEmailOrUsername"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginTop="250dp"
-        android:layout_marginLeft="50dp"
-        android:layout_marginRight="50dp"
-        android:gravity="center_horizontal"
-        android:textSize="25dp"
-        android:textColorHint="@color/white"
-        android:hint="Email or Username"
-        android:imeOptions="actionDone"
-        android:singleLine="true"/>
+        android:hint="email / username" />
 
-    <EditText
+    <EditText style="@style/WhisperLogin.ET"
         android:id="@+id/etPassword"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:layout_alignTop="@+id/etEmailOrUsername"
         android:layout_marginTop="60dp"
-        android:layout_marginLeft="50dp"
-        android:layout_marginRight="50dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginBottom="100dp"
-        android:gravity="center_horizontal"
-        android:textSize="25dp"
-        android:textColorHint="@color/white"
-        android:hint="Password"
-        android:imeOptions="actionDone"
-        android:singleLine="true"/>
+        android:hint="password" />
 
-    <Button
+    <Button style="@style/WhisperLogin.B"
         android:id="@+id/bLogin"
-        android:background="@color/accent_color"
-        android:textColor="@color/white"
-        android:textSize="20dp"
+        android:background="@drawable/img_btn_login"
+        android:textColor="@color/login_screen_text"
+        android:textSize="25dp"
         android:textStyle="bold"
         android:text="Login"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:layout_alignTop="@+id/etPassword"
         android:layout_marginTop="60dp"
-        android:layout_marginLeft="50dp"
-        android:layout_marginRight="50dp"/>
+        android:backgroundTint="@color/login_screen_text" />
 
     <TextView
         android:id="@+id/tvSignUp"
-        android:textColor="@color/white"
+        android:textColor="@color/login_screen_text"
         android:text="Sign Up"
         android:textSize="25dp"
         android:textStyle="bold"
