@@ -20,7 +20,8 @@
     "polymer": "Polymer/polymer#1.2.0",
     "paper-elements": "polymerelements/paper-elements#~1.0.7",
     "iron-elements": "polymerelements/iron-elements#~1.0.7",
-    "iron-icon": "PolymerElements/iron-icon#^1.0.7"
+    "iron-icon": "PolymerElements/iron-icon#^1.0.7",
+    "neon-elements": "polymerelements/neon-elements#~1.0.0"
   },
   "resolutions": {
     "polymer": "~1.2.3"

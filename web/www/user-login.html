@@ -66,13 +66,6 @@
     #content {
       z-index: 10;
     }
-
-    #loadingMessenger paper-spinner {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate3d(-50%, -50%, 0);
-    }
   </style>
   <template>
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
@@ -98,9 +91,6 @@
         <paper-button raised on-tap="doRegister" class="green">Sign Up</paper-button>
       </div>
     </paper-material>
-    <div id="loadingMessenger">
-      <paper-spinner active></paper-spinner>
-    </div>
   </template>
   <script>
     Polymer({
