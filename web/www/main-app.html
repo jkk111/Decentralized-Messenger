@@ -1,154 +1,31 @@
-<link rel="import" href="/bower_components/polymer/polymer.html">
-<link rel="import" href="/bower_components/paper-drawer-panel/paper-drawer-panel.html">
-<link rel="import" href="/bower_components/paper-header-panel/paper-header-panel.html">
-<link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html">
-<link rel="import" href="/bower_components/paper-menu/paper-menu.html">
-<link rel="import" href="/bower_components/paper-input/paper-input.html">
-<link rel="import" href="/bower_components/paper-item/paper-item.html">
-<link rel="import" href="/bower_components/paper-material/paper-material.html">
-<link rel="import" href="/bower_components/paper-input/paper-textarea.html">
-<link re;="import" href="/bower_components/iron-pages/iron-pages/html">
-<link rel="improt" href="/bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
-<link rel="import" href="contact-element.html">
+<link rel="import" href="messenger-view.html">
+<link rel="import" href="user-login.html">
 
 <dom-module id="main-app">
   <style>
-    paper-menu {
-      padding-top: 0;
+    messenger-view {
+      display: none;
     }
-    paper-dialog-scrollable {
-      height:400px;
-    }
-    paper-toolbar {
-      background-color: #4CAF50;
-    };
   </style>
   <template>
-    <paper-drawer-panel>
-      <paper-header-panel drawer>
-        <paper-toolbar>
-          <div class="title">Friends</div>
-        </paper-toolbar>
-        <div id="drawerContent">
-          <paper-menu selected="{{selectedContact}}">
-            <template is="dom-repeat" items="{{friends}}">
-              <paper-item>
-                <contact-element
-                  name="{{item.name}}"
-                  online="{{item.online}}"
-                  img="{{item.img}}">
-                </contact-element>
-              </paper-item>
-            </template>
-          </paper-menu>
-        </div>
-      </paper-header-panel>
-      <paper-header-panel main>
-        <paper-toolbar>
-          <div class="title">{{generateContactName(selectedContact)}}</div>
-        </paper-toolbar>
-        <div id="mainContent">
-          <template is="dom-if" if="{{noneSelected(selectedContact)}}">
-            <div>
-              <paper-material>
-                  Choose a contact to view or send messages.
-              </paper-material>
-            </div>
-          </template>
-          <div>
-            <paper-dialog-scrollable>
-            <template is="dom-repeat" items="{{getMessages(selectedContact)}}">
-              <paper-item>{{item}}</paper-item>
-            </template>
-          </paper-dialog-scrollable>
-            <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
-              <div>
-                <paper-textarea label="send a message"></paper-textarea>
-              </div>
-            </template>
-          </div>
-        </div>
-      </paper-header-panel>
-    </paper-drawer-panel>
+    <user-login id="login" on-logged-in="openMessenger"></user-login>
+    <messenger-view id="messenger"></messenger-view>
   </template>
   <script>
     Polymer({
       is: 'main-app',
       properties: {
-        selectedContact: {
-          type: Number,
-          value: -1,
-          notify: true
-        },
-        friends: {
-          type: Array,
-          value: [
-            {
-              name: "Mr. One",
-              online: true,
-              img: "img/one.png"
-            },{
-              name: "Mr. Two",
-              online: true,
-              img: "img/two.png"
-            },{
-              name: "Mr. Three",
-              online: false,
-              img: "img/three.png"
-            }
-          ]
-        },
-        messages: {
-          type: Array,
-          value: [
-            [
-              "Teshhh iherbieahbgir ihbegribesgirbghoewbgroj ehbgjoew hrbgjewh"+
-              "rkhsbkhwbekh kbwefkhwbefkhwe kbwefkhbwekhfb kbwkefhbewkhf bgoebwhro"+
-              "bgwoehbhh hhhhhhhhhh hhhhhhhhhbut",
-              "Hello",
-              "You there?"
-            ],
-            [
-              "I Told you",
-              "What?",
-              "lel"
-            ],
-            [
-              "Test message",
-              "here",
-              "You there?",
-              "nope",
-              "yeah",
-              "haha",
-              "lol",
-              "yeah",
-              "XD",
-              ">_<",
-              "haha",
-              "rofl"
-            ]
-          ]
+        id: {
+          type: String,
+          value: ""
         }
       },
-      getMessages: function(contact) {
-        if(!this.messages || contact > this.messages.length || contact == -1)
-          return
-        return this.messages[contact];
-      },
-      getSelectedFriend: function(contact) {
-        return this.friends[contact]
-      },
-      generateContactName: function(friend) {
-        console.log(friend);
-        if(friend < 0)
-          return "";
-        return this.getSelectedFriend(friend).name;
-      },
-      noneSelected: function(friend) {
-        if (friend < 0)
-          return true;
-        return false;
+
+      openMessenger: function (e, id) {
+        console.log(e);
+        console.log(id);
+        this.$.login.style.display = "none";
+        this.$.messenger.style.display = "block";
       }
     })
   </script>
