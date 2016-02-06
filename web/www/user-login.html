@@ -6,43 +6,88 @@
 <link rel="import" href="/bower_components/paper-button/paper-button.html">
 <dom-module id="user-login">
   <style>
+    :host {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: url("img/bg.jpg");
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
     paper-material {
       top: 0;
       bottom: 0;
       max-width: 400px;
-      margin: 80px 100px;
+      /*margin: 10% 5%;*/
+      margin-left: 5%;
       border-radius: 15px;
       overflow: hidden;
       text-align: center;
       box-sizing: border-box;
-      padding: 10px;
+      /*padding: 16px;*/
+      max-height: 80%;
+      overflow: hidden;
+      position: relative;
+      top: 50%;
+      transform: translateY(-50%);
+      -webkit-transform-style: preserve-3d;
+      -moz-transform-style: preserve-3d;
+      transform-style: preserve-3d;
+    }
+
+    paper-material > * {
+      padding: 16px;
     }
     paper-input {
       text-align: initial;
     }
-    
+
     paper-input {
-      padding: 0 10px 0 10px;
+      padding: 0 10px;
+    }
+    #background {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      background-color: #eee; /* TODO (john): work on the colors, shading, and spacing */
+      top:0;
+      overflow: hidden;
+      opacity: 0.1;
+      padding: 16px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    #content {
+      z-index: 10;
     }
   </style>
   <template>
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <iron-ajax id="secretAjax" url="{{secretUrl}}" handle-as="json" on-response="secretReceived" method="GET"></iron-ajax>
     <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
-    <paper-material elevation="2">
-      <!--<b>Enter your credentials to login:</b>-->
-      <paper-input value="{{loginUser}}" placeholder="username"></paper-input>
-      <paper-input value="{{loginPassword}}" type="password" placeholder="password"></paper-input>
-      <paper-button raised on-tap="doLogin" class="green">Sign In</paper-button>
-      <br/>
-      <br/>
-      <!--<br/>
-      <b>Register a new account:</b>-->
-      <paper-input value="{{registerUser}}" placeholder="username"></paper-input>
-      <paper-input value="{{registerEmail}}" placeholder="email"></paper-input>
-      <paper-input value="{{registerPassword}}" type="password" placeholder="password"></paper-input>
-      <paper-input value="{{confirmPassword}}" type="password" placeholder="confirm password"></paper-input><!--add appropriate changes in script-->
-      <paper-button raised on-tap="doRegister" class="green">Sign Up</paper-button>
+    <paper-material elevation="1">
+      <div id="background" on-tap="kek">
+
+      </div>
+      <div id="content">
+        <b>Enter your credentials to login:</b>
+        <paper-input value="{{loginUser}}" placeholder="username"></paper-input>
+        <paper-input value="{{loginPassword}}" type="password" placeholder="password"></paper-input>
+        <paper-button raised on-tap="doLogin" class="green">Sign In</paper-button>
+        <br/>
+        <br/>
+        <br/>
+        <b>Register a new account:</b>
+        <paper-input value="{{registerUser}}" placeholder="username"></paper-input>
+        <paper-input value="{{registerEmail}}" placeholder="email"></paper-input>
+        <paper-input value="{{registerPassword}}" type="password" placeholder="password"></paper-input>
+        <paper-input value="{{registerPasswordConfirm}}" type="password" placeholder="confirm password"></paper-input>
+        <paper-button raised on-tap="doRegister" class="green">Sign Up</paper-button>
+      </div>
     </paper-material>
   </template>
   <script>
@@ -65,10 +110,6 @@
           type: String,
           value: ""
         },
-        confirmPassword: {
-          type: String,
-          value: ""
-        },
         registerEmail: {
           type: String,
           value: ""
@@ -83,7 +124,7 @@
         },
         registerBody: {
           type: Object,
-          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword)'
+          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword, registerPasswordConfirm)'
         },
         loginUrl: {
           type: String,
@@ -101,6 +142,12 @@
           type: Object,
           value: function() { return {}; }
         }
+      },
+
+      checkEmail: function(email) {
+        var res =  /^([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22))*\x40([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d))*$/.test( email );
+        console.log(res);
+        console.log("kek");
       },
 
       registered: function(e, response) {
@@ -124,8 +171,9 @@
       },
 
       doRegister: function() {
-        if(this.registerUser == "" || this.registerPassword == "" || this.registerEmail == "")
+        if(this.registerUser == "" || this.registerPassword == "" || this.registerEmail == "" || this.registerPassword != this.registerPasswordConfirm)
           return;
+        this.checkEmail(this.registerEmail);
         this.$.registerAjax.generateRequest();
       },
 
