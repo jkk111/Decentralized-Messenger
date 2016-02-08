@@ -2,7 +2,7 @@ var express = require("express");
 var app = express();
 var bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("static"));
+app.use(express.static("../web/www"));
 var fs = require("fs");
 var request = require("request");
 var conf;
