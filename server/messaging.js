@@ -9,22 +9,6 @@ module.exports = function(app, storage) {
     }
   */
 
-  app.get("/login", function(req, res) {
-    var u = req.query.u;
-    var p = req.query.p;
-    storage.login(u, p, function(result) {
-      res.send(result);
-    })
-  });
-
-  app.get("/register", function(req, res) {
-    var u = req.query.u;
-    var p = req.query.p;
-    storage.register(u, p, function(result) {
-      res.send(result);
-    })
-  });
-
   app.post("/refreshToken", function(req, res) {
     var token = req.body.token;
     storage.refreshToken(token, function(success) {
