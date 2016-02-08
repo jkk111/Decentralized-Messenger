@@ -10,6 +10,10 @@ module.exports = function(app, storage) {
   */
 
   app.post("/refreshToken", function(req, res) {
+    if(!req.body.token) {
+      res.sendStatus(400);
+      return;
+    }
     var token = req.body.token;
     storage.refreshToken(token, function(success) {
       if(typeof success == "boolean") {
@@ -21,6 +25,10 @@ module.exports = function(app, storage) {
   });
 
   app.post("/login", function(req, res) {
+    if(!req.body.user || ! req.body.pass) {
+      res.sendStatus(400);
+      return;
+    }
     var user = req.body.user;
     var password = req.body.password;
     storage.userExists(user, function(exists) {
@@ -39,6 +47,10 @@ module.exports = function(app, storage) {
   })
 
   app.post("/register", function(req, res) {
+    if(!req.body.user || ! req.body.pass) {
+      res.sendStatus(400);
+      return;
+    }
     var user = req.body.user;
     var password = req.body.password;
     storage.userExists(user, function(exists) {
@@ -59,6 +71,10 @@ module.exports = function(app, storage) {
   });
 
   app.post("/messages", function(req, res) {
+    if(!req.body.sender || ! req.body.token) {
+      res.sendStatus(400);
+      return;
+    }
     var sender = req.body.sender;
     var token = req.body.token;
     storage.verifyToken(sender, token, function(success) {
@@ -75,6 +91,10 @@ module.exports = function(app, storage) {
   })
 
   app.post("/received", function(req, res) {
+    if(!req.body.sender || !req.body.token || req.body.highest) {
+      res.sendStatus(400);
+      return;
+    }
     var sender = req.body.sender;
     var token = req.body.token;
     var highest = req.body.highest;
@@ -94,6 +114,10 @@ module.exports = function(app, storage) {
   })
 
   app.post("/message", function(req, res) {
+    if(!req.body.sender || !req.body.dest || req.body.message || req.body.token) {
+      res.sendStatus(400);
+      return;
+    }
     var sender = req.body.sender;
     var dest = req.body.dest;
     var message = req.body.message;
