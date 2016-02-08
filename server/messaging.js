@@ -25,18 +25,6 @@ module.exports = function(app, storage) {
     })
   });
 
-  app.get("/refreshToken", function(req, res) {
-    var t = req.query.t;
-    t = t.replace(/\s/g, "+");
-    storage.refreshToken(t, function(success) {
-      if(typeof success == "boolean") {
-        res.send({ success: success });
-      } else {
-        res.send(token);
-      }
-    })
-  })
-
   app.post("/refreshToken", function(req, res) {
     var token = req.body.token;
     storage.refreshToken(token, function(success) {
