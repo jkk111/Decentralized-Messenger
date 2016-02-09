@@ -114,7 +114,7 @@ module.exports = function(app, storage) {
   })
 
   app.post("/message", function(req, res) {
-    if(!req.body.sender || !req.body.dest || req.body.message || req.body.token) {
+    if(!req.body.sender || !req.body.dest || !req.body.message || !req.body.token) {
       res.sendStatus(400);
       return;
     }
