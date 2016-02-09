@@ -27,7 +27,7 @@ if(cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  app.listen(80);
+  app.listen(conf.serverPort);
   var storage = require("./storage.js")(conf);
   var routes  = require("./routes.js")(app, storage, conf);
 }
