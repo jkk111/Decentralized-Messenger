@@ -25,7 +25,7 @@ module.exports = function(app, storage) {
   });
 
   app.post("/login", function(req, res) {
-    if(!req.body.user || ! req.body.pass) {
+    if(!req.body.user || ! req.body.password) {
       res.sendStatus(400);
       return;
     }
@@ -47,7 +47,7 @@ module.exports = function(app, storage) {
   })
 
   app.post("/register", function(req, res) {
-    if(!req.body.user || ! req.body.pass) {
+    if(!req.body.user || ! req.body.password) {
       res.sendStatus(400);
       return;
     }
