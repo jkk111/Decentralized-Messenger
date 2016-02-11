@@ -11,6 +11,7 @@ startTest();
 
 function startTest() {
   console.log("starting i guess")
+  console.log("starting register")
   var opt = {
     url: host + "/register",
     form: {
