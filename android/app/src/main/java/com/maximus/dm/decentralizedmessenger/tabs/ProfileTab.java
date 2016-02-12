@@ -27,8 +27,7 @@ public class ProfileTab extends Fragment implements View.OnClickListener {
 
     UserLocalStore userLocalStore;
 
-    TextView tvWelcome;
-    EditText etUsername, etEmail;
+    TextView tvWelcome, tvUsername, tvEmail;
     Button bLogout;
 
     @Nullable
@@ -43,8 +42,8 @@ public class ProfileTab extends Fragment implements View.OnClickListener {
         userLocalStore = new UserLocalStore(this.getContext());
 
         tvWelcome = (TextView)this.getView().findViewById(R.id.tvWelcome);
-        etUsername = (EditText) this.getView().findViewById(R.id.etUsername);
-        etEmail = (EditText) this.getView().findViewById(R.id.etEmail);
+        tvUsername = (TextView) this.getView().findViewById(R.id.tvUsername);
+        tvEmail = (TextView) this.getView().findViewById(R.id.tvEmail);
         bLogout = (Button) this.getView().findViewById(R.id.bLogout);
 
         bLogout.setOnClickListener(this);
@@ -61,8 +60,8 @@ public class ProfileTab extends Fragment implements View.OnClickListener {
 
     private void showUserData() {
         User user = userLocalStore.getLoggedInUser();
-        etUsername.setText(user.getUsername());
-        etEmail.setText(user.getEmail());
+        tvUsername.setText(user.getUsername());
+        tvEmail.setText(user.getEmail());
     }
 
     @Override

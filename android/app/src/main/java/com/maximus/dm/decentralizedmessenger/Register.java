@@ -9,12 +9,20 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
+
+import com.maximus.dm.decentralizedmessenger.helper.Encoder;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Register extends AppCompatActivity implements View.OnClickListener {
 
     EditText etUsername, etEmail, etPassword, etConfirmPassword;
     Button bRegister;
     UserDatabase userDatabase;
+
+    static String SERVER_REGISTER = "/register";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,16 +51,40 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
                 String password = etPassword.getText().toString();
                 String confirmPassword = etConfirmPassword.getText().toString();
 
-                //check if passwords are the same
-
-                //add check for existing username
+                // if passwords match, send user off to the server
 
                 //add check for existing email
-                if(password.equals(confirmPassword)) {
+                boolean yes = false;
+                if (username.length() > 0 &&
+                        email.length() > 0 &&
+                        password.length() > 0 &&
+                        password.equals(confirmPassword)) { yes = true; }
+
+                if(yes) {
+                    // for local db
                     User user = new User(username, email, password);
                     userDatabase.storeUser(user);
 
-                    startActivity(new Intent(this, Login.class));
+                    // server stuff
+                    Login networking = new Login();
+                    JSONObject jsonObject = new JSONObject();
+                    try {
+                        jsonObject.put("user", username);
+                        jsonObject.put("password", password);
+
+                        // Send request, get response (POST)
+                        String jsonToUrl = Encoder.jsonToURLEncoding(jsonObject);
+                        String jsonToUrlNoSpace = Encoder.replaceWhitespaces(jsonToUrl);
+                        String serverResponse = networking.connect(SERVER_REGISTER, jsonToUrlNoSpace);
+                        JSONObject jsonResponse = new JSONObject(serverResponse);
+
+                        Toast.makeText(this,serverResponse, Toast.LENGTH_SHORT).show();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        System.out.println("REGISTER ACTIVITY: " + e.toString());
+                    }
+
+                    //startActivity(new Intent(this, Login.class));
                 }
 
                 break;

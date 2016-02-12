@@ -1,10 +1,10 @@
 package com.maximus.dm.decentralizedmessenger;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.TabHost;
 
@@ -72,19 +72,13 @@ public class MainActivity extends AppCompatActivity implements ViewPager.OnPageC
     }
 
     @Override
-    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-    }
-
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
     @Override
     public void onPageSelected(int selectedPage) {
         tabHost.setCurrentTab(selectedPage);
     }
-
     @Override
-    public void onPageScrollStateChanged(int state) {
-
-    }
+    public void onPageScrollStateChanged(int state) {}
 
     @Override
     public void onTabChanged(String tabId) {
