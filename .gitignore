@@ -50,3 +50,4 @@ node_modules
 bower_components
 server/config.json
 server/config.json
+server/ssl.crt

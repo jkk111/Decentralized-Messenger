@@ -79,14 +79,14 @@
   </style>
 
   <template>
-  <!--
+<!--
     <paper-toolbar>
       <paper-icon-button icon="communication:chat"></paper-icon-button>
       <span class="title">Whisper - a decentralised messenger</span>
       <paper-icon-button icon="social:people" href="https://www.facebook.com"></paper-icon-button>
       <paper-icon-button icon="add"></paper-icon-button>
     </paper-toolbar>
-  -->
+ -->
 
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <iron-ajax id="secretAjax" url="{{secretUrl}}" handle-as="json" on-response="secretReceived" method="GET"></iron-ajax>
@@ -183,7 +183,8 @@
       },
 
       secretReceived: function(e, response) {
-        console.log("Received key: %s", response.response.key);
+        if(response.response)
+          console.log("Received key: %s", response.response.key);
       },
 
       doLogin: function() {

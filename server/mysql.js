@@ -78,7 +78,7 @@ module.exports = function(config) {
       if(results && results.length > 0)
         generateToken(results[0].id, cb);
       else
-        cb({ success: false });
+        cb({ error: "ERROR_BAD_LOGIN" });
     });
   }
 

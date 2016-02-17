@@ -3,7 +3,7 @@ var nodeRSA = require("node-rsa");
 // var key = new nodeRSA({ b: 2048 });
 // var pub = key.exportKey('pkcs1-public');
 
-var host = "http://" + (process.argv[2] || "localhost");
+var host = "https://" + (process.argv[2] || "localhost");
 
 // https://github.com/jkk111/Decentralized-Messenger.git
 
