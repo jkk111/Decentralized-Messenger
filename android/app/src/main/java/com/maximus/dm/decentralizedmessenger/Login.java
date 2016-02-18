@@ -8,6 +8,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.maximus.dm.decentralizedmessenger.helper.Encoder;
+import com.maximus.dm.decentralizedmessenger.helper.Networking;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Login extends AppCompatActivity implements View.OnClickListener {
 
     TextView tvSignUp;
@@ -42,18 +48,16 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 String enteredEmailOrUsername = etEmailOrUsername.getText().toString();
                 String enteredPassword = etPassword.getText().toString();
 
-                User userDB = userDatabase.getUser(UserDatabase.USER_ID);
-                String usernameDB = userDB.getUsername();
-                String emailDB = userDB.getEmail();
-                String passwordDB = userDB.getPassword();
-
-                if(enteredEmailOrUsername.equals(usernameDB) || enteredEmailOrUsername.equals(emailDB)) {
-                    if(enteredPassword.equals(passwordDB)) {
-                        userLocalStore.storeUserData(userDB);
-                        userLocalStore.setUserLoggedIn(true);
-                        startActivity(new Intent(this, MainActivity.class));
-                    }
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    jsonObject.put("user", enteredEmailOrUsername);
+                    jsonObject.put("password", enteredPassword);
+                } catch(JSONException e) {
+                    e.printStackTrace();
                 }
+                Networking networking = new Networking(this);
+                String response = networking.connect(Networking.SERVER_PATH_LOGIN, Encoder.jsonToUrl(jsonObject));
+                System.out.println("RESPONSE: " + response);
 
                 break;
             case R.id.tvSignUp:
@@ -63,5 +67,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 break;
         }
     }
+    /*
+    private boolean verifyLogin(String jsonResponse) {
 
+    }
+    */
 }
