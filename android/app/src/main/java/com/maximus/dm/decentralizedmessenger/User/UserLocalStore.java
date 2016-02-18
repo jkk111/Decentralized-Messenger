@@ -1,4 +1,4 @@
-package com.maximus.dm.decentralizedmessenger;
+package com.maximus.dm.decentralizedmessenger.User;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -19,16 +19,14 @@ public class UserLocalStore {
         SharedPreferences.Editor spEditor = userLocalDatabase.edit();
         spEditor.putString("username", user.username);
         spEditor.putString("email", user.email);
-        spEditor.putString("password", user.password);
         spEditor.commit();
     }
 
     public User getLoggedInUser() {
         String username = userLocalDatabase.getString("username", "");
         String email = userLocalDatabase.getString("email", "");
-        String password = userLocalDatabase.getString("password", "");
 
-        return new User(username, email, password);
+        return new User(username, email);
     }
 
     public void setUserLoggedIn(boolean loggedIn) {

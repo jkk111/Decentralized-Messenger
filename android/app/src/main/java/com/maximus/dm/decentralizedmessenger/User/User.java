@@ -1,16 +1,15 @@
-package com.maximus.dm.decentralizedmessenger;
+package com.maximus.dm.decentralizedmessenger.User;
 
 /**
  * Created by Maximus on 29/01/2016.
  */
 public class User {
 
-    String username, email, password;
+    String username, email;
 
-    public User(String username, String email, String password) {
+    public User(String username, String email) {
         this.username = username;
         this.email = email;
-        this.password = password;
     }
 
     public String getUsername() {
@@ -21,7 +20,4 @@ public class User {
         return email;
     }
 
-    public String getPassword() {
-        return password;
-    }
 }

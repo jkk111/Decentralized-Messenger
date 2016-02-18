@@ -2,13 +2,13 @@ package com.maximus.dm.decentralizedmessenger;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+
+import com.maximus.dm.decentralizedmessenger.User.User;
+import com.maximus.dm.decentralizedmessenger.User.UserDatabase;
 
 public class Register extends AppCompatActivity implements View.OnClickListener {
 
@@ -49,7 +49,7 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
 
                 //add check for existing email
                 if(password.equals(confirmPassword)) {
-                    User user = new User(username, email, password);
+                    User user = new User(username, email);
                     userDatabase.storeUser(user);
 
                     startActivity(new Intent(this, Login.class));

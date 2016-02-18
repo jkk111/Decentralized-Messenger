@@ -1,4 +1,4 @@
-package com.maximus.dm.decentralizedmessenger;
+package com.maximus.dm.decentralizedmessenger.User;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -8,11 +8,13 @@ import android.content.SharedPreferences;
  */
 public class UserDatabase {
 
-    public static String USER_DB = "userDatabase";
-    public static String USER_ID = "0";
-    public static String USERNAME = "username";
-    public static String EMAIL = "email";
-    public static String PASSWORD = "password";
+    public static final String USER_DB = "userDatabase";
+    public static final String USER_ID = "0";
+    public static final String USERNAME = "username";
+    public static final String EMAIL = "email";
+
+    public static final String LOGGED_IN = "loggedIn";
+
     SharedPreferences userDatabase;
 
     public UserDatabase(Context context) {
@@ -23,16 +25,27 @@ public class UserDatabase {
         SharedPreferences.Editor spEditor = userDatabase.edit();
         spEditor.putString(USER_ID + USERNAME, user.username);
         spEditor.putString(USER_ID + EMAIL, user.email);
-        spEditor.putString(USER_ID + PASSWORD, user.password);
         spEditor.commit();
     }
 
     public User getUser(String userId) {
         String username = userDatabase.getString(userId + USERNAME, "");
         String email = userDatabase.getString(userId + EMAIL, "");
-        String password = userDatabase.getString(userId + PASSWORD, "");
 
-        return new User(username, email, password);
+        return new User(username, email);
+    }
+
+    public void setLoggedIn(User user) {
+        SharedPreferences.Editor spEditor = userDatabase.edit();
+        spEditor.putString(LOGGED_IN + USERNAME, user.getUsername());
+        spEditor.putString(LOGGED_IN + EMAIL, user.getEmail());
+        spEditor.commit();
+    }
+
+    public User getLoggedIn() {
+        String username = userDatabase.getString(LOGGED_IN + USERNAME, "");
+        String email = userDatabase.getString(LOGGED_IN + EMAIL, "");
+        return new User(username, email);
     }
 
     public void clearAll() {

@@ -9,6 +9,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.maximus.dm.decentralizedmessenger.User.User;
+import com.maximus.dm.decentralizedmessenger.User.UserDatabase;
+import com.maximus.dm.decentralizedmessenger.User.UserLocalStore;
 import com.maximus.dm.decentralizedmessenger.helper.Encoder;
 import com.maximus.dm.decentralizedmessenger.helper.Networking;
 
@@ -20,7 +23,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     TextView tvSignUp;
     EditText etEmailOrUsername, etPassword;
     Button bLogin;
-    UserLocalStore userLocalStore;
     UserDatabase userDatabase;
 
     @Override
@@ -37,7 +39,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         bLogin.setOnClickListener(this);
         tvSignUp.setOnClickListener(this);
 
-        userLocalStore = new UserLocalStore(this);
         userDatabase = new UserDatabase(this);
     }
 
@@ -62,6 +63,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                     //System.out.println("RESPONSE: " + response);
 
                     if(validInfo(response)) {
+                        User currentUser = new User(enteredEmailOrUsername, "mail@noemail.mail.ie.com");
+                        userDatabase.setLoggedIn(currentUser);
+
                         Intent intent = new Intent(this, MainActivity.class);
                         startActivity(intent);
                     }

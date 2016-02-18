@@ -14,8 +14,8 @@
         android:textStyle="bold"
         android:layout_marginTop="30dp"/>
 
-    <EditText
-        android:id="@+id/etUsername"
+    <TextView
+        android:id="@+id/tvUsername"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
@@ -24,23 +24,23 @@
         android:layout_marginTop="100dp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
+        android:textSize="18dp"
         android:hint="Username"
-        android:imeOptions="actionDone"
         android:singleLine="true"/>
 
-    <EditText
-        android:id="@+id/etEmail"
+    <TextView
+        android:id="@+id/tvEmail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/etUsername"
+        android:layout_alignTop="@+id/tvUsername"
         android:layout_marginTop="60dp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginBottom="100dp"
+        android:textSize="18dp"
         android:hint="Email"
-        android:imeOptions="actionDone"
         android:singleLine="true"/>
 
     <Button
@@ -48,7 +48,7 @@
         android:text="Logout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/etEmail"
+        android:layout_alignTop="@+id/tvEmail"
         android:layout_marginTop="80dp"
         android:layout_marginLeft="50dp"
         android:layout_marginRight="50dp"/>

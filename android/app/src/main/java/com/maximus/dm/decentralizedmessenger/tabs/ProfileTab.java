@@ -13,22 +13,22 @@ import android.widget.TextView;
 
 import com.maximus.dm.decentralizedmessenger.Login;
 import com.maximus.dm.decentralizedmessenger.R;
-import com.maximus.dm.decentralizedmessenger.User;
-import com.maximus.dm.decentralizedmessenger.UserLocalStore;
-
-import org.w3c.dom.Text;
+import com.maximus.dm.decentralizedmessenger.User.User;
+import com.maximus.dm.decentralizedmessenger.User.UserDatabase;
+import com.maximus.dm.decentralizedmessenger.User.UserLocalStore;
 
 /**
  * Created by Maximus on 30/01/2016.
  */
 public class ProfileTab extends Fragment implements View.OnClickListener {
 
+    //TODO: Clear logged in user after user logs out
+
     public static String TAB_NAME = "Profile";
 
-    UserLocalStore userLocalStore;
+    UserDatabase userDatabase;
 
-    TextView tvWelcome;
-    EditText etUsername, etEmail;
+    TextView tvWelcome, tvUsername, tvEmail;
     Button bLogout;
 
     @Nullable
@@ -40,29 +40,23 @@ public class ProfileTab extends Fragment implements View.OnClickListener {
     @Override
     public void onStart() {
         super.onStart();
-        userLocalStore = new UserLocalStore(this.getContext());
+        userDatabase = new UserDatabase(this.getContext());
 
         tvWelcome = (TextView)this.getView().findViewById(R.id.tvWelcome);
-        etUsername = (EditText) this.getView().findViewById(R.id.etUsername);
-        etEmail = (EditText) this.getView().findViewById(R.id.etEmail);
+        tvUsername = (TextView) this.getView().findViewById(R.id.tvUsername);
+        tvEmail = (TextView) this.getView().findViewById(R.id.tvEmail);
         bLogout = (Button) this.getView().findViewById(R.id.bLogout);
 
         bLogout.setOnClickListener(this);
 
-        if(authenticate()) {
-            tvWelcome.setText("Maximus111 hw");
-            showUserData();
-        }
-    }
-
-    private boolean authenticate() {
-        return userLocalStore.getUserLoggedIn();
+        showUserData();
     }
 
     private void showUserData() {
-        User user = userLocalStore.getLoggedInUser();
-        etUsername.setText(user.getUsername());
-        etEmail.setText(user.getEmail());
+        User user = userDatabase.getLoggedIn();
+        tvWelcome.setText(user.getUsername() + "'s Profile");
+        tvUsername.setText(user.getUsername());
+        tvEmail.setText(user.getEmail());
     }
 
     @Override
@@ -70,9 +64,6 @@ public class ProfileTab extends Fragment implements View.OnClickListener {
         switch(v.getId()) {
             case R.id.bLogout:
                 //register clicked
-                userLocalStore.clearUserData();
-                userLocalStore.setUserLoggedIn(false);
-
                 startActivity(new Intent(getActivity(), Login.class));
                 break;
         }
