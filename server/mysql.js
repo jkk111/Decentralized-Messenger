@@ -164,6 +164,30 @@ module.exports = function(config) {
       cb(messages);
     })
   }
+
+  connector.getFriends = function (sender, cb) {
+    var q = "SELECT * FROM friends where user1 = ? OR user2 = ?";
+    conn.query(q, [sender, sender], function(err, results) {
+      if(err)
+        console.log(err);
+      else {
+        console.log(results);
+        cb(results);
+      }
+    })
+  }
+
+  connector.addFriend = function (user1, user2, secret, cb) {
+    var q = "INSERT INTO friends(user1, user2, secret) VALUES(?, ?, ?)";
+    conn.query(q, [user1, user2, secret], function(err, results) {
+      if(err)
+        console.log(err);
+      else {
+        console.log(results);
+        cb(results != undefined);
+      }
+    })
+  }
   return connector;
 }
 

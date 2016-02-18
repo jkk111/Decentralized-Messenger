@@ -80,7 +80,10 @@ function buildTables() {
                                       message TEXT(60000) NOT NULL); \
                CREATE TABLE tokens (user INT UNSIGNED NOT NULL, \
                                     token VARCHAR(100) NOT NULL, \
-                                    expiry DATETIME NOT NULL);";
+                                    expiry DATETIME NOT NULL); \
+               CREATE TABLE friends (user1 INT UNSIGNED NOT NULL, \
+                                     user2 INT UNSIGNED NOT NULL, \
+                                     secret TEXT(60000) NOT NULL);";
   conn.query(table, function(err, results) {
     if(err)
       console.log(err);

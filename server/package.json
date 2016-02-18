@@ -9,7 +9,8 @@
     "mysql": "^2.10.2",
     "node-rsa": "^0.3.2",
     "prompt": "^0.2.14",
-    "request": "^2.69.0"
+    "request": "^2.69.0",
+    "ssl-root-cas": "^1.1.10"
   },
   "devDependencies": {},
   "scripts": {

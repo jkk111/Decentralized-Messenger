@@ -51,8 +51,11 @@ module.exports = function(config) {
     storageEngine.userExists(user, cb);
   }
 
-  this.refreshToken = function(token, cb) {
-    storageEngine.refreshToken(token, cb);
-  }
+  this.refreshToken = storageEngine.refreshToken;
+
+  this.addFriend = storageEngine.addFriend;
+
+  this.getFriends = storageEngine.getFriends;
+
   return this;
 }

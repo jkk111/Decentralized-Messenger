@@ -1,5 +1,6 @@
 var request = require("request");
 var nodeRSA = require("node-rsa");
+require('ssl-root-cas/latest')
 // var key = new nodeRSA({ b: 2048 });
 // var pub = key.exportKey('pkcs1-public');
 

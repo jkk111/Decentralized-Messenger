@@ -113,6 +113,44 @@ module.exports = function(app, storage) {
     });
   })
 
+  app.post("/getFriends", function(req, res) {
+    var sender = req.body.sender;
+    var token = req.body.token;
+    storage.verifyToken(sender, token, function(success) {
+      if(success) {
+        storage.getFriends(sender, function(success) {
+          if(typeof success == "boolean") {
+            res.send({ success: success });
+          } else {
+            res.send(success);
+          }
+        });
+      } else {
+        res.send({ error: "ERROR_BAD_TOKEN" });
+      }
+    })
+  });
+
+  app.post("/addFriend", function(req, res) {
+    var sender = req.body.sender;
+    var token = req.body.token;
+    var client = req.body.client;
+    var secret = req.body.secret || "";
+    storage.verifyToken(sender, token, function(success) {
+      if(success) {
+        storage.addFriend(sender, client, secret, function(success) {
+          if(typeof success == "boolean") {
+            res.send({ success: success });
+          } else {
+            res.send(success);
+          }
+        });
+      } else {
+        res.send({ error: "ERROR_BAD_TOKEN" });
+      }
+    })
+  });
+
   app.post("/message", function(req, res) {
     if(!req.body.sender || !req.body.dest || !req.body.message || !req.body.token) {
       res.sendStatus(400);
