@@ -18,7 +18,7 @@ public class Encoder {
         return replaceWhitespaces(urlEncodedObject);
     }
 
-    public static String jsonToURLEncoding(JSONObject json) {
+    private static String jsonToURLEncoding(JSONObject json) {
         String output = "";
         String[] keys = Encoder.getKeys(json);
         for (String currKey : keys)
@@ -68,7 +68,7 @@ public class Encoder {
         return output;
     }
 
-    public static String replaceWhitespaces(String str) {
+    private static String replaceWhitespaces(String str) {
         return str.replaceAll("\\s+", "%20");
     }
 

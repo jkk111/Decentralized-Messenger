@@ -23,7 +23,13 @@
         <activity
             android:name=".Register"
             android:label="@string/title_activity_register"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme"
+            android:parentActivityName=".Login">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".Login"/>
+        </activity>
+
         <activity android:name=".MainActivity"></activity>
         <activity android:name=".ChatWindow"
             android:parentActivityName=".MainActivity">

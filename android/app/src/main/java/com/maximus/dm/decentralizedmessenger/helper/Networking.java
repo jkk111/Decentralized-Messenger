@@ -28,6 +28,7 @@ public class Networking {
 
     public static final String SERVER_DOMAIN = "https://john-kevin.me";
     public static final String SERVER_PATH_LOGIN = "/login";
+    public static final String SERVER_PATH_REGISTER = "/register";
 
     private Context mContext;
 
