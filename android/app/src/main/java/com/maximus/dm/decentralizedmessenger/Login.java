@@ -21,7 +21,7 @@ import org.json.JSONObject;
 public class Login extends AppCompatActivity implements View.OnClickListener {
 
     TextView tvSignUp;
-    EditText etEmailOrUsername, etPassword;
+    EditText etUsername, etPassword;
     Button bLogin;
     UserDatabase userDatabase;
 
@@ -31,7 +31,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         setContentView(R.layout.activity_login);
 
         // assign variables
-        etEmailOrUsername = (EditText) findViewById(R.id.etEmailOrUsername);
+        etUsername = (EditText) findViewById(R.id.etUsername);
         etPassword = (EditText) findViewById(R.id.etPassword);
         bLogin = (Button) findViewById(R.id.bLogin);
         tvSignUp = (TextView) findViewById(R.id.tvSignUp);
@@ -47,13 +47,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         switch(v.getId()) {
             case R.id.bLogin:
                 //login clicked
-                String enteredEmailOrUsername = etEmailOrUsername.getText().toString();
+                String enteredUsername = etUsername.getText().toString();
                 String enteredPassword = etPassword.getText().toString();
 
-                if(enteredEmailOrUsername.length() > 0 && enteredPassword.length() > 0) {
+                if(enteredUsername.length() > 0 && enteredPassword.length() > 0) {
                     JSONObject jsonObject = new JSONObject();
                     try {
-                        jsonObject.put("user", enteredEmailOrUsername);
+                        jsonObject.put("user", enteredUsername);
                         jsonObject.put("password", enteredPassword);
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -63,7 +63,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                     //System.out.println("RESPONSE: " + response);
 
                     if(validInfo(response)) {
-                        User currentUser = new User(enteredEmailOrUsername, "mail@noemail.mail.ie.com");
+                        User currentUser = new User(enteredUsername, "mail@noemail.mail.ie.com");
                         userDatabase.setLoggedIn(currentUser);
 
                         Intent intent = new Intent(this, MainActivity.class);
