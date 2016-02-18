@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.maximus.dm.decentralizedmessenger.helper.Encoder;
 import com.maximus.dm.decentralizedmessenger.helper.Networking;
@@ -48,17 +49,23 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 String enteredEmailOrUsername = etEmailOrUsername.getText().toString();
                 String enteredPassword = etPassword.getText().toString();
 
-                JSONObject jsonObject = new JSONObject();
-                try {
-                    jsonObject.put("user", enteredEmailOrUsername);
-                    jsonObject.put("password", enteredPassword);
-                } catch(JSONException e) {
-                    e.printStackTrace();
-                }
-                Networking networking = new Networking(this);
-                String response = networking.connect(Networking.SERVER_PATH_LOGIN, Encoder.jsonToUrl(jsonObject));
-                System.out.println("RESPONSE: " + response);
+                if(enteredEmailOrUsername.length() > 0 && enteredPassword.length() > 0) {
+                    JSONObject jsonObject = new JSONObject();
+                    try {
+                        jsonObject.put("user", enteredEmailOrUsername);
+                        jsonObject.put("password", enteredPassword);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    Networking networking = new Networking(this);
+                    String response = networking.connect(Networking.SERVER_PATH_LOGIN, Encoder.jsonToUrl(jsonObject));
+                    //System.out.println("RESPONSE: " + response);
 
+                    if(validInfo(response)) {
+                        Intent intent = new Intent(this, MainActivity.class);
+                        startActivity(intent);
+                    }
+                }
                 break;
             case R.id.tvSignUp:
                 //register clicked
@@ -67,9 +74,28 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 break;
         }
     }
-    /*
-    private boolean verifyLogin(String jsonResponse) {
 
+    private boolean validInfo(String strResponse) {
+        JSONObject jsonResponse;
+        String successName = "success";
+
+        try {
+            jsonResponse = new JSONObject(strResponse);
+            if(jsonResponse.has(successName)) {
+                if(jsonResponse.getBoolean(successName)) {
+                   //System.out.print("SUCCESS: " + jsonResponse);
+                    Toast.makeText(this, "SUCCESS: " + jsonResponse, Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+            } else {
+                //System.out.print("FAILED: " + jsonResponse);
+                Toast.makeText(this, "FAILED: " + jsonResponse, Toast.LENGTH_SHORT).show();
+            }
+        } catch(JSONException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
-    */
+
 }
