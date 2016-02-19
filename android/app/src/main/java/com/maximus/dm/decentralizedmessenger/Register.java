@@ -49,57 +49,49 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
                 String password = etPassword.getText().toString();
                 String confirmPassword = etConfirmPassword.getText().toString();
 
+                if (username.length() > 0 && password.length() > 0 && confirmPassword.length() > 0) {
+                    if(password.equals(confirmPassword)) {
+                        JSONObject jsonToSend = new JSONObject();
+                        JSONObject jsonResponse = null;
 
+                        try {
+                            jsonToSend.put("user", username);
+                            jsonToSend.put("password", password);
 
-                //add check for existing email
-                if(password.equals(confirmPassword)) {
-                    User user = new User(username, "noemail");
-                    userDatabase.storeUser(user);
+                            Networking networking = new Networking(this);
+                            String params = Encoder.jsonToUrl(jsonToSend);
+                            String response = networking.connect(Networking.SERVER_PATH_REGISTER, params);
+                            jsonResponse = new JSONObject(response);
 
-                    if (register(username, password)) {
+                            // If user registered successfully
+                            if (register(jsonResponse)) {
+                                startActivity(new Intent(this, Login.class));
+                            }
 
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
-
-                    //startActivity(new Intent(this, Login.class));
                 }
-
                 break;
         }
     }
 
-    private boolean register(String username, String password) {
-        JSONObject paramsJson;
-        JSONObject jsonResponse;
+    private boolean register(JSONObject jsonResponse) {
         String successName = "success";
-
         try {
-            // Prepare string to send
-            paramsJson = new JSONObject();
-            paramsJson.put("user", username);
-            paramsJson.put("password", password);
-
-            String params = Encoder.jsonToUrl(paramsJson);
-
-            // Send string and get response
-            Networking networking = new Networking(this);
-            String response = networking.connect(Networking.SERVER_PATH_REGISTER, params);
-            jsonResponse = new JSONObject(response);
-
             if(jsonResponse.has(successName)) {
                 if(jsonResponse.getBoolean(successName)) {
-                    //System.out.print("SUCCESS: " + jsonResponse);
                     Toast.makeText(this, "SUCCESS: " + jsonResponse, Toast.LENGTH_SHORT).show();
                     return true;
                 }
             } else {
-                //System.out.print("FAILED: " + jsonResponse);
                 Toast.makeText(this, "FAILED: " + jsonResponse, Toast.LENGTH_SHORT).show();
             }
 
         } catch(JSONException e) {
             e.printStackTrace();
         }
-
         return false;
     }
 

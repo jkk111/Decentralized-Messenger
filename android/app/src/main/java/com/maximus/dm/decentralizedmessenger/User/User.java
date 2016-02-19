@@ -5,19 +5,19 @@ package com.maximus.dm.decentralizedmessenger.User;
  */
 public class User {
 
-    String username, email;
+    String userId, username;
 
-    public User(String username, String email) {
+    public User(String userId, String username) {
+        this.userId = userId;
         this.username = username;
-        this.email = email;
     }
 
-    public String getUsername() {
-        return username;
+    public User(String username) {
+        new User(null, username);
     }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getUserId() { return userId; }
+
+    public String getUsername() { return username; }
 
 }

@@ -11,7 +11,6 @@ import android.widget.Toast;
 
 import com.maximus.dm.decentralizedmessenger.User.User;
 import com.maximus.dm.decentralizedmessenger.User.UserDatabase;
-import com.maximus.dm.decentralizedmessenger.User.UserLocalStore;
 import com.maximus.dm.decentralizedmessenger.helper.Encoder;
 import com.maximus.dm.decentralizedmessenger.helper.Networking;
 
@@ -51,23 +50,26 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 String enteredPassword = etPassword.getText().toString();
 
                 if(enteredUsername.length() > 0 && enteredPassword.length() > 0) {
-                    JSONObject jsonObject = new JSONObject();
+                    JSONObject jsonToSend = new JSONObject();
+                    JSONObject jsonResponse = null;
                     try {
-                        jsonObject.put("user", enteredUsername);
-                        jsonObject.put("password", enteredPassword);
+                        // Send entered info to server
+                        // Convert response to json, and analyse
+                        jsonToSend.put("user", enteredUsername);
+                        jsonToSend.put("password", enteredPassword);
+                        Networking networking = new Networking(this);
+                        String responseStr = networking.connect(Networking.SERVER_PATH_LOGIN, Encoder.jsonToUrl(jsonToSend));
+                        jsonResponse = new JSONObject(responseStr);
+
+                        if(validInfo(jsonResponse)) {
+                            User currentUser = new User(jsonResponse.getString("id"), enteredUsername);
+                            userDatabase.storeUser(currentUser, jsonResponse.getString("token"));
+
+                            Intent intent = new Intent(this, MainActivity.class);
+                            startActivity(intent);
+                        }
                     } catch (JSONException e) {
                         e.printStackTrace();
-                    }
-                    Networking networking = new Networking(this);
-                    String response = networking.connect(Networking.SERVER_PATH_LOGIN, Encoder.jsonToUrl(jsonObject));
-                    //System.out.println("RESPONSE: " + response);
-
-                    if(validInfo(response)) {
-                        User currentUser = new User(enteredUsername, "mail@noemail.mail.ie.com");
-                        userDatabase.setLoggedIn(currentUser);
-
-                        Intent intent = new Intent(this, MainActivity.class);
-                        startActivity(intent);
                     }
                 }
                 break;
@@ -79,26 +81,22 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         }
     }
 
-    private boolean validInfo(String strResponse) {
-        JSONObject jsonResponse;
-        String successName = "success";
+    private boolean validInfo(JSONObject jsonResponse) {
+        if (jsonResponse == null) return false;
 
+        String successField = "success";
         try {
-            jsonResponse = new JSONObject(strResponse);
-            if(jsonResponse.has(successName)) {
-                if(jsonResponse.getBoolean(successName)) {
-                   //System.out.print("SUCCESS: " + jsonResponse);
+            if(jsonResponse.has(successField)) {
+                if(jsonResponse.getBoolean(successField)) {
                     Toast.makeText(this, "SUCCESS: " + jsonResponse, Toast.LENGTH_SHORT).show();
                     return true;
                 }
             } else {
-                //System.out.print("FAILED: " + jsonResponse);
                 Toast.makeText(this, "FAILED: " + jsonResponse, Toast.LENGTH_SHORT).show();
             }
         } catch(JSONException e) {
             e.printStackTrace();
         }
-
         return false;
     }
 
