@@ -71,8 +71,26 @@ TODO
  ```
  {
    sender: "The user to mark messages received for",
-   token: "The token to refresh"
+   token: "The user token",
    highest: "The highest received message"
+ }
+ ```
+ 
+ `/getFriends` Gets a list of friends for a user
+ ```
+ {
+   sender: "The user to get friends for",
+   token: "The user token"
+ }
+ ``` 
+ 
+ `/addFriend` adds a new friend to the friends list
+ ```
+ {
+   sender: "The user to add friend to",
+   token: "user token",
+   client: "The client id to add as friend",
+   secretL "Not implemented yet send any value to prevent errors"
  }
  ```
 
