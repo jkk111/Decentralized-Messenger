@@ -16,14 +16,11 @@ module.exports = function(config) {
     password: databasePassword,
     host: databaseHost,
     port: databasePort,
-    database: databaseName
+    database: databaseName,
+    multipleStatements: true
   });
 
   tokenCache = {}
-
-  // TODO (john): Stop logging password #DEBUG
-  console.log("Connecting to MySql server on %s using: user %s, pass %s",
-               databaseHost, databaseUser, databasePassword);
 
   /*
    * Queries are in need of some optimization, but gets the job done.
@@ -31,8 +28,11 @@ module.exports = function(config) {
   connector.verifyToken = function(user, token, cb) {
     console.log("Checking if user %s is authorized to use token %s", user, token);
     if(tokenCache[token]) {
-      if(tokenCache[token].expiry <= new Date().getTime()) {
+      var tokenObj = tokenCache[token]
+      if(tokenObj.expiry <= new Date().getTime()) {
         tokenCache[token] = undefined;
+        cb(false);
+        return;
       }
       return cb(tokenCache[token] && tokenCache[token].user == user);
     }
@@ -41,13 +41,30 @@ module.exports = function(config) {
     conn.query(q, [user, token], function(err, results) {
       if(err) {
         console.log(err);
+        cb({ error: "DATABASE_ERROR" });
       }
       else {
-        if(results) {
-          tokenCache[token] = { user: user, expiry: new Date(results[0].expiry) };
-        }
+        q = "UPDATE users set lastActive = NOW() WHERE id = ?;";
+        conn.query(q, [user], function(err2, results2) {
+          if(err2) {
+            console.log(err2);
+          }
+          if(results && results[0]) {
+            tokenCache[token] = { user: user, expiry: new Date(results[0].expiry) };
+            cb(!err && results)
+            return;
+          } else if (results && !results[0]) {
+            console.log(results);
+            cb({ error: "NO_TOKEN_FOR_USER"});
+            return;
+          } else {
+            cb({ error: "NO_RESULTS_FOR_USER", info: {
+              hasResults: results != null && results.length > 0,
+              hasErrors: err != undefined
+            }});
+          }
+        });
       }
-      cb(!err && results != undefined);
     });
   }
 
@@ -79,6 +96,17 @@ module.exports = function(config) {
         generateToken(results[0].id, cb);
       else
         cb({ error: "ERROR_BAD_LOGIN" });
+    });
+  }
+
+  connector.updateFriendship = function(fId, confirm, cb) {
+    if(confirm) {
+      var q = "UPDATE friends WHERE id = ? SET pending = FALSE;";
+    } else {
+      var q = "DELETE FROM friends where id = ?";
+    }
+    conn.query(q, [fId], function(err, results) {
+      cb(!err && results);
     });
   }
 
@@ -153,6 +181,7 @@ module.exports = function(config) {
         console.log(err);
       var messages = {};
       if(results) {
+        console.log(results)
         for(var i = 0 ; i < results.length; i++) {
           var item = results[i];
           if(!messages[item.sender])
@@ -160,7 +189,12 @@ module.exports = function(config) {
           messages[item.sender].push({id: item.id, message: item.message});
         }
       }
+      else {
+        cb({error: "NO_MESSAGES_FOUND"})
+        return;
+      }
       console.log("im here");
+      console.log(messages)
       cb(messages);
     })
   }
@@ -191,6 +225,7 @@ module.exports = function(config) {
   return connector;
 }
 
+
 function pruneExpiredTokens() {
   console.log("pruning expired tokens");
   if(tokenCache) {
@@ -212,6 +247,7 @@ function generateHash(pass) {
 }
 
 function addToken(user, token, cb) {
+  console.log("Adding token: %s", token);
   var q = "INSERT INTO tokens VALUES(?, ?, NOW() + INTERVAL 2 HOUR);"
   conn.query(q, [user, token], function(err, rows, fields) {
     if(err) {

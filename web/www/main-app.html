@@ -25,7 +25,7 @@
   </style>
   <template>
     <user-login id="login" on-logged-in="openMessenger"></user-login>
-    <messenger-view id="messenger"></messenger-view>
+    <messenger-view id="messenger" user-id="{{userId}}" token="{{token}}"></messenger-view>
     <div id="loadingMessenger">
       <paper-spinner id="loading"></paper-spinner>
     </div>
@@ -35,6 +35,14 @@
       is: 'main-app',
       properties: {
         id: {
+          type: String,
+          value: ""
+        },
+        userId: {
+          type: Number,
+          value: -1
+        },
+        token: {
           type: String,
           value: ""
         },
@@ -98,17 +106,23 @@
           this.$.messenger.style.opacity = 1;
           this.$.messenger.style.zIndex = 1;
           this.$.loading.active = false;
+          // // this.$.messenger.loggedIn.bind(this.$.messenger);
+          // console.log(this);
+          // console.log(this.$.messenger)
+          // this.$.messenger.loggedIn.bind(this.$.messenger);
         }
       },
 
-      openMessenger: function (e, id) {
+      openMessenger: function (e, data) {
         console.log(e);
-        console.log(id);
+        console.log(data);
         this.$.loading.active = true;
+        this.userId = data.id;
+        this.token = data.token;
         // this.$.login.style.display = "none";
         // this.$.messenger.style.display = "block";
         this.playAnimation('closeLogin', 'closeLogin');
-        var self =this;
+        var self = this;
         // TODO (john): Implement loading actual data, and replace the hard-coded timeout
         setTimeout(function() {
           self.$.messenger.style.display = "block";

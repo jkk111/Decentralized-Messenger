@@ -1,4 +1,4 @@
-module.exports = function(app, storage) {
+  module.exports = function(app, storage) {
   /*
     Message format
     {
@@ -77,6 +77,7 @@ module.exports = function(app, storage) {
     }
     var sender = req.body.sender;
     var token = req.body.token;
+    console.log(token);
     storage.verifyToken(sender, token, function(success) {
       if(success) {
         console.log("getting messages");
@@ -89,6 +90,28 @@ module.exports = function(app, storage) {
       }
     });
   })
+
+  app.post("/confirmFriend", function(req, res) {
+    // Todo allow confirm/deny
+    var response = req.body.confirm;
+    var token = req.body.token;
+    var sender = req.body.sender;
+    var friendshipId = req.body.friendshipId; //
+    storage.verifyToken(sender, token, function(success) {
+      if(success) {
+        storage.updateFriendship(friendshipId, response, function(success) {
+          if(typeof success == "Boolean") {
+            res.send({ success: success })
+          } else {
+            res.send(success);
+          }
+        });
+      } else {
+        res.send({ error: "ERROR_BAD_TOKEN" })
+      }
+    });
+    res.send("not implemented")
+  });
 
   app.post("/received", function(req, res) {
     if(!req.body.sender || !req.body.token || req.body.highest) {
@@ -116,6 +139,10 @@ module.exports = function(app, storage) {
   app.post("/getFriends", function(req, res) {
     var sender = req.body.sender;
     var token = req.body.token;
+    if(!sender || ! token) {
+      res.sendStatus(400);
+      return
+    }
     storage.verifyToken(sender, token, function(success) {
       if(success) {
         storage.getFriends(sender, function(success) {
@@ -136,6 +163,10 @@ module.exports = function(app, storage) {
     var token = req.body.token;
     var client = req.body.client;
     var secret = req.body.secret || "";
+    if(!(sender && token && client)) {
+      res.sendStatus(400);
+      return;
+    }
     storage.verifyToken(sender, token, function(success) {
       if(success) {
         storage.addFriend(sender, client, secret, function(success) {

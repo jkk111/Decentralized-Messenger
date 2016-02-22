@@ -51,6 +51,8 @@ module.exports = function(config) {
     storageEngine.userExists(user, cb);
   }
 
+  this.updateFriendship = storageEngine.updateFriendship;
+
   this.refreshToken = storageEngine.refreshToken;
 
   this.addFriend = storageEngine.addFriend;

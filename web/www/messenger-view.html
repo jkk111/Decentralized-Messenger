@@ -9,6 +9,7 @@
 <link rel="import" href="/bower_components/paper-input/paper-textarea.html">
 <link re;="import" href="/bower_components/iron-pages/iron-pages/html">
 <link rel="improt" href="/bower_components/iron-icons/iron-icons.html">
+<link rel="improt" href="/bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="contact-element.html">
 
@@ -25,6 +26,9 @@
     };
   </style>
   <template>
+    <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded"
+               body="{{messagesBody}}" handle-as="json" on-response="pollResponse">
+    </iron-ajax>
     <paper-drawer-panel>
       <paper-header-panel drawer>
         <paper-toolbar>
@@ -81,6 +85,25 @@
           value: -1,
           notify: true
         },
+        self: {
+          type: Object
+        },
+        MAX_POLL_TIME: {
+          type: Number,
+          value: 120000 // 120 seconds
+        },
+        pollTime: {
+          type: Number,
+          value: 1000
+        },
+        token: {
+          type: String,
+          value: "",
+          observer: 'tokenChanged'
+        },
+        userId: {
+          type: Number
+        },
         friends: {
           type: Array,
           value: [
@@ -101,35 +124,26 @@
         },
         messages: {
           type: Array,
-          value: [
-            [
-              "Teshhh iherbieahbgir ihbegribesgirbghoewbgroj ehbgjoew hrbgjewh"+
-              "rkhsbkhwbekh kbwefkhwbefkhwe kbwefkhbwekhfb kbwkefhbewkhf bgoebwhro"+
-              "bgwoehbhh hhhhhhhhhh hhhhhhhhhbut",
-              "Hello",
-              "You there?"
-            ],
-            [
-              "I Told you",
-              "What?",
-              "lel"
-            ],
-            [
-              "Test message",
-              "here",
-              "You there?",
-              "nope",
-              "yeah",
-              "haha",
-              "lol",
-              "yeah",
-              "XD",
-              ">_<",
-              "haha",
-              "rofl"
-            ]
-          ]
+        },
+        messagesBody: {
+          type: Object,
+          computed: 'computeMessagesBody(token, userId)'
         }
+      },
+      tokenChanged: function(newValue, old) {
+        if(newValue != "") {
+          this.loggedIn();
+          console.log(this);
+          console.log("Polling for updates");
+          console.log(this.messagesBody);
+          console.log(this);
+          this.$.pollajax.generateRequest();
+        }
+      },
+
+      computeMessagesBody: function(id, token) {
+        console.log(token + ":" + id);
+        return { token: token, sender: id };
       },
       getMessages: function(contact) {
         if(!this.messages || contact > this.messages.length || contact == -1)
@@ -149,6 +163,20 @@
         if (friend < 0)
           return true;
         return false;
+      },
+      pollResponse: function(e, res) {
+        console.log(e.res);
+        if(res.reponse == {}) {
+          this.pollTime = Math.min(this.pollTime * 2, this.MAX_POLL_TIME)
+        } else {
+          this.pollTime = 1000;
+        }
+        setTimeout(this.poll, this.pollTime)
+      },
+      loggedIn: function() {
+        this.poll();
+      },
+      poll: function() {
       }
     })
   </script>

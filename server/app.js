@@ -1,5 +1,9 @@
 var express = require("express");
 var app = express();
+var app2 = express();
+app2.get("/*", function(req, res) {
+  res.redirect("https://" + req.headers.host + req.url);
+})
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -52,8 +56,7 @@ if(cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  http.createServer(app).listen(conf.serverPort);
-  // Switching to https, soon there will be no http
+  http.createServer(app2).listen(conf.serverPort);
   https.createServer(opts, app).listen(443, function(e) {
     console.log(e);
   });

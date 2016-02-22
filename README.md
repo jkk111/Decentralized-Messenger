@@ -12,7 +12,7 @@ Super quick start guide
  2. Run `npm install` in server/ to get all dependencies for node.
  3. Run `node setup.js` from server/ and fill in all the required information
  4. Run `node app.js` to start the server.
-  
+
 ## Android
 
 TODO
@@ -26,14 +26,14 @@ TODO
  All methods, except for login and register must provide a token, and in some cases id. This is to ensure that a given user is who they claim to be. A token is valid for 6 hours, but can be refreshed, there is also an encryption layer currently in development.
 
  `/register` Used to register a new user account returns an auth token.
- Usage: 
+ Usage:
  ```
  {
    user: "The username to register",
    password: "The users password"
  }
  ```
- 
+
  `/login` Used to log an existing user in.
  ```
  {
@@ -41,14 +41,14 @@ TODO
    password: "The users password"
  }
  ```
- 
+
  `/refreshToken` Used to refresh an existing token.
  ```
  {
    token: "The token to refresh"
  }
  ```
- 
+
  `/message` Used to refresh an existing token.
  ```
  {
@@ -58,7 +58,7 @@ TODO
    message: "The message to send"
  }
  ```
- 
+
  `/messages` Used to get all pending messages
  ```
  {
@@ -66,13 +66,23 @@ TODO
    token: "The token of the user"
  }
  ```
- 
+
  `/received` Used to mark and/or delete received messages.
  ```
  {
    sender: "The user to mark messages received for",
-   token: "The token to refresh"
+   token: "The token of the user"
    highest: "The highest received message"
+ }
+ ```
+
+ `/confirmFriend` Used to mark and/or delete received messages.
+ ```
+ {
+   response: "Accept/Deny friend request",
+   token: "The token of the user",
+   sender: "The user id",
+   friendshipId: "The friendship id to apply to"
  }
  ```
 
