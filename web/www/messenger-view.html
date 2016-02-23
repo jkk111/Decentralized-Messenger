@@ -28,6 +28,9 @@
   <template>
     <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded"
                body="{{messagesBody}}" handle-as="json" on-response="pollResponse">
+               </iron-ajax>
+    <iron-ajax id="friendsajax" url="/getFriends" method="Post" content-type="application/x-www-form-urlencoded"
+               body="{{messagesBody}}" handle-as="json" on-response="friendsResponse">
     </iron-ajax>
     <paper-drawer-panel>
       <paper-header-panel drawer>
@@ -137,7 +140,7 @@
           console.log("Polling for updates");
           console.log(this.messagesBody);
           console.log(this);
-          this.$.pollajax.generateRequest();
+          this.$.7.generateRequest();
         }
       },
 
@@ -172,6 +175,11 @@
           this.pollTime = 1000;
         }
         setTimeout(this.poll, this.pollTime)
+      },
+      friendsResponse: function(e, res) {
+        if(res.response) {
+          var tmp = res.response.friends;
+        }
       },
       loggedIn: function() {
         this.poll();

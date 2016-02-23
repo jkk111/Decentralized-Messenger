@@ -1,29 +1,20 @@
 var express = require("express");
 var app = express();
-var app2 = express();
-app2.get("/*", function(req, res) {
+var httpUpgrade = express();
+app.use(function(req, res, next) {
+  res.set({
+    "Strict-Transport-Security": "max-age=31536000",
+    kek: "topest"
+  });
+  next();
+});
+httpUpgrade.get("/*", function(req, res) {
   res.redirect("https://" + req.headers.host + req.url);
-})
+});
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(function(req, res, next) {
-  console.log(req.protocol + ":" + req.secure + ":" + req.cookies.confirmDeprecation);
-  if(req.secure) {
-    next();
-  } else {
-    if(!req.cookies.confirmDeprecation) {
-      res.cookie("confirmDeprecation", true);
-      res.status(301)
-      res.write("HTTP IS DEPRECATED! COOKIE STORED<br/>, RELOAD TO ACCESS INSECURE RESOURCE will be moved shortly, change to https!");
-      res.end();
-    } else {
-      console.log("confirmedDeprecated")
-      next();
-    }
-  }
-});
 app.use(express.static("../web/www"));
 var http = require("http");
 var https = require("https");
@@ -50,15 +41,14 @@ if(cluster.isMaster) {
   for(var i = 0 ; i < numCPUs; i++) {
     cluster.fork();
   }
-
   cluster.on("exit", function(worker, code, signal) {
     console.log("a worker died, restarting....");
     cluster.fork();
   });
 } else {
-  http.createServer(app2).listen(conf.serverPort);
-  https.createServer(opts, app).listen(443, function(e) {
-    console.log(e);
+  http.createServer(httpUpgrade).listen(conf.serverPort);
+  https.createServer(opts, app).listen(443, function() {
+    console.log("Webserver running on port: 443");
   });
   var storage = require("./storage.js")(conf);
   var routes  = require("./routes.js")(app, storage, conf);

@@ -31,7 +31,7 @@ module.exports = function(config) {
       var tokenObj = tokenCache[token]
       if(tokenObj.expiry <= new Date().getTime()) {
         tokenCache[token] = undefined;
-        cb(false);
+        connector.verifyToken(user, token, cb);
         return;
       }
       return cb(tokenCache[token] && tokenCache[token].user == user);
@@ -83,6 +83,18 @@ module.exports = function(config) {
       console.log(results)
       cb(!err && results != undefined && results.length > 0);
     })
+  }
+
+  connector.idFromName = function(user, cb) {
+    var q = "SELECT id FROM user WHERE id = ?"
+    conn.query(q, [user], function(err, results) {
+      if(err) {
+        cb({ error: "DATABASE_ERROR" });
+        return
+      }
+      console.log(results)
+      cb((results != null) ? results[0] : false);
+    });
   }
 
   connector.login = function(user, pass, cb) {
@@ -212,22 +224,29 @@ module.exports = function(config) {
   }
 
   connector.addFriend = function (user1, user2, secret, cb) {
-    var q = "INSERT INTO friends(user1, user2, secret) VALUES(?, ?, ?)";
-    conn.query(q, [user1, user2, secret], function(err, results) {
-      if(err)
-        console.log(err);
-      else {
-        console.log(results);
-        cb(results != undefined);
+    var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? OR user2 = ? AND user1 = ?"
+    conn.query(q, [user1, user2, user2, user1], function(err, results) {
+      if(err || ! results) {
+        cb({ error: "DATABASE_ERROR"});
+      } else if(results && results.length > 0) {
+        cb({ error: "FRIENDSHIP_EXISTS" });
+      } else if( results && results.length == 0) {
+        q = "INSERT INTO friends(user1, user2, secret) VALUES(?, ?, ?)"
+        conn.query(q, [user1, user2, secret], function(err, results) {
+          if(err) {
+            cb({ error: "DATABASE_ERROR" });
+          } else {
+            cb(results != undefined);
+          }
+        });
       }
-    })
+    });
   }
   return connector;
 }
 
 
 function pruneExpiredTokens() {
-  console.log("pruning expired tokens");
   if(tokenCache) {
     var keys = Object.keys(tokenCache);
     for(var i = 0 ; i < keys.length; i++) {

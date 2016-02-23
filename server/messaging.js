@@ -1,13 +1,4 @@
   module.exports = function(app, storage) {
-  /*
-    Message format
-    {
-      sender: "client that sent the message",
-      token: "Token that proves the client 'is' the client",
-      message: "The message to send to the recipient",
-      recipient: "The id of the recipient for the server"
-    }
-  */
 
   app.post("/refreshToken", function(req, res) {
     if(!req.body.token) {
@@ -169,18 +160,54 @@
     }
     storage.verifyToken(sender, token, function(success) {
       if(success) {
-        storage.addFriend(sender, client, secret, function(success) {
-          if(typeof success == "boolean") {
-            res.send({ success: success });
-          } else {
-            res.send(success);
-          }
+        storage.userExists(client, function(exists) {
+          if(exists)
+            storage.addFriend(sender, client, secret, function(success) {
+              if(typeof success == "boolean") {
+                res.send({ success: success });
+              } else {
+                res.send(success);
+              }
+            });
+          else
+            res.send({ error: "USER_NOT_EXISTS" });
         });
       } else {
         res.send({ error: "ERROR_BAD_TOKEN" });
       }
     })
   });
+
+  // TODO (johnkevink): Find alternative to this, perhaps search and add.
+  app.post("/addFriendName", function(req, res) {
+    var sender = req.body.sender;
+    var token = req.body.token;
+    var client = req.body.client;
+    var secret = req.body.secret || "";
+    if(!(sender && token && client)) {
+      res.sendStatus(400);
+      return;
+    }
+    storage.verifyToken(sender, token, function(success) {
+      if(success) {
+        storage.idFromName(client, function(id) {
+          if(id) {
+            storage.addFriend(sender, client, secret, function(success) {
+              if(typeof success == "boolean") {
+                res.send({ success: success });
+              } else {
+                res.send(success);
+              }
+            });
+          } else {
+            res.send({error: "USER_NOT_EXISTS"});
+          }
+        })
+      } else {
+        res.send({ error: "ERROR_BAD_TOKEN" });
+      }
+    })
+  })
 
   app.post("/message", function(req, res) {
     if(!req.body.sender || !req.body.dest || !req.body.message || !req.body.token) {
