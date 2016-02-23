@@ -21,6 +21,8 @@ module.exports = function(config) {
 
   var storageEngine = require(storageScript)(config);
 
+  this.search = storageEngine.search;
+
   this.idFromName = storageEngine.idFromName;
 
   this.verifyToken = storageEngine.verifyToken;

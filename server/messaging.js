@@ -178,6 +178,21 @@
     })
   });
 
+  app.post("/search", function(req, res) {
+    var sender = req.body.sender;
+    var token = req.body.token;
+    var query = req.body.query;
+    storage.verifyToken(sender, token, function(success) {
+      if(success) {
+        storage.search(query, function(result) {
+          res.send(result);
+        })
+      } else {
+        res.send({error: "ERROR_BAD_TOKEN"});
+      }
+    });
+  })
+
   // TODO (johnkevink): Find alternative to this, perhaps search and add.
   app.post("/addFriendName", function(req, res) {
     var sender = req.body.sender;
@@ -202,12 +217,12 @@
           } else {
             res.send({error: "USER_NOT_EXISTS"});
           }
-        })
+        });
       } else {
         res.send({ error: "ERROR_BAD_TOKEN" });
       }
-    })
-  })
+    });
+  });
 
   app.post("/message", function(req, res) {
     if(!req.body.sender || !req.body.dest || !req.body.message || !req.body.token) {

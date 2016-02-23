@@ -76,6 +76,23 @@ module.exports = function(config) {
     })
   }
 
+  connector.search = function(query, cb) {
+    var q = "SELECT id, username FROM users WHERE INSTR(username, ?);"
+    conn.query(q, [query], function(err, results) {
+      if(err) {
+        console.log(err);
+        cb({error: "DATABASE_ERROR"});
+        return;
+      } else {
+        if(results && results[0]) {
+          cb({ users: results });
+        } else {
+          cb({error: "NO_RESULTS_FOUND"});
+        }
+      }
+    })
+  }
+
   connector.userIdExists = function(user, cb) {
     console.log(user);
     var q = "SELECT id FROM users WHERE id = ?";
