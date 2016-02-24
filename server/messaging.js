@@ -7,11 +7,7 @@
     }
     var token = req.body.token;
     storage.refreshToken(token, function(success) {
-      if(typeof success == "boolean") {
-        res.send({ success: success });
-      } else {
-        res.send(token);
-      }
+      handleResult(success, res);
     })
   });
 
@@ -22,18 +18,8 @@
     }
     var user = req.body.user;
     var password = req.body.password;
-    storage.userExists(user, function(exists) {
-      if(!exists) {
-        res.send({ error: "ERROR_BAD_LOGIN" });
-      } else {
-        storage.login(user, password, function(success) {
-          if(typeof success == "boolean") {
-            res.send({ success: success });
-          } else {
-            res.send(success);
-          }
-        });
-      }
+    storage.login(user, password, function(success) {
+      handleResult(success, res);
     });
   })
 
@@ -45,19 +31,15 @@
     var user = req.body.user;
     var password = req.body.password;
     storage.userExists(user, function(exists) {
-      if(exists) {
-        res.send({ error: "ERROR_USER_EXISTS" });
-      } else {
+      handleResult(!exists == false ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
         storage.register(user, password, function(success) {
-          if(typeof success == "boolean" && success) {
+          handleResult(success, res, function() {
             storage.login(user, password, function(success) {
-              res.send(success);
+              handleResult(success, res);
             });
-          } else {
-            res.send(success);
-          }
+          });
         });
-      }
+      });
     });
   });
 
@@ -70,15 +52,11 @@
     var token = req.body.token;
     console.log(token);
     storage.verifyToken(sender, token, function(success) {
-      if(success) {
-        console.log("getting messages");
+      handleResult(success, res, function() {
         storage.getMessages(sender, function(messages) {
-          console.log(messages);
           res.send(messages);
-        })
-      } else {
-        res.send({ error: "ERROR_BAD_TOKEN" })
-      }
+        });
+      });
     });
   })
 
@@ -89,19 +67,12 @@
     var sender = req.body.sender;
     var friendshipId = req.body.friendshipId; //
     storage.verifyToken(sender, token, function(success) {
-      if(success) {
+      handleResult(success, res, function() {
         storage.updateFriendship(friendshipId, response, function(success) {
-          if(typeof success == "Boolean") {
-            res.send({ success: success })
-          } else {
-            res.send(success);
-          }
-        });
-      } else {
-        res.send({ error: "ERROR_BAD_TOKEN" })
-      }
+          handleResult(success, res)
+        })
+      });
     });
-    res.send("not implemented")
   });
 
   app.post("/received", function(req, res) {
@@ -113,19 +84,13 @@
     var token = req.body.token;
     var highest = req.body.highest;
     storage.verifyToken(sender, token, function(success) {
-      if(success) {
+      handleResult(success, res, function() {
         storage.receivedMessages(sender, highest, function(success) {
-          if(typeof success == "boolean") {
-            res.send({ success: success });
-          } else {
-            res.send(success);
-          }
-        })
-      } else {
-        res.send({ error: "ERROR_BAD_TOKEN" })
-      }
+          handleResult(success, res);
+        });
+      });
     });
-  })
+  });
 
   app.post("/getFriends", function(req, res) {
     var sender = req.body.sender;
@@ -135,18 +100,12 @@
       return
     }
     storage.verifyToken(sender, token, function(success) {
-      if(success) {
+      handleResult(success, res, function() {
         storage.getFriends(sender, function(success) {
-          if(typeof success == "boolean") {
-            res.send({ success: success });
-          } else {
-            res.send(success);
-          }
+          handleResult(success, res);
         });
-      } else {
-        res.send({ error: "ERROR_BAD_TOKEN" });
-      }
-    })
+      });
+    });
   });
 
   app.post("/addFriend", function(req, res) {
@@ -159,23 +118,16 @@
       return;
     }
     storage.verifyToken(sender, token, function(success) {
-      if(success) {
+      handleResult(success, res, function() {
         storage.userExists(client, function(exists) {
-          if(exists)
+          handleResult(exists, res, function() {
             storage.addFriend(sender, client, secret, function(success) {
-              if(typeof success == "boolean") {
-                res.send({ success: success });
-              } else {
-                res.send(success);
-              }
+              handleResult(success, res);
             });
-          else
-            res.send({ error: "USER_NOT_EXISTS" });
+          });
         });
-      } else {
-        res.send({ error: "ERROR_BAD_TOKEN" });
-      }
-    })
+      });
+    });
   });
 
   app.post("/search", function(req, res) {
@@ -183,16 +135,13 @@
     var token = req.body.token;
     var query = req.body.query;
     storage.verifyToken(sender, token, function(success) {
-      if(success) {
+      handleResult(success, res, function() {
         storage.search(query, function(result) {
           res.send(result);
         })
-      } else {
-        res.send({error: "ERROR_BAD_TOKEN"});
-      }
+      })
     });
   })
-
   // TODO (johnkevink): Find alternative to this, perhaps search and add.
   app.post("/addFriendName", function(req, res) {
     var sender = req.body.sender;
@@ -204,23 +153,13 @@
       return;
     }
     storage.verifyToken(sender, token, function(success) {
-      if(success) {
+      handleResult(success, res, function() {
         storage.idFromName(client, function(id) {
-          if(id) {
-            storage.addFriend(sender, client, secret, function(success) {
-              if(typeof success == "boolean") {
-                res.send({ success: success });
-              } else {
-                res.send(success);
-              }
-            });
-          } else {
-            res.send({error: "USER_NOT_EXISTS"});
-          }
+          handleResult(id, res, function() {
+            handleResult(success, res);
+          });
         });
-      } else {
-        res.send({ error: "ERROR_BAD_TOKEN" });
-      }
+      });
     });
   });
 
@@ -234,17 +173,26 @@
     var message = req.body.message;
     var token = req.body.token;
     storage.verifyToken(sender, token, function(success) {
-      if(success) {
+      handleResult(success, res, function() {
         storage.addMessage(sender, dest, message, function(success) {
-          if(typeof success == "boolean") {
-            res.send({ success: success });
-          } else {
-            res.send(success);
-          }
+          handleResult(success, res);
         });
-      } else {
-        res.send({ error: "ERROR_BAD_TOKEN" });
+      });
+    });
+  });
+
+  function handleResult(result, res, cb) {
+    if(typeof result == "boolean") {
+      if(result) {
+        if(cb)
+          cb();
+        else
+          res.send({success: true});
       }
-    })
-  })
+      else
+        res.send({success: false});
+    } else {
+      res.send(result)
+    }
+  }
 }

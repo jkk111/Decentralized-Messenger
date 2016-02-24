@@ -26,7 +26,6 @@ module.exports = function(config) {
    * Queries are in need of some optimization, but gets the job done.
    */
   connector.verifyToken = function(user, token, cb) {
-    console.log("Checking if user %s is authorized to use token %s", user, token);
     if(tokenCache[token]) {
       var tokenObj = tokenCache[token]
       if(tokenObj.expiry <= new Date().getTime()) {
@@ -34,34 +33,28 @@ module.exports = function(config) {
         connector.verifyToken(user, token, cb);
         return;
       }
-      return cb(tokenCache[token] && tokenCache[token].user == user);
+      console.log("is in cache")
+      return cb((tokenCache[token] && tokenCache[token].user == user) ? true : {error: "ERROR_BAD_TOKEN"});
     }
+
     var q = "SELECT expiry FROM tokens WHERE user = ? AND token = ? \
              AND expiry > NOW() ORDER BY expiry DESC;";
+
     conn.query(q, [user, token], function(err, results) {
       if(err) {
-        console.log(err);
         cb({ error: "DATABASE_ERROR" });
       }
       else {
         q = "UPDATE users set lastActive = NOW() WHERE id = ?;";
         conn.query(q, [user], function(err2, results2) {
           if(err2) {
-            console.log(err2);
+            cb({error: "USER_STATUS_UPDATE_ERROR"});
           }
           if(results && results[0]) {
             tokenCache[token] = { user: user, expiry: new Date(results[0].expiry) };
-            cb(!err && results)
-            return;
-          } else if (results && !results[0]) {
-            console.log(results);
-            cb({ error: "NO_TOKEN_FOR_USER"});
-            return;
+            cb(!err && results != undefined)
           } else {
-            cb({ error: "NO_RESULTS_FOR_USER", info: {
-              hasResults: results != null && results.length > 0,
-              hasErrors: err != undefined
-            }});
+            cb({ error: "ERROR_BAD_TOKEN" });
           }
         });
       }
@@ -103,14 +96,15 @@ module.exports = function(config) {
   }
 
   connector.idFromName = function(user, cb) {
-    var q = "SELECT id FROM user WHERE id = ?"
+    var q = "SELECT id FROM users WHERE id = ?"
     conn.query(q, [user], function(err, results) {
       if(err) {
+        console.log(err);
         cb({ error: "DATABASE_ERROR" });
         return
       }
       console.log(results)
-      cb((results != null) ? results[0] : false);
+      cb((results != null && results[0] != null) ? results[0] : {error: "USER_NOT_EXISTS"});
     });
   }
 
@@ -163,16 +157,6 @@ module.exports = function(config) {
         cb({ error: "ERROR_RECIPIENT_NOT_EXISTS" });
       }
     });
-
-
-
-    // console.log("Adding message %s for client %s from client %s", message, dest, sender);
-    // conn.query(q, [sender, dest, message], function(err, results) {
-    //   if(err) {
-    //     console.log(err);
-    //   }
-    //   cb(err == undefined);
-    // });
   }
 
   connector.receivedMessages = function(sender, highest, cb) {
@@ -206,8 +190,11 @@ module.exports = function(config) {
   connector.getMessages = function(sender, cb) {
     var q = "SELECT id, sender, message FROM messages WHERE recipient = ?";
     conn.query(q, [sender], function(err, results) {
-      if(err)
+      if(err) {
         console.log(err);
+        cb({error: "DATABASE_ERROR"});
+        return;
+      }
       var messages = {};
       if(results) {
         console.log(results)
@@ -231,8 +218,10 @@ module.exports = function(config) {
   connector.getFriends = function (sender, cb) {
     var q = "SELECT * FROM friends where user1 = ? OR user2 = ?";
     conn.query(q, [sender, sender], function(err, results) {
-      if(err)
+      if(err) {
         console.log(err);
+        cb({error: "DATABASE_ERROR"});
+      }
       else {
         console.log(results);
         cb(results);
@@ -241,6 +230,7 @@ module.exports = function(config) {
   }
 
   connector.addFriend = function (user1, user2, secret, cb) {
+    console.log("first: ) ")
     var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? OR user2 = ? AND user1 = ?"
     conn.query(q, [user1, user2, user2, user1], function(err, results) {
       if(err || ! results) {
