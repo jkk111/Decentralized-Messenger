@@ -4,7 +4,7 @@ var httpUpgrade = express();
 app.use(function(req, res, next) {
   res.set({
     "Strict-Transport-Security": "max-age=31536000",
-    kek: "topest"
+    "Schrodingers-Cat-State": "Unknown"
   });
   next();
 });
@@ -14,6 +14,10 @@ httpUpgrade.get("/*", function(req, res) {
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(function(req, res, next) {
+  console.log(req.url);
+  next();
+});
 app.use(cookieParser());
 app.use(express.static("../web/www"));
 var http = require("http");

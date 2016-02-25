@@ -62,7 +62,7 @@ module.exports = function(config) {
   }
 
   connector.userExists = function(user, cb) {
-    var q = "SELECT id FROM users WHERE username = ?";
+    var q = "SELECT id FROM users WHERE id = ?";
     conn.query(q, user, function(err, results) {
       console.log(results)
       cb(!err && results != undefined && results.length > 0);
@@ -96,7 +96,8 @@ module.exports = function(config) {
   }
 
   connector.idFromName = function(user, cb) {
-    var q = "SELECT id FROM users WHERE id = ?"
+    console.log(user)
+    var q = "SELECT id FROM users WHERE username = ?;";
     conn.query(q, [user], function(err, results) {
       if(err) {
         console.log(err);
@@ -230,7 +231,11 @@ module.exports = function(config) {
   }
 
   connector.addFriend = function (user1, user2, secret, cb) {
-    console.log("first: ) ")
+    console.log("first: ) %d,\n second: ) %d")
+    if(user1 == user2) {
+      cb({error: "ERROR_ADD_SELF"});
+      return;
+    }
     var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? OR user2 = ? AND user1 = ?"
     conn.query(q, [user1, user2, user2, user1], function(err, results) {
       if(err || ! results) {
@@ -238,11 +243,13 @@ module.exports = function(config) {
       } else if(results && results.length > 0) {
         cb({ error: "FRIENDSHIP_EXISTS" });
       } else if( results && results.length == 0) {
-        q = "INSERT INTO friends(user1, user2, secret) VALUES(?, ?, ?)"
-        conn.query(q, [user1, user2, secret], function(err, results) {
+        q = "INSERT INTO friends(user1, user2, secret) VALUES(?, ?, ?);"
+        conn.query(q, [user1, user2, secret], function(err, results2) {
           if(err) {
             cb({ error: "DATABASE_ERROR" });
           } else {
+            console.log(results2);
+            console.log(err);
             cb(results != undefined);
           }
         });
@@ -280,6 +287,7 @@ function addToken(user, token, cb) {
       console.log(err);
       return cb({ success: false, error: "Storing token failed" });
     }
+    console.log(rows)
     cb({ success: true, id: user, token: token });
   })
 }

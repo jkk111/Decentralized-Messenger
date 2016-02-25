@@ -1,5 +1,43 @@
-  module.exports = function(app, storage) {
+var rateLimits = {
 
+}
+var RATE_LIMITS = 100;
+
+var USAGE_VALUES = {
+  "/search": 1,
+  "/addFriend": 1
+}
+
+var rateLimiting = function(req, res, next) {
+  console.log(req.url);
+  if(!req.body.token) {
+    res.send(400);
+    return;
+  }
+  var token = req.body.token;
+  var method = req.url;
+  if(!USAGE_VALUES[method]) {
+    res.sendStatus(404);
+    return;
+  }
+  if(!rateLimits[token]) {
+    rateLimits[token] = USAGE_VALUES[method];
+  } else {
+    rateLimits[token] += USAGE_VALUES[method];
+  }
+  console.log(rateLimits[token])
+  if(rateLimits[token] > RATE_LIMITS) {
+    res.sendStatus(429);
+  } else {
+    next();
+  }
+}
+
+setInterval(function() {
+  RATE_LIMITS = {};
+}, 1000 * 60 * 60);
+
+module.exports = function(app, storage) {
   app.post("/refreshToken", function(req, res) {
     if(!req.body.token) {
       res.sendStatus(400);
@@ -108,7 +146,7 @@
     });
   });
 
-  app.post("/addFriend", function(req, res) {
+  app.post("/addFriend", rateLimiting, function(req, res) {
     var sender = req.body.sender;
     var token = req.body.token;
     var client = req.body.client;
@@ -130,7 +168,7 @@
     });
   });
 
-  app.post("/search", function(req, res) {
+  app.post("/search", rateLimiting, function(req, res) {
     var sender = req.body.sender;
     var token = req.body.token;
     var query = req.body.query;
@@ -155,8 +193,10 @@
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
         storage.idFromName(client, function(id) {
-          handleResult(id, res, function() {
-            handleResult(success, res);
+          handleResult(id.error === undefined, res, function() {
+            storage.addFriend(sender, id, secret, function(success) {
+              handleResult(success, res);
+            })
           });
         });
       });
