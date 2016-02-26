@@ -8,48 +8,44 @@ import android.content.SharedPreferences;
  */
 public class UserDatabase {
 
-    public static final String USER_DB = "userDatabase";
-    public static final String USER_ID = "0";
+    public static final String USER_DB = "currentUserDatabase";
+
+    // Things to be stored in SharedPrefs.
+    public static final String USER_ID_LOCAL = "0";
+    public static final String USER_ID = "userId";
     public static final String USERNAME = "username";
-    public static final String EMAIL = "email";
+    public static final String TOKEN = "token";
 
-    public static final String LOGGED_IN = "loggedIn";
-
-    SharedPreferences userDatabase;
+    SharedPreferences currentUserDatabse;
 
     public UserDatabase(Context context) {
-        userDatabase = context.getSharedPreferences(USER_DB, 0);
+        currentUserDatabse = context.getSharedPreferences(USER_DB, 0);
     }
 
-    public void storeUser(User user) {
-        SharedPreferences.Editor spEditor = userDatabase.edit();
-        spEditor.putString(USER_ID + USERNAME, user.username);
-        spEditor.putString(USER_ID + EMAIL, user.email);
+    // "SETTERS". Call on login!
+    public void storeUser(String currentUserUsername, int currentUserId) {
+        SharedPreferences.Editor spEditor = currentUserDatabse.edit();
+        spEditor.putString(USER_ID_LOCAL + USERNAME, currentUserUsername);
+        spEditor.putInt(USER_ID_LOCAL + USER_ID, currentUserId);
         spEditor.commit();
     }
 
-    public User getUser(String userId) {
-        String username = userDatabase.getString(userId + USERNAME, "");
-        String email = userDatabase.getString(userId + EMAIL, "");
-
-        return new User(username, email);
-    }
-
-    public void setLoggedIn(User user) {
-        SharedPreferences.Editor spEditor = userDatabase.edit();
-        spEditor.putString(LOGGED_IN + USERNAME, user.getUsername());
-        spEditor.putString(LOGGED_IN + EMAIL, user.getEmail());
+    public void setToken(String token) {
+        SharedPreferences.Editor spEditor = currentUserDatabse.edit();
+        spEditor.putString(USER_ID_LOCAL + TOKEN, token);
         spEditor.commit();
     }
 
-    public User getLoggedIn() {
-        String username = userDatabase.getString(LOGGED_IN + USERNAME, "");
-        String email = userDatabase.getString(LOGGED_IN + EMAIL, "");
-        return new User(username, email);
+    // GETTERS
+    public String getCurrentUsername() { return currentUserDatabse.getString(USER_ID_LOCAL + USERNAME, ""); }
+    public int getCurrentId() {
+        return currentUserDatabse.getInt(USER_ID_LOCAL + USER_ID, -1);
     }
+    public String getToken() { return currentUserDatabse.getString(USER_ID_LOCAL + TOKEN, ""); }
 
+    // Call on log out
     public void clearAll() {
-        SharedPreferences.Editor spEditor = userDatabase.edit();
+        SharedPreferences.Editor spEditor = currentUserDatabse.edit();
         spEditor.clear();
         spEditor.commit();
     }

@@ -8,9 +8,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TabHost;
 
+import com.maximus.dm.decentralizedmessenger.User.User;
 import com.maximus.dm.decentralizedmessenger.tabs.DialogsTab;
 import com.maximus.dm.decentralizedmessenger.tabs.ProfileTab;
 import com.maximus.dm.decentralizedmessenger.tabs.TabPagerAdapter;
+import com.maximus.dm.decentralizedmessenger.tabs.FriendsTab;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +21,7 @@ public class MainActivity extends AppCompatActivity implements ViewPager.OnPageC
 
     ViewPager viewPager;
     TabHost tabHost;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements ViewPager.OnPageC
         tabHost.setup();
 
         //create tabs one by one (to populate tab host)
-        String[] tabName = {ProfileTab.TAB_NAME, DialogsTab.TAB_NAME};
+        String[] tabName = {DialogsTab.TAB_NAME, FriendsTab.TAB_NAME, ProfileTab.TAB_NAME};
         for(int i = 0; i < tabName.length; i++) {
             TabHost.TabSpec tabSpec;
             tabSpec = tabHost.newTabSpec(tabName[i]);
@@ -42,8 +45,9 @@ public class MainActivity extends AppCompatActivity implements ViewPager.OnPageC
 
         //create tabs for viewpager
         List<Fragment> tabList = new ArrayList<Fragment>();
-        tabList.add(new ProfileTab());
         tabList.add(new DialogsTab());
+        tabList.add(new FriendsTab());
+        tabList.add(new ProfileTab());
 
         //view pager create
         viewPager = (ViewPager) findViewById(R.id.view_pager);
@@ -69,6 +73,11 @@ public class MainActivity extends AppCompatActivity implements ViewPager.OnPageC
 
             return tabView;
         }
+    }
+
+    private void setCurrentTab(int index) {
+        tabHost.setCurrentTab(index);
+        viewPager.setCurrentItem(index);
     }
 
     @Override

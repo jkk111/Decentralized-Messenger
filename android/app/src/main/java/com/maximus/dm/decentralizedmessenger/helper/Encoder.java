@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 /**
  * Created by Maximus on 18/02/2016.
@@ -15,7 +16,8 @@ public class Encoder {
     // Use this method to fully convert json to urlEncoded
     public static String jsonToUrl(JSONObject jsonObject) {
         String urlEncodedObject = jsonToURLEncoding(jsonObject);
-        return replaceWhitespaces(urlEncodedObject);
+        String  noSpaces = replaceWhitespaces(urlEncodedObject);
+        return replacePluses(noSpaces);
     }
 
     private static String jsonToURLEncoding(JSONObject json) {
@@ -29,7 +31,7 @@ public class Encoder {
                 e.printStackTrace();
             }
 
-        return output.substring(0, output.length()-1);
+        return output.substring(0, output.length() - 1);
     }
 
     private static String jsonToURLEncodingAux(Object json, String prefix) {
@@ -70,6 +72,10 @@ public class Encoder {
 
     private static String replaceWhitespaces(String str) {
         return str.replaceAll("\\s+", "%20");
+    }
+
+    private static String replacePluses(String str) {
+        return str.replaceAll(Pattern.quote("+"), "%2B");
     }
 
     private static String[] getKeys(JSONObject jsonObject) {

@@ -8,14 +8,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 
 import com.maximus.dm.decentralizedmessenger.Login;
 import com.maximus.dm.decentralizedmessenger.R;
 import com.maximus.dm.decentralizedmessenger.User.User;
 import com.maximus.dm.decentralizedmessenger.User.UserDatabase;
-import com.maximus.dm.decentralizedmessenger.User.UserLocalStore;
 
 /**
  * Created by Maximus on 30/01/2016.
@@ -53,10 +51,10 @@ public class ProfileTab extends Fragment implements View.OnClickListener {
     }
 
     private void showUserData() {
-        User user = userDatabase.getLoggedIn();
-        tvWelcome.setText(user.getUsername() + "'s Profile");
-        tvUsername.setText(user.getUsername());
-        tvEmail.setText(user.getEmail());
+        String currentUsername = userDatabase.getCurrentUsername();
+        tvWelcome.setText(currentUsername + "'s Profile");
+        tvUsername.setText(currentUsername);
+        tvEmail.setText("TODO: Remove email!");
     }
 
     @Override
@@ -64,6 +62,7 @@ public class ProfileTab extends Fragment implements View.OnClickListener {
         switch(v.getId()) {
             case R.id.bLogout:
                 //register clicked
+                userDatabase.clearAll();
                 startActivity(new Intent(getActivity(), Login.class));
                 break;
         }

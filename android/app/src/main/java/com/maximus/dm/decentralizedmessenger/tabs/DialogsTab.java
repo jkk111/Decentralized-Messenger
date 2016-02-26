@@ -54,4 +54,9 @@ public class DialogsTab extends Fragment implements AdapterView.OnItemClickListe
         Intent intent = new Intent(getActivity(), ChatWindow.class);
         startActivity(intent);
     }
+
+    private void getDialogs() {
+
+    }
+
 }

@@ -29,6 +29,10 @@ public class Networking {
     public static final String SERVER_DOMAIN = "https://john-kevin.me";
     public static final String SERVER_PATH_LOGIN = "/login";
     public static final String SERVER_PATH_REGISTER = "/register";
+    public static final String SERVER_PATH_GET_FRIENDS = "/getFriends";
+    public static final String SERVER_PATH_ADD_FRIEND_NAME = "/addFriendName";
+    public static final String SERVER_PATH_ADD_FRIEND_ID = "/addFriend";
+    public static final String SERVER_PATH_REFRESH_TOKEN = "/refreshToken";
 
     private Context mContext;
 
