@@ -306,8 +306,10 @@ function getUsernames(users, sender, cb) {
   var ids = [];
   for(var i = 0 ; i < users.length; i++) {
     var user;
-    if(users[i]["user1"] != sender)
-     ids.push(users[i]["user1"])
+    if(users[i]["user1"] != sender) {
+     ids.push(users[i]["user1"]);
+     users[i].isFirst = true
+    }
     else
       ids.push(users[i]["user2"])
   }
@@ -324,7 +326,10 @@ function getUsernames(users, sender, cb) {
     }
     var response = [];
     for(var i = 0 ; i < results.length; i++) {
-      response.push({ id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false});
+      var item = { id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false};
+      if(item.pending)
+        item.initiatedBySelf = users[i].isFirst !== true;
+      response.push(item);
     }
     console.log(response);
     cb(response);
