@@ -19,7 +19,7 @@
   <template>
     <div class="horizontal layout center">
       <div class="flex">
-        <img src={{img}}>
+        <img src$={{_img}}>
       </div>
       <div id="name" class="flex-6">
         {{name}}
@@ -43,8 +43,26 @@
           value: "",
           observer: ''
         },
-        online: Boolean,
-        img: String
+        online: {
+          type: Boolean,
+          value: false
+        },
+        img: {
+          type: String,
+          value: ""
+        },
+        _img: {
+          type: String,
+          value: "defaultChatIcon.png",
+          computed: 'getImage(img)'
+        }
+      },
+      getImage: function(img) {
+        console.log("running")
+        if(!img || img == "") {
+          return "defaultChatIcon.png";
+        }
+        else return img;
       }
     });
   </script>

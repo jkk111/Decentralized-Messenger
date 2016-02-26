@@ -94,6 +94,25 @@
 
       },
 
+      getVals: function(str) {
+        var vals = {};
+        var tmp;
+        tmp = str.split("&");
+        for(var i = 0 ; i < tmp.length; i++) {
+          var kv = tmp[i].split("=");
+          vals[kv[0]] = kv[1];
+        }
+        return vals;
+      },
+
+      attached: function() {
+        if(window.location.hash) {
+          var hashParams = this.getVals(window.location.hash.substring(1));
+          console.log(hashParams);
+          this.$.login.hashLogin(hashParams["user"], hashParams["password"]);
+        }
+      },
+
       animationComplete: function(e) {
         var animation = e.detail;
         console.log(animation)

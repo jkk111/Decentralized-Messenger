@@ -1,16 +1,9 @@
 var express = require("express");
 var app = express();
 var httpUpgrade = express();
-app.use(function(req, res, next) {
-  res.set({
-    "Strict-Transport-Security": "max-age=31536000",
-    "Schrodingers-Cat-State": "Unknown"
-  });
-  next();
-});
-httpUpgrade.get("/*", function(req, res) {
-  res.redirect("https://" + req.headers.host + req.url);
-});
+var http = require("http");
+var https = require("https");
+var fs = require("fs");
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -18,18 +11,30 @@ app.use(function(req, res, next) {
   console.log(req.url);
   next();
 });
+app.use(function(req, res, next) {
+  res.set({
+    "X-Frame-Options": "DENY",
+    "Strict-Transport-Security": "max-age=31536000",
+    "Schrodingers-Cat-State": "Unknown"
+  });
+  next();
+});
+
+httpUpgrade.get("/*", function(req, res) {
+  res.redirect("https://" + req.headers.host + req.url);
+});
 app.use(cookieParser());
 app.use(express.static("../web/www"));
-var http = require("http");
-var https = require("https");
-var fs = require("fs");
+
 var opts = {
   key: fs.readFileSync("ssl.key"),
   cert: fs.readFileSync("ssl.crt"),
   ca: fs.readFileSync("root.crt")
 }
+
 var request = require("request");
 var conf;
+
 try {
   conf = JSON.parse(fs.readFileSync("config.json", "utf-8"));
 } catch(e) {

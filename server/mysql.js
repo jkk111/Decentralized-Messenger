@@ -188,9 +188,9 @@ module.exports = function(config) {
     })
   }
 
-  connector.getMessages = function(sender, cb) {
-    var q = "SELECT id, sender, message FROM messages WHERE recipient = ?";
-    conn.query(q, [sender], function(err, results) {
+  connector.getMessages = function(sender, highest, cb) {
+    var q = "SELECT id, sender, message FROM messages WHERE recipient = ? AND id > ?";
+    conn.query(q, [sender, highest], function(err, results) {
       if(err) {
         console.log(err);
         cb({error: "DATABASE_ERROR"});
@@ -224,8 +224,7 @@ module.exports = function(config) {
         cb({error: "DATABASE_ERROR"});
       }
       else {
-        console.log(results);
-        cb(results);
+        getUsernames(results, sender, cb);
       }
     })
   }
@@ -301,6 +300,35 @@ function generateExpiry() {
 function generateToken(user, cb) {
   var token = crypto.randomBytes(64).toString("base64");
   addToken(user, token, cb);
+}
+
+function getUsernames(users, sender, cb) {
+  var ids = [];
+  for(var i = 0 ; i < users.length; i++) {
+    var user;
+    if(users[i]["user1"] != sender)
+     ids.push(users[i]["user1"])
+    else
+      ids.push(users[i]["user2"])
+  }
+  var q = "SELECT username, id from users where id in (";
+  for(var i = 0 ; i < ids.length; i++) {
+    if(i > 0)
+      q += ",";
+      q += "?";
+  }
+  q += ");";
+  conn.query(q, ids, function(err, results) {
+    if(err) {
+      cb({ error: "DATABASE_ERROR" });
+    }
+    var response = [];
+    for(var i = 0 ; i < results.length; i++) {
+      response.push({ id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false});
+    }
+    console.log(response);
+    cb(response);
+  })
 }
 
 setInterval(pruneExpiredTokens, 1000 * 60);

@@ -1,7 +1,7 @@
 var rateLimits = {
 
 }
-var RATE_LIMITS = 100;
+var RATE_LIMITS = 200;
 
 var USAGE_VALUES = {
   "/search": 1,
@@ -88,10 +88,11 @@ module.exports = function(app, storage) {
     }
     var sender = req.body.sender;
     var token = req.body.token;
+    var highest = req.body.highestReceived || 0;
     console.log(token);
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
-        storage.getMessages(sender, function(messages) {
+        storage.getMessages(sender, highest, function(messages) {
           res.send(messages);
         });
       });

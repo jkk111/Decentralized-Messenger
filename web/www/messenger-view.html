@@ -31,6 +31,9 @@
                </iron-ajax>
     <iron-ajax id="friendsajax" url="/getFriends" method="Post" content-type="application/x-www-form-urlencoded"
                body="{{messagesBody}}" handle-as="json" on-response="friendsResponse">
+               </iron-ajax>
+    <iron-ajax id="messageAjax" url="/message" method="Post" content-type="application/x-www-form-urlencoded"
+               body="{{messageBody}}" handle-as="json" on-response="messageSentResponse">
     </iron-ajax>
     <paper-drawer-panel>
       <paper-header-panel drawer>
@@ -42,7 +45,7 @@
             <template is="dom-repeat" items="{{friends}}">
               <paper-item>
                 <contact-element
-                  name="{{item.name}}"
+                  name="{{item.username}}"
                   online="{{item.online}}"
                   img="{{item.img}}">
                 </contact-element>
@@ -65,13 +68,13 @@
           </template>
           <div>
             <paper-dialog-scrollable>
-            <template is="dom-repeat" items="{{getMessages(selectedContact)}}">
-              <paper-item>{{item}}</paper-item>
+            <template is="dom-repeat" items="{{currentMessages}}">
+              <paper-item>{{item.message}}</paper-item>
             </template>
           </paper-dialog-scrollable>
             <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
               <div>
-                <paper-textarea label="send a message"></paper-textarea>
+                <paper-input on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
               </div>
             </template>
           </div>
@@ -99,6 +102,10 @@
           type: Number,
           value: 1000
         },
+        polling: {
+          type: Boolean,
+          value: false
+        },
         token: {
           type: String,
           value: "",
@@ -109,29 +116,43 @@
         },
         friends: {
           type: Array,
-          value: [
-            {
-              name: "Mr. One",
-              online: true,
-              img: "img/one.png"
-            },{
-              name: "Mr. Two",
-              online: true,
-              img: "img/two.png"
-            },{
-              name: "Mr. Three",
-              online: false,
-              img: "img/three.png"
-            }
-          ]
+          value: function() { return [] },
+          notify: true
         },
         messages: {
           type: Array,
         },
         messagesBody: {
           type: Object,
-          computed: 'computeMessagesBody(token, userId)'
+          computed: 'computeMessagesBody(token, userId, highestReceived)'
+        },
+        messageBody: {
+          type: Object,
+          value: function() { return {}; }
+        },
+        highestReceived: {
+          type: Number,
+          value: 0
+        },
+        currentMessages: {
+          type: Array,
+          value: function() { return []; },
+          readonly: false,
+          readOnly: false
         }
+      },
+      observers: [
+        'friendsChanged(friends.*)',
+        'friendsChanged(selectedContact)'
+      ],
+      friendsChanged: function(cr) {
+        console.log(cr);
+        this.set("currentMessages", this.computeCurrentMessages(this.selectedContact, this.friends));
+      },
+      computeCurrentMessages: function(i, friends) {
+        if(friends && i > friends.length || i == -1)
+          return [];
+        return friends[i].messages
       },
       tokenChanged: function(newValue, old) {
         if(newValue != "") {
@@ -140,18 +161,24 @@
           console.log("Polling for updates");
           console.log(this.messagesBody);
           console.log(this);
-          this.$.7.generateRequest();
+          this.$.friendsajax.generateRequest();
+          if(!this.polling) {
+            console.log("polling")
+            this.polling = true;
+            this.$.pollajax.generateRequest();
+          }
         }
       },
-
-      computeMessagesBody: function(id, token) {
+      computeMessagesBody: function(token, id, h) {
         console.log(token + ":" + id);
-        return { token: token, sender: id };
+        console.log(this.highestReceived)
+        console.log(token + "\n" + id + "\n" + this.highestReceived)
+        return { token: token, sender: id, highestReceived: this.highestReceived };
       },
-      getMessages: function(contact) {
-        if(!this.messages || contact > this.messages.length || contact == -1)
+      getMessages: function(friends, contact) {
+        if(!friends || contact > friends.length || contact == -1)
           return
-        return this.messages[contact];
+        return friends[contact].messages;
       },
       getSelectedFriend: function(contact) {
         return this.friends[contact]
@@ -168,23 +195,72 @@
         return false;
       },
       pollResponse: function(e, res) {
-        console.log(e.res);
-        if(res.reponse == {}) {
+        console.log(res.response);
+        var asString;
+        try {
+          asString = JSON.stringify(res.response);
+        } catch(e) {
+          asString = "{}";
+        }
+        if(asString == "{}") {
+          console.log("Increasing wait time");
           this.pollTime = Math.min(this.pollTime * 2, this.MAX_POLL_TIME)
         } else {
+          console.log("Resetting wait time");
           this.pollTime = 1000;
+          this.addMessagesToFriends(res.response);
         }
-        setTimeout(this.poll, this.pollTime)
+        var self = this;
+        setTimeout(function() {
+          self.$.pollajax.generateRequest();
+        }, this.pollTime)
+      },
+      addMessagesToFriends: function(messages) {
+        var ids = Object.keys(messages);
+        for(var i = 0 ; i < ids.length; i++) {
+          for(var j = 0 ; j < this.friends.length; j++) {
+            if(ids[i] ==  this.friends[j].id) {
+              if(!this.friends[j].messages)
+                this.friends[j].messages = [];
+              for(var k = 0; k < messages[ids[i]].length; k++) {
+                console.log(messages[ids[i]][k].id)
+                if(messages[ids[i]][k].id > this.highestReceived || this.highestReceived == NaN || this.highestReceived === undefined) {
+                  console.log("changing highestReceived")
+                  this.set("highestReceived", messages[ids[i]][k].id);
+                } else {
+                  console.log("not pushing %d, %d", this.highestReceived, messages[ids[i]][k].id);
+                  console.log(this.highestReceived)
+                }
+                // this.friends[j].messages.push(messages[ids[i]][k])
+                console.log("friends."+j+".messages");
+                this.push("friends." + j + ".messages", messages[ids[i]][k]);
+                this.notifyPath("friends", this.friends.slice());
+                this.notifyPath("friends."+j+".messages", this.friends[j].messages.slice());
+              }
+            }
+          }
+        }
+      },
+      checkSubmit: function(e) {
+        if(e.keyCode == 13) {
+          this.messageBody = this.computeMessageBody()
+          this.message = "";
+          this.$.messageAjax.generateRequest();
+        }
+      },
+      computeMessageBody: function() {
+        console.log({ sender: this.userId, dest: this.friends[this.selectedContact].id, message: this.message, token: this.token });
+        return { sender: this.userId, dest: this.friends[this.selectedContact].id, message: this.message, token: this.token }
       },
       friendsResponse: function(e, res) {
         if(res.response) {
-          var tmp = res.response.friends;
+          var tmp = res.response;
+          console.log(tmp);
+          this.friends = tmp;
         }
       },
       loggedIn: function() {
-        this.poll();
-      },
-      poll: function() {
+        // this.$.pollajax.generateRequest();
       }
     })
   </script>

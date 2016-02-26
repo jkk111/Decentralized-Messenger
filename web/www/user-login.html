@@ -169,6 +169,12 @@
         console.log("kek");
       },
 
+      hashLogin: function(user, pass) {
+        this.loginUser = user;
+        this.loginPassword = pass;
+        this.doLogin();
+      },
+
       registered: function(e, response) {
         if(!response)
           return;
