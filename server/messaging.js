@@ -69,7 +69,7 @@ module.exports = function(app, storage) {
     var user = req.body.user;
     var password = req.body.password;
     storage.userExists(user, function(exists) {
-      handleResult(!exists == false ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
+      handleResult(exists == false ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
         storage.register(user, password, function(success) {
           handleResult(success, res, function() {
             storage.login(user, password, function(success) {
