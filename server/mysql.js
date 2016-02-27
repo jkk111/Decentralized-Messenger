@@ -138,9 +138,9 @@ module.exports = function(config) {
     var hash = generateHash(pass);
     var q = "INSERT INTO users (username, password) VALUES(?, ?)";
     conn.query(q, [user, hash], function(err, results) {
-      if(err)
+      if({error: "DATABASE_ERROR"});
         console.log(err);
-      cb({ success: true, id: results.insertId });
+      cb(true);
     })
   }
 
