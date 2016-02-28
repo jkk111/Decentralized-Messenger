@@ -198,6 +198,9 @@
         return false;
       },
       pollResponse: function(e, res) {
+        if(this.containsError(res.response)) {
+          return;
+        }
         console.log(res.response);
         var asString;
         try {
@@ -265,6 +268,14 @@
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
       },
+      function containsError(e) {
+        if(e && e.error) {
+          errorHandler(e);
+          return true;
+        } else {
+          return false;
+        }
+      }
       errorHandler: function(e) {
         switch(e.error) {
           case "ERROR_BAD_TOKEN":
