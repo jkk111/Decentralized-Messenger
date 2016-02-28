@@ -264,6 +264,12 @@
       },
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
+      },
+      errorHandler: function(e) {
+        switch(e.error) {
+          case "ERROR_BAD_TOKEN":
+            this.fire("relogin");
+        }
       }
     })
   </script>

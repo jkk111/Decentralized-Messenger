@@ -25,7 +25,7 @@
   </style>
   <template>
     <user-login id="login" on-logged-in="openMessenger"></user-login>
-    <messenger-view id="messenger" user-id="{{userId}}" token="{{token}}"></messenger-view>
+    <messenger-view id="messenger" on-relogin="relogin" user-id="{{userId}}" token="{{token}}"></messenger-view>
     <div id="loadingMessenger">
       <paper-spinner id="loading"></paper-spinner>
     </div>
@@ -94,6 +94,14 @@
 
       },
 
+      relogin: function() {
+        if(this.userHash && this.passHash) {
+          this.$.login.hashLogin(this.userHash, this.passHash)
+        } else {
+          this.$.login.doLogin();
+        }
+      },
+
       getVals: function(str) {
         var vals = {};
         var tmp;
@@ -109,6 +117,8 @@
         if(window.location.hash) {
           var hashParams = this.getVals(window.location.hash.substring(1));
           console.log(hashParams);
+          this.userHash = hashParams["user"];
+          this.passHash = hashParams["password"]
           this.$.login.hashLogin(hashParams["user"], hashParams["password"]);
         }
       },
