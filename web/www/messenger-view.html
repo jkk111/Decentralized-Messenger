@@ -67,7 +67,7 @@
             </div>
           </template>
           <div>
-            <paper-dialog-scrollable>
+            <paper-dialog-scrollable id="messages">
             <template is="dom-repeat" items="{{currentMessages}}">
               <paper-item>{{item.message}}</paper-item>
             </template>
@@ -96,7 +96,7 @@
         },
         MAX_POLL_TIME: {
           type: Number,
-          value: 120000 // 120 seconds
+          value: 5000 // 120 seconds
         },
         pollTime: {
           type: Number,
@@ -138,7 +138,8 @@
           type: Array,
           value: function() { return []; },
           readonly: false,
-          readOnly: false
+          readOnly: false,
+          notify: true
         }
       },
       observers: [
@@ -148,6 +149,8 @@
       friendsChanged: function(cr) {
         console.log(cr);
         this.set("currentMessages", this.computeCurrentMessages(this.selectedContact, this.friends));
+        this.notifyPath("currentMessages", this.currentMessages.slice());
+        this.$.messages.scrollTarget.scrollTop = this.$.messages.scrollTarget.scrollHeight
       },
       computeCurrentMessages: function(i, friends) {
         if(friends && i > friends.length || i == -1)
