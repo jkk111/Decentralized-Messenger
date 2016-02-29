@@ -125,7 +125,7 @@ module.exports = function(config) {
 
   connector.updateFriendship = function(fId, confirm, cb) {
     if(confirm) {
-      var q = "UPDATE friends WHERE id = ? SET pending = FALSE;";
+      var q = "UPDATE friends SET pending = FALSE WHERE id = ?;";
     } else {
       var q = "DELETE FROM friends where id = ?";
     }
