@@ -68,7 +68,7 @@
           </template>
           <div>
             <paper-dialog-scrollable id="messages">
-            <template is="dom-repeat" items="{{currentMessages}}">
+            <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
               <paper-item>{{item.message}}</paper-item>
             </template>
           </paper-dialog-scrollable>
@@ -137,8 +137,6 @@
         currentMessages: {
           type: Array,
           value: function() { return []; },
-          readonly: false,
-          readOnly: false,
           notify: true
         }
       },
@@ -150,12 +148,15 @@
         console.log(cr);
         this.set("currentMessages", this.computeCurrentMessages(this.selectedContact, this.friends));
         this.notifyPath("currentMessages", this.currentMessages.slice());
-        this.$.messages.scrollTarget.scrollTop = this.$.messages.scrollTarget.scrollHeight
       },
       computeCurrentMessages: function(i, friends) {
         if(friends && i > friends.length || i == -1)
           return [];
         return friends[i].messages
+      },
+      scrollTest: function() {
+        console.log("it works")
+        this.$.messages.scrollTarget.scrollTop = this.$.messages.scrollTarget.scrollHeight
       },
       tokenChanged: function(newValue, old) {
         if(newValue != "") {
@@ -268,14 +269,15 @@
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
       },
-      function containsError(e) {
+
+      containsError: function(e) {
         if(e && e.error) {
           errorHandler(e);
           return true;
         } else {
           return false;
         }
-      }
+      },
       errorHandler: function(e) {
         switch(e.error) {
           case "ERROR_BAD_TOKEN":

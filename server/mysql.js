@@ -326,7 +326,7 @@ function getUsernames(users, sender, cb) {
     }
     var response = [];
     for(var i = 0 ; i < results.length; i++) {
-      var item = { id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false};
+      var item = { friendshipId: users[i].id, id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false};
       if(item.pending)
         item.initiatedBySelf = users[i].isFirst !== true;
       response.push(item);
