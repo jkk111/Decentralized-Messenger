@@ -130,7 +130,7 @@ module.exports = function(config) {
       var q = "DELETE FROM friends where id = ?";
     }
     conn.query(q, [fId], function(err, results) {
-      cb(!err && results);
+      cb(!err && results != undefined);
     });
   }
 

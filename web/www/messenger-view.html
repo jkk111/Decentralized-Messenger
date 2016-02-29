@@ -68,9 +68,12 @@
           </template>
           <div>
             <paper-dialog-scrollable id="messages">
-            <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
-              <paper-item>{{item.message}}</paper-item>
-            </template>
+              <div id="messagesContainer">
+              <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
+
+                  <div>{{item.message}}</div>
+              </template>
+            </div>
           </paper-dialog-scrollable>
             <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
               <div>
@@ -156,7 +159,7 @@
       },
       scrollTest: function() {
         console.log("it works")
-        this.$.messages.scrollTarget.scrollTop = this.$.messages.scrollTarget.scrollHeight
+        this.$.messagesContainer.scrollTop = this.$.messagesContainer.scrollHeight + 10000;
       },
       tokenChanged: function(newValue, old) {
         if(newValue != "") {
