@@ -8,25 +8,36 @@ var USAGE_VALUES = {
   "/addFriend": 1
 }
 
+var REQUIREMENTS = {
+  message: ["sender", "dest", "message", "token"],
+  basic: ["sender", "token"],
+  auth: ["user", "password"],
+  addFriend: ["sender", "token", "client", "secret"],
+  search: ["token", "sender", "query"],
+  confirmFriend: ["sender", "token", "response", "friendshipId"],
+  received: ["sender", "token", "highest"]
+}
+
+
+
 var rateLimiting = function(req, res, next) {
   console.log(req.url);
-  if(!req.body.token) {
+  if(!hasRequirements(req, res, REQUIREMENTS.basic)) {
     res.send(400);
     return;
   }
-  var token = req.body.token;
+  var sender = req.body.sender;
   var method = req.url;
   if(!USAGE_VALUES[method]) {
     res.sendStatus(404);
     return;
   }
-  if(!rateLimits[token]) {
-    rateLimits[token] = USAGE_VALUES[method];
+  if(!rateLimits[sender]) {
+    rateLimits[sender] = USAGE_VALUES[method];
   } else {
-    rateLimits[token] += USAGE_VALUES[method];
+    rateLimits[sender] += USAGE_VALUES[method];
   }
-  console.log(rateLimits[token])
-  if(rateLimits[token] > RATE_LIMITS) {
+  if(rateLimits[sender] > RATE_LIMITS) {
     res.sendStatus(429);
   } else {
     next();
@@ -39,8 +50,7 @@ setInterval(function() {
 
 module.exports = function(app, storage) {
   app.post("/refreshToken", function(req, res) {
-    if(!req.body.token) {
-      res.sendStatus(400);
+    if(!hasRequirements(req, res, REQUIREMENTS.basic)) {
       return;
     }
     var token = req.body.token;
@@ -50,8 +60,7 @@ module.exports = function(app, storage) {
   });
 
   app.post("/login", function(req, res) {
-    if(!req.body.user || ! req.body.password) {
-      res.sendStatus(400);
+    if(!hasRequirements(req, res, REQUIREMENTS.auth)) {
       return;
     }
     var user = req.body.user;
@@ -62,14 +71,13 @@ module.exports = function(app, storage) {
   })
 
   app.post("/register", function(req, res) {
-    if(!req.body.user || ! req.body.password) {
-      res.sendStatus(400);
+    if(!hasRequirements(req, res, REQUIREMENTS.auth)) {
       return;
     }
     var user = req.body.user;
     var password = req.body.password;
     storage.userExists(user, function(exists) {
-      handleResult(exists == false ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
+      handleResult((exists === false) ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
         storage.register(user, password, function(success) {
           handleResult(success, res, function() {
             storage.login(user, password, function(success) {
@@ -82,8 +90,7 @@ module.exports = function(app, storage) {
   });
 
   app.post("/messages", function(req, res) {
-    if(!req.body.sender || ! req.body.token) {
-      res.sendStatus(400);
+    if(!hasRequirements(req, res, REQUIREMENTS.basic)) {
       return;
     }
     var sender = req.body.sender;
@@ -100,14 +107,16 @@ module.exports = function(app, storage) {
   })
 
   app.post("/confirmFriend", function(req, res) {
-    // Todo allow confirm/deny
-    var response = req.body.confirm;
+    if(!hasRequirements(req, res, REQUIREMENTS.confirmFriend)) {
+      return;
+    }
+    var response = req.body.response;
     var token = req.body.token;
     var sender = req.body.sender;
     var friendshipId = req.body.friendshipId; //
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
-        storage.updateFriendship(friendshipId, response, function(success) {
+        storage.updateFriendship(friendshipId, response, sender, function(success) {
           handleResult(success, res)
         })
       });
@@ -115,8 +124,7 @@ module.exports = function(app, storage) {
   });
 
   app.post("/received", function(req, res) {
-    if(!req.body.sender || !req.body.token || req.body.highest) {
-      res.sendStatus(400);
+    if(!hasRequirements(req, res, REQUIREMENTS.received)) {
       return;
     }
     var sender = req.body.sender;
@@ -132,12 +140,11 @@ module.exports = function(app, storage) {
   });
 
   app.post("/getFriends", function(req, res) {
-    var sender = req.body.sender;
-    var token = req.body.token;
-    if(!sender || ! token) {
-      res.sendStatus(400);
+    if(!hasRequirements(req, res, REQUIREMENTS.basic)) {
       return
     }
+    var sender = req.body.sender;
+    var token = req.body.token;
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
         storage.getFriends(sender, function(success) {
@@ -148,14 +155,13 @@ module.exports = function(app, storage) {
   });
 
   app.post("/addFriend", rateLimiting, function(req, res) {
+    if(!hasRequirements(req, res, REQUIREMENTS.addFriend)) {
+      return;
+    }
     var sender = req.body.sender;
     var token = req.body.token;
     var client = req.body.client;
     var secret = req.body.secret || "";
-    if(!(sender && token && client)) {
-      res.sendStatus(400);
-      return;
-    }
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
         storage.userExists(client, function(exists) {
@@ -170,6 +176,9 @@ module.exports = function(app, storage) {
   });
 
   app.post("/search", rateLimiting, function(req, res) {
+    if(!hasRequirements(req, res, REQUIREMENTS.search)) {
+      return;
+    }
     var sender = req.body.sender;
     var token = req.body.token;
     var query = req.body.query;
@@ -183,14 +192,13 @@ module.exports = function(app, storage) {
   })
   // TODO (johnkevink): Find alternative to this, perhaps search and add.
   app.post("/addFriendName", function(req, res) {
+    if(!hasRequirements(req, res, REQUIREMENTS.addFriend)) {
+      return;
+    }
     var sender = req.body.sender;
     var token = req.body.token;
     var client = req.body.client;
     var secret = req.body.secret || "";
-    if(!(sender && token && client)) {
-      res.sendStatus(400);
-      return;
-    }
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
         storage.idFromName(client, function(id) {
@@ -205,8 +213,7 @@ module.exports = function(app, storage) {
   });
 
   app.post("/message", function(req, res) {
-    if(!req.body.sender || !req.body.dest || !req.body.message || !req.body.token) {
-      res.sendStatus(400);
+    if(!hasRequirements(req, res, REQUIREMENTS.message)) {
       return;
     }
     var sender = req.body.sender;
@@ -221,6 +228,17 @@ module.exports = function(app, storage) {
       });
     });
   });
+}
+
+
+
+  function badKeys(res, keys, req, missing) {
+    var error = {}
+    error.error = "ERROR_BAD_KEYS";
+    error.detail = `Parameter missing: ${missing}`
+    error.message = `Parameters for method "${req.url}": ${keys}`;
+    res.json(error);
+  }
 
   function handleResult(result, res, cb) {
     if(typeof result == "boolean") {
@@ -236,4 +254,13 @@ module.exports = function(app, storage) {
       res.send(result)
     }
   }
-}
+
+  function hasRequirements(req, res, keys) {
+    for(var i = 0 ; i < keys.length; i++ ) {
+      if(!req.body[keys[i]]) {
+        badKeys(res, keys, req, keys[i]);
+        return false;
+      }
+    }
+    return true;
+  }

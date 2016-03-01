@@ -62,10 +62,11 @@ module.exports = function(config) {
   }
 
   connector.userExists = function(user, cb) {
-    var q = "SELECT id FROM users WHERE id = ?";
+    var q = "SELECT id FROM users WHERE username = ?";
     conn.query(q, user, function(err, results) {
-      console.log(results)
-      cb(!err && results != undefined && results.length > 0);
+      if(err)
+        return cb({error: "DATABASE_ERROR"});
+      cb(results != undefined && results.length > 0);
     })
   }
 
@@ -90,8 +91,10 @@ module.exports = function(config) {
     console.log(user);
     var q = "SELECT id FROM users WHERE id = ?";
     conn.query(q, [user], function(err, results) {
-      console.log(results)
-      cb(!err && results != undefined && results.length > 0);
+      if(err) {
+        return cb({error: "DATABASE_ERROR"});
+      }
+      cb(results != undefined && results.length > 0);
     })
   }
 
@@ -123,14 +126,19 @@ module.exports = function(config) {
     });
   }
 
-  connector.updateFriendship = function(fId, confirm, cb) {
+  connector.updateFriendship = function(fId, confirm, user, cb) {
+    console.log(fId+":"+confirm+":"+user)
     if(confirm) {
-      var q = "UPDATE friends SET pending = FALSE WHERE id = ?;";
+      console.log("confirming")
+      var q = "UPDATE friends SET pending = FALSE WHERE id = ? AND user2 = ?;";
     } else {
-      var q = "DELETE FROM friends where id = ?";
+      console.log("deleting")
+      var q = "DELETE FROM friends where id = ? AND user2 = ?";
     }
-    conn.query(q, [fId], function(err, results) {
-      cb(!err && results != undefined);
+    conn.query(q, [fId, user], function(err, results) {
+      if(err)
+        return cb({error: "DATABASE_ERROR"})
+        return cb(results != undefined && results.changedRows > 0);
     });
   }
 
@@ -138,9 +146,9 @@ module.exports = function(config) {
     var hash = generateHash(pass);
     var q = "INSERT INTO users (username, password) VALUES(?, ?)";
     conn.query(q, [user, hash], function(err, results) {
-      if({error: "DATABASE_ERROR"});
-        console.log(err);
-      cb(true);
+      if(err)
+        return cb({error: "DATABASE_ERROR"})
+      return cb(true);
     })
   }
 
@@ -322,7 +330,9 @@ function getUsernames(users, sender, cb) {
   q += ");";
   conn.query(q, ids, function(err, results) {
     if(err) {
-      cb({ error: "DATABASE_ERROR" });
+      console.log(err);
+      cb({ error: "DATABASE_ERROR", info: err});
+      return
     }
     var response = [];
     for(var i = 0 ; i < results.length; i++) {
