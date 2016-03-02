@@ -21,8 +21,7 @@ var REQUIREMENTS = {
 
 
 var rateLimiting = function(req, res, next) {
-  console.log(req.url);
-  if(!hasRequirements(req, res, REQUIREMENTS.basic)) {
+  if(!hasRequirements(req, res, REQUIREMENTS.basic, true)) {
     res.send(400);
     return;
   }
@@ -96,7 +95,6 @@ module.exports = function(app, storage) {
     var sender = req.body.sender;
     var token = req.body.token;
     var highest = req.body.highestReceived || 0;
-    console.log(token);
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
         storage.getMessages(sender, highest, function(messages) {
@@ -255,11 +253,13 @@ module.exports = function(app, storage) {
     }
   }
 
-  function hasRequirements(req, res, keys) {
+  function hasRequirements(req, res, keys, silent) {
     for(var i = 0 ; i < keys.length; i++ ) {
       if(!req.body[keys[i]]) {
         badKeys(res, keys, req, keys[i]);
         return false;
+      } else if(!silent) {
+        console.log(keys[i] + ") " + req.body[keys[i]]);
       }
     }
     return true;

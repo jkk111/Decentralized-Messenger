@@ -33,7 +33,6 @@ module.exports = function(config) {
         connector.verifyToken(user, token, cb);
         return;
       }
-      console.log("is in cache")
       return cb((tokenCache[token] && tokenCache[token].user == user) ? true : {error: "ERROR_BAD_TOKEN"});
     }
 
@@ -74,7 +73,6 @@ module.exports = function(config) {
     var q = "SELECT id, username FROM users WHERE INSTR(username, ?);"
     conn.query(q, [query], function(err, results) {
       if(err) {
-        console.log(err);
         cb({error: "DATABASE_ERROR"});
         return;
       } else {
@@ -88,7 +86,6 @@ module.exports = function(config) {
   }
 
   connector.userIdExists = function(user, cb) {
-    console.log(user);
     var q = "SELECT id FROM users WHERE id = ?";
     conn.query(q, [user], function(err, results) {
       if(err) {
@@ -99,16 +96,13 @@ module.exports = function(config) {
   }
 
   connector.idFromName = function(user, cb) {
-    console.log(user)
     var q = "SELECT id FROM users WHERE username = ?;";
     conn.query(q, [user], function(err, results) {
       if(err) {
-        console.log(err);
         cb({ error: "DATABASE_ERROR" });
         return
       }
-      console.log(results)
-      cb((results != null && results[0] != null) ? results[0] : {error: "USER_NOT_EXISTS"});
+      cb((results != null && results[0] != null) ? results[0].id : {error: "USER_NOT_EXISTS"});
     });
   }
 
@@ -117,7 +111,7 @@ module.exports = function(config) {
     pass = generateHash(pass);
     conn.query(q, [user, pass], function(err, results) {
       if(err) {
-        console.log(err);
+        return cb({error: "DATABASE_ERROR"});
       }
       if(results && results.length > 0)
         generateToken(results[0].id, cb);
@@ -127,12 +121,9 @@ module.exports = function(config) {
   }
 
   connector.updateFriendship = function(fId, confirm, user, cb) {
-    console.log(fId+":"+confirm+":"+user)
     if(confirm) {
-      console.log("confirming")
       var q = "UPDATE friends SET pending = FALSE WHERE id = ? AND user2 = ?;";
     } else {
-      console.log("deleting")
       var q = "DELETE FROM friends where id = ? AND user2 = ?";
     }
     conn.query(q, [fId, user], function(err, results) {
@@ -170,11 +161,10 @@ module.exports = function(config) {
 
   connector.receivedMessages = function(sender, highest, cb) {
     var q = "DELETE FROM messages WHERE recipient = ? AND id <= ?";
-    console.log(sender + highest);
     console.log("DELETE FROM messages WHERE recipient = %s AND id <= %s", sender, highest);
     conn.query(q, [sender, highest], function(err, results) {
       if(err) {
-        console.log(err);
+        return cb({error: "DATABASE_ERROR"});
       }
       cb(err == undefined);
     });
@@ -182,10 +172,8 @@ module.exports = function(config) {
 
   connector.refreshToken = function(token, cb) {
     var q = "UPDATE tokens SET expiry = NOW() + INTERVAL 6 HOUR WHERE token = ?";
-    console.log(token);
     conn.query(q, [token], function(err, results) {
       if(err) {
-        console.log(err);
         return cb(false);
       }
       if(results.changedRows == 0) {
