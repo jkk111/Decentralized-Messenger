@@ -47,5 +47,7 @@ module.exports = function(config) {
 
   this.getFriends = storageEngine.getFriends;
 
+  this.cancelFriendRequest = storageEngine.cancelFriendRequest;
+
   return this;
 }

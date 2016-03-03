@@ -184,10 +184,10 @@ module.exports = function(app, storage) {
       handleResult(success, res, function() {
         storage.search(query, function(result) {
           res.send(result);
-        })
-      })
+        });
+      });
     });
-  })
+  });
   // TODO (johnkevink): Find alternative to this, perhaps search and add.
   app.post("/addFriendName", function(req, res) {
     if(!hasRequirements(req, res, REQUIREMENTS.addFriend)) {
@@ -228,39 +228,53 @@ module.exports = function(app, storage) {
   });
 }
 
-
-
-  function badKeys(res, keys, req, missing) {
-    var error = {}
-    error.error = "ERROR_BAD_KEYS";
-    error.detail = `Parameter missing: ${missing}`
-    error.message = `Parameters for method "${req.url}": ${keys}`;
-    res.json(error);
+app.post("/cancelFriend", function(req, res) {
+  if(!hasRequirements(req, res, REQUIREMENTS.cancelFriend)) {
+    return;
   }
+  var sender = req.body.sender;
+  var token = req.body.token;
+  var fId = req.body.friendshipId;
+  storage.verifyToken(sender,token, function(success){
+    handleResult(success, res, function() {
+      storage.cancelFriendRequest(fId, sender, function(success) {
+        handleResult(success, res);
+      });
+    });
+  });
+});
 
-  function handleResult(result, res, cb) {
-    if(typeof result == "boolean") {
-      if(result) {
-        if(cb)
-          cb();
-        else
-          res.send({success: true});
-      }
+function badKeys(res, keys, req, missing) {
+  var error = {}
+  error.error = "ERROR_BAD_KEYS";
+  error.detail = `Parameter missing: ${missing}`
+  error.message = `Parameters for method "${req.url}": ${keys}`;
+  res.json(error);
+}
+
+function handleResult(result, res, cb) {
+  if(typeof result == "boolean") {
+    if(result) {
+      if(cb)
+        cb();
       else
-        res.send({success: false});
-    } else {
-      res.send(result)
+        res.send({success: true});
     }
+    else
+      res.send({success: false});
+  } else {
+    res.send(result)
   }
+}
 
-  function hasRequirements(req, res, keys, silent) {
-    for(var i = 0 ; i < keys.length; i++ ) {
-      if(!req.body[keys[i]]) {
-        badKeys(res, keys, req, keys[i]);
-        return false;
-      } else if(!silent) {
-        console.log(keys[i] + ") " + req.body[keys[i]]);
-      }
+function hasRequirements(req, res, keys, silent) {
+  for(var i = 0 ; i < keys.length; i++ ) {
+    if(!req.body[keys[i]]) {
+      badKeys(res, keys, req, keys[i]);
+      return false;
+    } else if(!silent) {
+      console.log(keys[i] + ") " + req.body[keys[i]]);
     }
-    return true;
   }
+  return true;
+}

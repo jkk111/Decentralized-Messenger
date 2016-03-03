@@ -61,7 +61,7 @@ module.exports = function(config) {
   }
 
   connector.userExists = function(user, cb) {
-    var q = "SELECT id FROM users WHERE username = ?";
+    var q = "SELECT id FROM users WHERE id = ?";
     conn.query(q, user, function(err, results) {
       if(err)
         return cb({error: "DATABASE_ERROR"});
@@ -124,13 +124,28 @@ module.exports = function(config) {
     if(confirm) {
       var q = "UPDATE friends SET pending = FALSE WHERE id = ? AND user2 = ?;";
     } else {
-      var q = "DELETE FROM friends where id = ? AND user2 = ?";
+      var q = "DELETE FROM friends where id = ? AND user2 = ? ";
     }
     conn.query(q, [fId, user], function(err, results) {
       if(err)
         return cb({error: "DATABASE_ERROR"})
-        return cb(results != undefined && results.changedRows > 0);
+      if(results != undefined && results.changedRows > 0)
+        return cb(true);
+      else
+        return cb({error: "FRIENDSHIP_NOT_EXISTS"});
     });
+  }
+
+  connector.cancelFriendRequest = function(Fid, user, cb) {
+    var q = "DELETE FROM friends WHERE pending = 1 AND id = ? AND user1 = ?;";
+    conn.query(q, [fId, user], function(err, results) {
+      if(err)
+        return cb({error: "DATABASE_ERROR"});
+      if(results != undefined && results.changedRows > 0)
+        return cb(true);
+      else
+        return cb({error: "FRIENDSHIP_NOT_PENDING"})
+    })
   }
 
   connector.register = function(user, pass, cb) {
