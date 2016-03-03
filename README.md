@@ -104,5 +104,14 @@ TODO
  }
  ```
 
+ `/search` Search for users on the server, ratelimited, returns id and username of user.
+ ```
+ {
+   token: "The token of the user",
+   sender: "The user id",
+   query: The user to search for
+ }
+ ```
+
 
 
