@@ -226,23 +226,23 @@ module.exports = function(app, storage) {
       });
     });
   });
-}
 
-app.post("/cancelFriend", function(req, res) {
-  if(!hasRequirements(req, res, REQUIREMENTS.cancelFriend)) {
-    return;
-  }
-  var sender = req.body.sender;
-  var token = req.body.token;
-  var fId = req.body.friendshipId;
-  storage.verifyToken(sender,token, function(success){
-    handleResult(success, res, function() {
-      storage.cancelFriendRequest(fId, sender, function(success) {
-        handleResult(success, res);
+  app.post("/cancelFriend", function(req, res) {
+    if(!hasRequirements(req, res, REQUIREMENTS.cancelFriend)) {
+      return;
+    }
+    var sender = req.body.sender;
+    var token = req.body.token;
+    var fId = req.body.friendshipId;
+    storage.verifyToken(sender,token, function(success){
+      handleResult(success, res, function() {
+        storage.cancelFriendRequest(fId, sender, function(success) {
+          handleResult(success, res);
+        });
       });
     });
   });
-});
+}
 
 function badKeys(res, keys, req, missing) {
   var error = {}
