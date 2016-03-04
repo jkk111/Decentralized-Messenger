@@ -9,7 +9,7 @@
 <link rel="import" href="/bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="/bower_components/paper-card/paper-card.html">
 <link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="/bower_components/iron-pages/iron-pages/html">
+<link rel="import" href="/bower_components/iron-pages/iron-pages.html">
 <link rel="improt" href="/bower_components/iron-icons/iron-icons.html">
 <link rel="improt" href="/bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
@@ -40,16 +40,55 @@
     <iron-ajax id="messageAjax" url="/message" method="Post" content-type="application/x-www-form-urlencoded"
                body="{{messageBody}}" handle-as="json" on-response="messageSentResponse">
     </iron-ajax>
+    <iron-ajax id="searchAjax" url="/search" method="POST" content-type="application/x-www-form-urlencoded"
+               body="{{searchBody}}" handle-as="json" on-response="searchResultsReceived">
+    </iron-ajax>
+    <iron-ajax id="addFriendAjax" url="/addFriend" method="POST" content-type="application/x-www-form-urlencoded"
+               body="{{addFriendBody}}" handle-as="json" on-response="friendAdded">
+    </iron-ajax>
     <paper-drawer-panel>
       <paper-header-panel drawer>
         <paper-toolbar>
           <div class="title">Friends</div>
         </paper-toolbar>
         <div id="drawerContent">
-          <paper-button>
-              <iron-icon icon="add"></iron-icon>
-              add a friend
-          </paper-button>
+          <template is="dom-if" if="{{!showFriendSearch}}">
+            <paper-button on-tap="toggleFriendSearch">
+                <iron-icon icon="add"></iron-icon>
+                add a friend
+            </paper-button>
+          </template>
+          <template is="dom-if" if="{{showFriendSearch}}">
+            <template is="dom-if" if="{{!hasFriendSearchResults}}">
+              <paper-input placeholder="username" value="{{searchQuery}}">
+              </paper-input>
+              <paper-button on-tap="doSearch">
+                Search
+              </paper-button>
+            </template>
+            <template is="dom-if" if="{{hasFriendSearchResults}}">
+              <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
+                <template is="dom-repeat" items="{{friendSearchResults}}">
+                  <template is="dom-if" if="{{!isSelf(userId, item.id)}}">
+                    <div userId="{{itemId}}">
+                      <paper-item on-tap="addFriend" user-id="{{item.id}}">
+                        {{item.username}}
+                      </paper-item>
+                    </div>
+                  </template>
+                </template>
+              </template>
+              <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
+                <div>No Results</div>
+                <paper-button on-tap="returnToSearch">
+                  Return
+                </paper-button>
+              </template>
+            </template>
+            <paper-button on-tap="toggleFriendSearch">
+              Close Search
+            </paper-button>
+          </template>
           <paper-menu selected="{{selectedContact}}">
             <template is="dom-repeat" items="{{friends}}">
               <paper-item>
@@ -68,21 +107,23 @@
           <div class="title">{{generateContactName(selectedContact)}}</div>
         </paper-toolbar>
         <div id="mainContent">
-          <template is="dom-if" if="{{noneSelected(selectedContact)}}">
-            <div>
-              <paper-card elevation="2" heading="A Decentralized Messenger" >
-                <div class="card-content">
-                  Welcome To A Decentralized Messenger.
-                  <br>Select a friend to view or send messages.
-                  <br><br>Enjoy.
-                </div>
-                <div class="card-actions">
-                  <paper-button>Got it</paper-button>
-                  <paper-button>FAQ</paper-button>
-                  <paper-button>Contact</paper-button>
-                </div>
-              </paper-card>
-            </div>
+          <template is="dom-if" if="{{showWelcome}}">
+            <template is="dom-if" if="{{noneSelected(selectedContact)}}">
+              <div>
+                <paper-card elevation="2" heading="A Decentralized Messenger" >
+                  <div class="card-content">
+                    Welcome To A Decentralized Messenger.
+                    <br>Select a friend to view or send messages.
+                    <br><br>Enjoy.
+                  </div>
+                  <div class="card-actions">
+                    <paper-button on-tap="hideWelcome">Got it</paper-button>
+                    <paper-button>FAQ</paper-button>
+                    <paper-button>Contact</paper-button>
+                  </div>
+                </paper-card>
+              </div>
+            </template>
           </template>
           <div>
             <paper-dialog-scrollable id="messages">
@@ -158,12 +199,65 @@
           type: Array,
           value: function() { return []; },
           notify: true
+        },
+        showFriendSearch: {
+          type: Boolean,
+          value: false
+        },
+        hasFriendSearchResults: {
+          type: Boolean,
+          value: false
+        },
+        searchQuery: {
+          type: String,
+          value: ""
+        },
+        searchBody: {
+          type: Object,
+          computed: 'computeSearchBody(userId, token, searchQuery)'
+        },
+        friendSearchResults: {
+          type: Object,
+          value: function() { return {}; }
+        },
+        showWelcome: {
+          type: Boolean,
+          value: true
         }
       },
       observers: [
         'friendsChanged(friends.*)',
         'friendsChanged(selectedContact)'
       ],
+      computeSearchBody: function(id, token, searchQuery) {
+        return { sender: id, token: token, query: searchQuery }
+      },
+      hideWelcome: function() {
+        setCookie("showWelcome", false, 365);
+        this.showWelcome = false;
+      },
+      friendSearchEmpty: function(results) {
+        return !(results === undefined || results.users === undefined || results.users.length < 1 ||
+                 results.users.length == 1 && this.isSelf(userId, results.users[0].id))
+      },
+      friendAdded: function(e, res) {
+        if(!res || !res.results) {
+          return;
+        } else {
+          console.log(res.results)
+        }
+      },
+      isSelf: function(self, user) {
+        return self == user;
+      },
+      addFriend: function(e) {
+        var friendId = e.srcElement.userId;
+        this.set("addFriendBody", this.computeAddFriendBody(this.userId, this.token, friendId, "lol"));
+        this.$.addFriendAjax.generateRequest();
+      },
+      computeAddFriendBody: function(id, token, friend, secret) {
+        return { sender: id, token: token, client: friend, secret: secret };
+      },
       friendsChanged: function(cr) {
         console.log(cr);
         this.set("currentMessages", this.computeCurrentMessages(this.selectedContact, this.friends));
@@ -177,6 +271,9 @@
       scrollTest: function() {
         console.log("it works")
         this.$.messagesContainer.scrollTop = this.$.messagesContainer.scrollHeight + 10000;
+      },
+      doSearch: function() {
+        this.$.searchAjax.generateRequest();
       },
       tokenChanged: function(newValue, old) {
         if(newValue != "") {
@@ -192,6 +289,15 @@
             this.$.pollajax.generateRequest();
           }
         }
+      },
+      searchResultsReceived: function(e, res) {
+        if(!res || !res.response || !res.response.users) {
+          return;
+        } else {
+          this.set("friendSearchResults", res.response.users);
+          this.hasFriendSearchResults = true;
+        }
+        console.log(res.response);
       },
       computeMessagesBody: function(token, id, h) {
         console.log(token + ":" + id);
@@ -289,6 +395,12 @@
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
       },
+      toggleFriendSearch: function() {
+        this.showFriendSearch = !this.showFriendSearch;
+        this.searchQuery = "";
+        this.set("friendSearchResults", {});
+        this.hasFriendSearchResults = false;
+      },
 
       containsError: function(e) {
         if(e && e.error) {
@@ -303,7 +415,34 @@
           case "ERROR_BAD_TOKEN":
             this.fire("relogin");
         }
+      },
+      attached: function() {
+        this.setVisibilityOfWelcome();
+      },
+      setVisibilityOfWelcome: function() {
+        var show = getCookie("showWelcome");
+        if(show !== undefined) {
+          this.showWelcome = false;
+        } else {
+          this.showWelcome = true;
+        }
       }
     })
+    function getCookie(cname) {
+      var name = cname + "=";
+      var ca = document.cookie.split(';');
+      for(var i=0; i<ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0)==' ') c = c.substring(1);
+          if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+      }
+      return undefined;
+    }
+    function setCookie(cname, cvalue, exdays) {
+      var d = new Date();
+      d.setTime(d.getTime() + (exdays*24*60*60*1000));
+      var expires = "expires="+d.toUTCString();
+      document.cookie = cname + "=" + cvalue + "; " + expires;
+    }
   </script>
 </dom-module>

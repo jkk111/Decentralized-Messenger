@@ -22,7 +22,6 @@ var REQUIREMENTS = {
 
 var rateLimiting = function(req, res, next) {
   if(!hasRequirements(req, res, REQUIREMENTS.basic, true)) {
-    res.send(400);
     return;
   }
   var sender = req.body.sender;
