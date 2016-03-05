@@ -46,6 +46,12 @@
     <iron-ajax id="addFriendAjax" url="/addFriend" method="POST" content-type="application/x-www-form-urlencoded"
                body="{{addFriendBody}}" handle-as="json" on-response="friendAdded">
     </iron-ajax>
+    <iron-ajax id="confirmFriendAjax" url="/confirmFriend" method="POST" content-type="application/x-www-form-urlencoded"
+               body="{{confirmFriendBody}}" handle-as="json" on-response="friendConfirmed">
+               </iron-ajax>
+    <iron-ajax id="cancelFriendAjax" url="/cancelFriend" method="POST" content-type="application/x-www-form-urlencoded"
+               body="{{cancelFriendBody}}" handle-as="json" on-response="requestCancelled">
+    </iron-ajax>
     <paper-drawer-panel>
       <paper-header-panel drawer>
         <paper-toolbar>
@@ -123,20 +129,31 @@
               </div>
             </template>
           </template>
-          <div>
-            <paper-dialog-scrollable id="messages">
-              <div id="messagesContainer">
-              <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
-                  <div>{{item.message}}</div>
+          <template is="dom-if" if="{{!isPending(selectedContact)}}">
+            <div>
+              <paper-dialog-scrollable id="messages">
+                <div id="messagesContainer">
+                <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
+                    <div>{{item.message}}</div>
+                </template>
+              </div>
+            </paper-dialog-scrollable>
+              <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
+                <div>
+                  <paper-input on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
+                </div>
               </template>
             </div>
-          </paper-dialog-scrollable>
-            <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
-              <div>
-                <paper-input on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
-              </div>
+          </template>
+          <template is="dom-if" if="{{isPending(selectedContact)}}">
+            <template is="dom-if" if="{{fromSelf(selectedContact)}}">
+              <div>Friend Request Pending</div>
+              <paper-button on-tap="cancelFriendRequest">Cancel Request</paper-button>
             </template>
-          </div>
+            <template is="dom-if" if="{{!fromSelf(selectedContact)}}">
+              <paper-button on-tap="acceptFriendRequest">Accept Friend Request</paper-button>
+            </template>
+          </template>
         </div>
       </paper-header-panel>
     </paper-drawer-panel>
@@ -218,6 +235,19 @@
           type: Object,
           value: function() { return {}; }
         },
+        confirmFriendRequest: {
+          type: Boolean
+        },
+        confirmFriendBody: {
+          type: Object,
+          value: function() { return {}; },
+          computed: 'computeConfirmFriendBody(userId, token, selectedContact, confirmFriendRequest)'
+        },
+        cancelFriendBody: {
+          type: Object,
+          value: function() { return {}; },
+          computed: 'computeCancelFriendBody(userId, token, selectedContact)'
+        },
         showWelcome: {
           type: Boolean,
           value: true
@@ -227,8 +257,15 @@
         'friendsChanged(friends.*)',
         'friendsChanged(selectedContact)'
       ],
+      computeConfirmFriendBody: function(userId, token, selectedContact, confirmFriendRequest) {
+        return { sender: userId, token: token, friendshipId: this.friends[selectedContact].friendshipId, response: confirmFriendRequest }
+      },
       computeSearchBody: function(id, token, searchQuery) {
         return { sender: id, token: token, query: searchQuery }
+      },
+      friendConfirmed: function(e, res) {
+        // this.$.confirmFriendAjax.generateRequest();
+        console.log(res.response);
       },
       hideWelcome: function() {
         setCookie("showWelcome", false, 365);
@@ -244,9 +281,31 @@
         } else {
           console.log(res.results)
         }
+        this.$.friendsajax.generateRequest();
+      },
+      isPending: function(friend) {
+        if(!this.friends)
+          return;
+        return this.friends[friend].pending;
       },
       isSelf: function(self, user) {
         return self == user;
+      },
+      notFriend: function(friend) {
+        for(var i = 0; i < this.friends.length; i++) {
+          if(this.friends[i].id == friend) {
+            return false;
+          }
+        }
+        return true;
+      },
+      computeCancelFriendBody: function(userId, token, friend) {
+        if(!this.friends || !this.friends[friend])
+          return;
+        return { sender: userId, token: token, friendshipId: this.friends[friend].friendshipId };
+      },
+      fromSelf: function(friend) {
+        return this.friends[friend].initiatedBySelf;
       },
       addFriend: function(e) {
         var friendId = e.srcElement.userId;
@@ -256,7 +315,20 @@
       computeAddFriendBody: function(id, token, friend, secret) {
         return { sender: id, token: token, client: friend, secret: secret };
       },
+      cancelFriendRequest: function() {
+        this.$.cancelFriendAjax.generateRequest();
+      },
+      acceptFriendRequest: function() {
+        this.confirmFriendRequest = false;
+        this.$.confirmFriendAjax.generateRequest();
+      },
+      rejectFriendRequest: function() {
+        this.confirmFriendRequest = true;
+        this.$.confirmFriendAjax.generateRequest();
+      },
       friendsChanged: function(cr) {
+        if(!this.currentMessages || !this.currentMessages.slice)
+          return;
         console.log(cr);
         this.set("currentMessages", this.computeCurrentMessages(this.selectedContact, this.friends));
         this.notifyPath("currentMessages", this.currentMessages.slice());
@@ -266,8 +338,13 @@
           return [];
         return friends[i].messages
       },
+      requestCancelled: function(e, res) {
+        console.log(res.response);
+      },
       scrollTest: function() {
         console.log("it works")
+        if(!this.$.messagesContainer)
+          return;
         this.$.messagesContainer.scrollTop = this.$.messagesContainer.scrollHeight + 10000;
       },
       doSearch: function() {

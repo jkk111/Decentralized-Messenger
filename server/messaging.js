@@ -15,7 +15,8 @@ var REQUIREMENTS = {
   addFriend: ["sender", "token", "client", "secret"],
   search: ["token", "sender", "query"],
   confirmFriend: ["sender", "token", "response", "friendshipId"],
-  received: ["sender", "token", "highest"]
+  received: ["sender", "token", "highest"],
+  cancelFriend: ["sender", "token", "friendshipId"]
 }
 
 

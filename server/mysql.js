@@ -111,6 +111,7 @@ module.exports = function(config) {
     pass = generateHash(pass);
     conn.query(q, [user, pass], function(err, results) {
       if(err) {
+        console.log(err);
         return cb({error: "DATABASE_ERROR"});
       }
       if(results && results.length > 0)
@@ -136,7 +137,7 @@ module.exports = function(config) {
     });
   }
 
-  connector.cancelFriendRequest = function(Fid, user, cb) {
+  connector.cancelFriendRequest = function(fId, user, cb) {
     var q = "DELETE FROM friends WHERE pending = 1 AND id = ? AND user1 = ?;";
     conn.query(q, [fId, user], function(err, results) {
       if(err)
@@ -229,12 +230,16 @@ module.exports = function(config) {
 
   connector.getFriends = function (sender, cb) {
     var q = "SELECT * FROM friends where user1 = ? OR user2 = ?";
+    console.log(sender);
     conn.query(q, [sender, sender], function(err, results) {
       if(err) {
         console.log(err);
         cb({error: "DATABASE_ERROR"});
       }
       else {
+        if(results.length == 0) {
+          cb({error: "ERROR_NO_FRIENDS"});
+        }
         getUsernames(results, sender, cb);
       }
     })
@@ -314,6 +319,7 @@ function generateToken(user, cb) {
 }
 
 function getUsernames(users, sender, cb) {
+  console.log(users + ":"+ sender)
   var ids = [];
   for(var i = 0 ; i < users.length; i++) {
     var user;
