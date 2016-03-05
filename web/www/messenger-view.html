@@ -59,35 +59,33 @@
             </paper-button>
           </template>
           <template is="dom-if" if="{{showFriendSearch}}">
-            <template is="dom-if" if="{{!hasFriendSearchResults}}">
-              <paper-input placeholder="username" value="{{searchQuery}}">
-              </paper-input>
-              <paper-button on-tap="doSearch">
-                Search
-              </paper-button>
-            </template>
-            <template is="dom-if" if="{{hasFriendSearchResults}}">
-              <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
-                <template is="dom-repeat" items="{{friendSearchResults}}">
-                  <template is="dom-if" if="{{!isSelf(userId, item.id)}}">
-                    <div userId="{{itemId}}">
-                      <paper-item on-tap="addFriend" user-id="{{item.id}}">
-                        {{item.username}}
-                      </paper-item>
-                    </div>
+            <paper-item>
+              <template is="dom-if" if="{{!hasFriendSearchResults}}">
+                <paper-input placeholder="username" value="{{searchQuery}}">
+                </paper-input>
+                <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
+              </template>
+              <template is="dom-if" if="{{hasFriendSearchResults}}">
+                <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
+                  <template is="dom-repeat" items="{{friendSearchResults}}">
+                    <template is="dom-if" if="{{!isSelf(userId, item.id)}}">
+                      <div userId="{{itemId}}">
+                        <paper-item on-tap="addFriend" user-id="{{item.id}}">
+                          {{item.username}}
+                        </paper-item>
+                      </div>
+                    </template>
                   </template>
                 </template>
+                <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
+                  <div>No Results</div>
+                  <paper-button on-tap="returnToSearch">
+                    Return
+                  </paper-button>
+                </template>
               </template>
-              <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
-                <div>No Results</div>
-                <paper-button on-tap="returnToSearch">
-                  Return
-                </paper-button>
-              </template>
-            </template>
-            <paper-button on-tap="toggleFriendSearch">
-              Close Search
-            </paper-button>
+              <paper-icon-button icon="close" title="close" on-tap="toggleFriendSearch"></paper-icon-button>
+            </paper-item>
           </template>
           <paper-menu selected="{{selectedContact}}">
             <template is="dom-repeat" items="{{friends}}">
