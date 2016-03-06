@@ -142,7 +142,8 @@ module.exports = function(config) {
     conn.query(q, [fId, user], function(err, results) {
       if(err)
         return cb({error: "DATABASE_ERROR"});
-      if(results != undefined && results.changedRows > 0)
+      console.log(results);
+      if(results != undefined && results.affectedRows > 0)
         return cb(true);
       else
         return cb({error: "FRIENDSHIP_NOT_PENDING"})
@@ -237,10 +238,23 @@ module.exports = function(config) {
         cb({error: "DATABASE_ERROR"});
       }
       else {
-        if(results.length == 0) {
-          cb({error: "ERROR_NO_FRIENDS"});
+        console.log(results);
+        console.log(results != undefined ? results.length : undefined);
+        if(results.length === 0) {
+          return cb({error: "ERROR_NO_FRIENDS"});
         }
         getUsernames(results, sender, cb);
+      }
+    })
+  }
+
+  connector.checkFriendship = function(user1, user2) {
+    var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? OR user1 = ? AND user2 = ?"
+    conn.query(q, [user1, user2, user2, user1] , function(err, results) {
+      if(err) {
+        return cb({error: "DATABASE_ERROR"});
+      } else {
+        return (results != undefined && results.length > 0);
       }
     })
   }
@@ -251,7 +265,7 @@ module.exports = function(config) {
       cb({error: "ERROR_ADD_SELF"});
       return;
     }
-    var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? OR user2 = ? AND user1 = ?"
+    var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? AND pending = 0 OR user2 = ? AND user1 = ? AND pending = 0";
     conn.query(q, [user1, user2, user2, user1], function(err, results) {
       if(err || ! results) {
         cb({ error: "DATABASE_ERROR"});

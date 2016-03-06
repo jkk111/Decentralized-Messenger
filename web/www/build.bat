@@ -1,0 +1,1 @@
+vulcanize dv_index.html > index.html

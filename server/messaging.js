@@ -219,9 +219,13 @@ module.exports = function(app, storage) {
     var message = req.body.message;
     var token = req.body.token;
     storage.verifyToken(sender, token, function(success) {
-      handleResult(success, res, function() {
-        storage.addMessage(sender, dest, message, function(success) {
-          handleResult(success, res);
+      handleResult(success, function() {
+        storage.checkFriendship(sender, dest, function(success) {
+          handleResult(success, res, function() {
+            storage.addMessage(sender, dest, message, function(success) {
+              handleResult(success, res);
+            });
+          });
         });
       });
     });

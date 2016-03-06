@@ -1,18 +1,18 @@
-<link rel="import" href="/bower_components/polymer/polymer.html">
-<link rel="import" href="/bower_components/paper-drawer-panel/paper-drawer-panel.html">
-<link rel="import" href="/bower_components/paper-header-panel/paper-header-panel.html">
-<link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html">
-<link rel="import" href="/bower_components/paper-menu/paper-menu.html">
-<link rel="import" href="/bower_components/paper-input/paper-input.html">
-<link rel="import" href="/bower_components/paper-item/paper-item.html">
-<link rel="import" href="/bower_components/paper-material/paper-material.html">
-<link rel="import" href="/bower_components/paper-input/paper-textarea.html">
-<link rel="import" href="/bower_components/paper-card/paper-card.html">
-<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="/bower_components/iron-pages/iron-pages.html">
-<link rel="improt" href="/bower_components/iron-icons/iron-icons.html">
-<link rel="improt" href="/bower_components/iron-ajax/iron-ajax.html">
-<link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="bower_components/polymer/polymer.html">
+<link rel="import" href="bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="bower_components/paper-header-panel/paper-header-panel.html">
+<link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="bower_components/paper-input/paper-input.html">
+<link rel="import" href="bower_components/paper-item/paper-item.html">
+<link rel="import" href="bower_components/paper-material/paper-material.html">
+<link rel="import" href="bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="bower_components/paper-card/paper-card.html">
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="bower_components/iron-pages/iron-pages.html">
+<link rel="improt" href="bower_components/iron-icons/iron-icons.html">
+<link rel="improt" href="bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="contact-element.html">
 
 <dom-module id="messenger-view">
@@ -73,14 +73,12 @@
               </template>
               <template is="dom-if" if="{{hasFriendSearchResults}}">
                 <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
-                  <template is="dom-repeat" items="{{friendSearchResults}}">
-                    <template is="dom-if" if="{{!isSelf(userId, item.id)}}">
-                      <div userId="{{itemId}}">
-                        <paper-item on-tap="addFriend" user-id="{{item.id}}">
-                          {{item.username}}
-                        </paper-item>
-                      </div>
-                    </template>
+                  <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, userId, friends)}}">
+                    <div userId="{{itemId}}">
+                      <paper-item on-tap="addFriend" user-id="{{item.id}}">
+                        {{item.username}}
+                      </paper-item>
+                    </div>
                   </template>
                 </template>
                 <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
@@ -90,7 +88,7 @@
                   </paper-button>
                 </template>
               </template>
-              <paper-icon-button icon="close" title="close" on-tap="toggleFriendSearch"></paper-icon-button>
+              <paper-button icon="close" title="close" on-tap="toggleFriendSearch">Close</paper-button>
             </paper-item>
           </template>
           <paper-menu selected="{{selectedContact}}">
@@ -272,8 +270,18 @@
         this.showWelcome = false;
       },
       friendSearchEmpty: function(results) {
+        console.log(!(results === undefined || results.users === undefined || results.users.length < 1 ||
+                 results.users.length == 1 && this.isSelf(userId, results.users[0].id)));
         return !(results === undefined || results.users === undefined || results.users.length < 1 ||
                  results.users.length == 1 && this.isSelf(userId, results.users[0].id))
+      },
+      getValidSearchFriends: function(search, friends, self) {
+        var valid = [];
+        for(var i = 0 ; i < search.length; i++) {
+          if(isValidSearchFriend(self, friends, search[i].id))
+            valid.push(search[i])
+        }
+        return valid;
       },
       friendAdded: function(e, res) {
         if(!res || !res.results) {
@@ -290,6 +298,13 @@
       },
       isSelf: function(self, user) {
         return self == user;
+      },
+      isValidSearchFriend: function(self, friends, user) {
+        for(var i = 0; i < (friends || []).length; i++) {
+          if(user == friends[i].id)
+            return false;
+        }
+        return !this.isSelf(self, user);
       },
       notFriend: function(friend) {
         for(var i = 0; i < this.friends.length; i++) {
@@ -327,10 +342,10 @@
         this.$.confirmFriendAjax.generateRequest();
       },
       friendsChanged: function(cr) {
-        if(!this.currentMessages || !this.currentMessages.slice)
+        if(!this.currentMessages || !this.currentMessages.slice || this.currentMessages == undefined)
           return;
         console.log(cr);
-        this.set("currentMessages", this.computeCurrentMessages(this.selectedContact, this.friends));
+        this.set("currentMessages", this.computeCurrentMessages(this.selectedContact, this.friends) || []);
         this.notifyPath("currentMessages", this.currentMessages.slice());
       },
       computeCurrentMessages: function(i, friends) {
@@ -461,7 +476,7 @@
         return { sender: this.userId, dest: this.friends[this.selectedContact].id, message: this.message, token: this.token }
       },
       friendsResponse: function(e, res) {
-        if(res.response) {
+        if(res.response && !res.response.error) {
           var tmp = res.response;
           console.log(tmp);
           this.friends = tmp;

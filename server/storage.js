@@ -49,5 +49,7 @@ module.exports = function(config) {
 
   this.cancelFriendRequest = storageEngine.cancelFriendRequest;
 
+  this.checkFriendship = storageEngine.checkFriendship;
+
   return this;
 }
