@@ -219,10 +219,13 @@ module.exports = function(app, storage) {
     var message = req.body.message;
     var token = req.body.token;
     storage.verifyToken(sender, token, function(success) {
-      handleResult(success, function() {
+      console.log("verified: %s", success)
+      handleResult(success, res, function() {
         storage.checkFriendship(sender, dest, function(success) {
+          console.log("friends: %s", success)
           handleResult(success, res, function() {
             storage.addMessage(sender, dest, message, function(success) {
+              console.log("message added: %s", success)
               handleResult(success, res);
             });
           });

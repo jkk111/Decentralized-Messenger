@@ -32,7 +32,7 @@
   </style>
   <template>
     <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded"
-               body="{{messagesBody}}" handle-as="json" on-response="pollResponse">
+               body="{{messagesBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponse">
                </iron-ajax>
     <iron-ajax id="friendsajax" url="/getFriends" method="Post" content-type="application/x-www-form-urlencoded"
                body="{{messagesBody}}" handle-as="json" on-response="friendsResponse">
@@ -415,7 +415,7 @@
         return false;
       },
       pollResponse: function(e, res) {
-        if(this.containsError(res.response)) {
+        if(!res || !res.response || this.containsError(res.response)) {
           return;
         }
         console.log(res.response);

@@ -248,13 +248,13 @@ module.exports = function(config) {
     })
   }
 
-  connector.checkFriendship = function(user1, user2) {
+  connector.checkFriendship = function(user1, user2, cb) {
     var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? OR user1 = ? AND user2 = ?"
     conn.query(q, [user1, user2, user2, user1] , function(err, results) {
       if(err) {
         return cb({error: "DATABASE_ERROR"});
       } else {
-        return (results != undefined && results.length > 0);
+        return cb(results != undefined && results.length > 0);
       }
     })
   }
