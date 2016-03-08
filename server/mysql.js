@@ -202,8 +202,8 @@ module.exports = function(config) {
   }
 
   connector.getMessages = function(sender, highest, cb) {
-    var q = "SELECT id, sender, message FROM messages WHERE recipient = ? AND id > ?";
-    conn.query(q, [sender, highest], function(err, results) {
+    var q = "SELECT id, sender, message, recipient FROM messages WHERE recipient = ? AND id > ? OR sender = ? AND id > ?";
+    conn.query(q, [sender, highest, sender, highest], function(err, results) {
       if(err) {
         console.log(err);
         cb({error: "DATABASE_ERROR"});
@@ -216,7 +216,13 @@ module.exports = function(config) {
           var item = results[i];
           if(!messages[item.sender])
             messages[item.sender] = [];
-          messages[item.sender].push({id: item.id, message: item.message});
+          if(item.sender != sender)
+            messages[item.sender].push({id: item.id, message: item.message, fromSelf: false});
+          else {
+            if(!messages[item.recipient])
+              messages[item.recipient] = [];
+            messages[item.recipient].push({id: item.id, message: item.message, fromSelf: true});
+          }
         }
       }
       else {

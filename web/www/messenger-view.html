@@ -29,6 +29,13 @@
     paper-toolbar {
       background-color: #4CAF50;
     };
+    .searchFriend {
+      cursor: pointer;
+    }
+    .selfMessage {
+      background-color: #eee;
+    }
+
   </style>
   <template>
     <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded"
@@ -65,7 +72,6 @@
             </paper-button>
           </template>
           <template is="dom-if" if="{{showFriendSearch}}">
-            <paper-item>
               <template is="dom-if" if="{{!hasFriendSearchResults}}">
                 <paper-input placeholder="username" value="{{searchQuery}}">
                 </paper-input>
@@ -73,9 +79,9 @@
               </template>
               <template is="dom-if" if="{{hasFriendSearchResults}}">
                 <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
-                  <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, userId, friends)}}">
+                  <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, friends, userId)}}">
                     <div userId="{{itemId}}">
-                      <paper-item on-tap="addFriend" user-id="{{item.id}}">
+                      <paper-item on-tap="addFriend" user-id="{{item.id}}" class="searchFriend">
                         {{item.username}}
                       </paper-item>
                     </div>
@@ -89,7 +95,6 @@
                 </template>
               </template>
               <paper-button icon="close" title="close" on-tap="toggleFriendSearch">Close</paper-button>
-            </paper-item>
           </template>
           <paper-menu selected="{{selectedContact}}">
             <template is="dom-repeat" items="{{friends}}">
@@ -109,8 +114,8 @@
           <div class="title">{{generateContactName(selectedContact)}}</div>
         </paper-toolbar>
         <div id="mainContent">
-          <template is="dom-if" if="{{showWelcome}}">
-            <template is="dom-if" if="{{noneSelected(selectedContact)}}">
+          <template is="dom-if" if="{{noneSelected(selectedContact)}}">
+            <template is="dom-if" if="{{showWelcome}}">
               <div>
                 <paper-card elevation="2" heading="A Decentralized Messenger" >
                   <div class="card-content">
@@ -126,13 +131,21 @@
                 </paper-card>
               </div>
             </template>
+            <template is="dom-if" if="{{!showWelcome}}">
+              Select a conversation on the left!
+            </template>
           </template>
           <template is="dom-if" if="{{!isPending(selectedContact)}}">
             <div>
               <paper-dialog-scrollable id="messages">
                 <div id="messagesContainer">
                 <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
-                    <div>{{item.message}}</div>
+                  <template is="dom-if" if="{{item.fromSelf}}">
+                    <div class="selfMessage">{{item.message}}</div>
+                  </template>
+                  <template is="dom-if" if="{{!item.fromSelf}}">
+                    <div class="friendMessage">{{item.message}}</div>
+                  </template>
                 </template>
               </div>
             </paper-dialog-scrollable>
@@ -170,11 +183,11 @@
         },
         MAX_POLL_TIME: {
           type: Number,
-          value: 5000 // 120 seconds
+          value: 1000 // 1 second
         },
         pollTime: {
           type: Number,
-          value: 1000
+          value: 100
         },
         polling: {
           type: Boolean,
@@ -264,6 +277,7 @@
       friendConfirmed: function(e, res) {
         // this.$.confirmFriendAjax.generateRequest();
         console.log(res.response);
+        this.$.friendsajax.generateRequest();
       },
       hideWelcome: function() {
         setCookie("showWelcome", false, 365);
@@ -276,15 +290,18 @@
                  results.users.length == 1 && this.isSelf(userId, results.users[0].id))
       },
       getValidSearchFriends: function(search, friends, self) {
+        console.log("==========================")
+        console.log(search);
+        console.log("==========================")
         var valid = [];
         for(var i = 0 ; i < search.length; i++) {
-          if(isValidSearchFriend(self, friends, search[i].id))
+          if(this.isValidSearchFriend(self, friends, search[i].id))
             valid.push(search[i])
         }
         return valid;
       },
       friendAdded: function(e, res) {
-        if(!res || !res.results) {
+        if(!res || !res.response) {
           return;
         } else {
           console.log(res.results)
@@ -292,7 +309,7 @@
         this.$.friendsajax.generateRequest();
       },
       isPending: function(friend) {
-        if(!this.friends)
+        if(!this.friends || friend < 0)
           return;
         return this.friends[friend].pending;
       },
@@ -320,18 +337,27 @@
         return { sender: userId, token: token, friendshipId: this.friends[friend].friendshipId };
       },
       fromSelf: function(friend) {
+        if(friend < 0)
+          return;
         return this.friends[friend].initiatedBySelf;
       },
       addFriend: function(e) {
         var friendId = e.srcElement.userId;
         this.set("addFriendBody", this.computeAddFriendBody(this.userId, this.token, friendId, "lol"));
         this.$.addFriendAjax.generateRequest();
+        this.returnToSearch();
       },
       computeAddFriendBody: function(id, token, friend, secret) {
         return { sender: id, token: token, client: friend, secret: secret };
       },
+      returnToSearch: function() {
+        this.set("friendSearchResults", []);
+        this.hasFriendSearchResults = false;
+        this.showFriendSearch = false;
+      },
       cancelFriendRequest: function() {
         this.$.cancelFriendAjax.generateRequest();
+        this.selectedContact = -1;
       },
       acceptFriendRequest: function() {
         this.confirmFriendRequest = false;
@@ -355,6 +381,7 @@
       },
       requestCancelled: function(e, res) {
         console.log(res.response);
+        this.$.friendsajax.generateRequest();
       },
       scrollTest: function() {
         console.log("it works")
@@ -410,9 +437,17 @@
         return this.getSelectedFriend(friend).name;
       },
       noneSelected: function(friend) {
-        if (friend < 0)
-          return true;
-        return false;
+        return friend < 0;
+      },
+      encrypt: function(str) {
+        var encStr = "";
+
+        return encStr;
+      },
+      decrypt: function(str) {
+        var decStr = "";
+
+        return decStr;
       },
       pollResponse: function(e, res) {
         if(!res || !res.response || this.containsError(res.response)) {
@@ -430,7 +465,7 @@
           this.pollTime = Math.min(this.pollTime * 2, this.MAX_POLL_TIME)
         } else {
           console.log("Resetting wait time");
-          this.pollTime = 1000;
+          this.pollTime = 100;
           this.addMessagesToFriends(res.response);
         }
         var self = this;
@@ -479,7 +514,9 @@
         if(res.response && !res.response.error) {
           var tmp = res.response;
           console.log(tmp);
-          this.friends = tmp;
+          this.set("friends", tmp || []);
+        } else if (res.response && res.response.error === "ERROR_NO_FRIENDS") {
+          this.set("friends", []);
         }
       },
       loggedIn: function() {
