@@ -18631,6 +18631,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       acceptFriendRequest: function() {
         this.confirmFriendRequest = false;
         this.$.confirmFriendAjax.generateRequest();
+        this.$.friendsajax.generateRequest();
       },
       rejectFriendRequest: function() {
         this.confirmFriendRequest = true;
@@ -18673,6 +18674,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             console.log("polling")
             this.polling = true;
             this.$.pollajax.generateRequest();
+            this.$.friendsajax.generateRequest();
           }
         }
       },
