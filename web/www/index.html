@@ -18310,7 +18310,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     };
   </style>
   <template>
-    <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="pollResponse">
+    <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponse">
                </iron-ajax>
     <iron-ajax id="friendsajax" url="/getFriends" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="friendsResponse">
                </iron-ajax>
@@ -18332,7 +18332,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <div id="drawerContent">
           <template is="dom-if" if="{{!showFriendSearch}}">
             <paper-button on-tap="toggleFriendSearch">
-                <iron-icon icon="add"></iron-icon>
+                <iron-icon icon="social:person-add"></iron-icon>
                 add a friend
             </paper-button>
           </template>
@@ -18684,7 +18684,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return false;
       },
       pollResponse: function(e, res) {
-        if(this.containsError(res.response)) {
+        if(!res || !res.response || this.containsError(res.response)) {
           return;
         }
         console.log(res.response);
