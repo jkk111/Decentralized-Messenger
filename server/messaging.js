@@ -80,6 +80,7 @@ module.exports = function(app, storage) {
         storage.register(user, password, function(success) {
           handleResult(success, res, function() {
             storage.login(user, password, function(success) {
+              console.log(success);
               handleResult(success, res);
             });
           });

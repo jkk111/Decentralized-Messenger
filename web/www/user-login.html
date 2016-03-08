@@ -176,10 +176,10 @@
       },
 
       registered: function(e, response) {
-        if(!response)
+        if(!response || ! response.response)
           return;
         if(response.response.success)
-          this.goToMessenger(response.response.id);
+          this.goToMessenger(response.response.id, response.response.token);
       },
 
       loggedIn: function(e, response) {
