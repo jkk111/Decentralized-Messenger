@@ -209,7 +209,8 @@
         // Generate keypair
         var enc = new JSEncrypt({default_key_size: 2048});
         enc.getKey();
-        console.log(enc.getPrivateKey())
+        this.privateKey = enc.getPrivateKey();
+        this.publicKey = enc.getPublicKey();
         this.$.registerAjax.generateRequest();
       },
 
