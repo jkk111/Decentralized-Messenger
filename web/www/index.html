@@ -17391,6 +17391,2655 @@ The complete set of contributors may be found at http://polymer.github.io/CONTRI
 Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 --><script>
+
+/**
+Polymer.IronFitBehavior fits an element in another element using `max-height` and `max-width`, and
+optionally centers it in the window or another element.
+
+The element will only be sized and/or positioned if it has not already been sized and/or positioned
+by CSS.
+
+CSS properties               | Action
+-----------------------------|-------------------------------------------
+`position` set               | Element is not centered horizontally or vertically
+`top` or `bottom` set        | Element is not vertically centered
+`left` or `right` set        | Element is not horizontally centered
+`max-height` or `height` set | Element respects `max-height` or `height`
+`max-width` or `width` set   | Element respects `max-width` or `width`
+
+@demo demo/index.html
+@polymerBehavior
+*/
+
+  Polymer.IronFitBehavior = {
+
+    properties: {
+
+      /**
+       * The element that will receive a `max-height`/`width`. By default it is the same as `this`,
+       * but it can be set to a child element. This is useful, for example, for implementing a
+       * scrolling region inside the element.
+       * @type {!Element}
+       */
+      sizingTarget: {
+        type: Object,
+        value: function() {
+          return this;
+        }
+      },
+
+      /**
+       * The element to fit `this` into.
+       */
+      fitInto: {
+        type: Object,
+        value: window
+      },
+
+      /**
+       * Set to true to auto-fit on attach.
+       */
+      autoFitOnAttach: {
+        type: Boolean,
+        value: false
+      },
+
+      /** @type {?Object} */
+      _fitInfo: {
+        type: Object
+      }
+
+    },
+
+    get _fitWidth() {
+      var fitWidth;
+      if (this.fitInto === window) {
+        fitWidth = this.fitInto.innerWidth;
+      } else {
+        fitWidth = this.fitInto.getBoundingClientRect().width;
+      }
+      return fitWidth;
+    },
+
+    get _fitHeight() {
+      var fitHeight;
+      if (this.fitInto === window) {
+        fitHeight = this.fitInto.innerHeight;
+      } else {
+        fitHeight = this.fitInto.getBoundingClientRect().height;
+      }
+      return fitHeight;
+    },
+
+    get _fitLeft() {
+      var fitLeft;
+      if (this.fitInto === window) {
+        fitLeft = 0;
+      } else {
+        fitLeft = this.fitInto.getBoundingClientRect().left;
+      }
+      return fitLeft;
+    },
+
+    get _fitTop() {
+      var fitTop;
+      if (this.fitInto === window) {
+        fitTop = 0;
+      } else {
+        fitTop = this.fitInto.getBoundingClientRect().top;
+      }
+      return fitTop;
+    },
+
+    attached: function() {
+      if (this.autoFitOnAttach) {
+        if (window.getComputedStyle(this).display === 'none') {
+          setTimeout(function() {
+            this.fit();
+          }.bind(this));
+        } else {
+          this.fit();
+        }
+      }
+    },
+
+    /**
+     * Fits and optionally centers the element into the window, or `fitInfo` if specified.
+     */
+    fit: function() {
+      this._discoverInfo();
+      this.constrain();
+      this.center();
+    },
+
+    /**
+     * Memoize information needed to position and size the target element.
+     */
+    _discoverInfo: function() {
+      if (this._fitInfo) {
+        return;
+      }
+      var target = window.getComputedStyle(this);
+      var sizer = window.getComputedStyle(this.sizingTarget);
+      this._fitInfo = {
+        inlineStyle: {
+          top: this.style.top || '',
+          left: this.style.left || ''
+        },
+        positionedBy: {
+          vertically: target.top !== 'auto' ? 'top' : (target.bottom !== 'auto' ?
+            'bottom' : null),
+          horizontally: target.left !== 'auto' ? 'left' : (target.right !== 'auto' ?
+            'right' : null),
+          css: target.position
+        },
+        sizedBy: {
+          height: sizer.maxHeight !== 'none',
+          width: sizer.maxWidth !== 'none'
+        },
+        margin: {
+          top: parseInt(target.marginTop, 10) || 0,
+          right: parseInt(target.marginRight, 10) || 0,
+          bottom: parseInt(target.marginBottom, 10) || 0,
+          left: parseInt(target.marginLeft, 10) || 0
+        }
+      };
+    },
+
+    /**
+     * Resets the target element's position and size constraints, and clear
+     * the memoized data.
+     */
+    resetFit: function() {
+      if (!this._fitInfo || !this._fitInfo.sizedBy.height) {
+        this.sizingTarget.style.maxHeight = '';
+        this.style.top = this._fitInfo ? this._fitInfo.inlineStyle.top : '';
+      }
+      if (!this._fitInfo || !this._fitInfo.sizedBy.width) {
+        this.sizingTarget.style.maxWidth = '';
+        this.style.left = this._fitInfo ? this._fitInfo.inlineStyle.left : '';
+      }
+      if (this._fitInfo) {
+        this.style.position = this._fitInfo.positionedBy.css;
+      }
+      this._fitInfo = null;
+    },
+
+    /**
+     * Equivalent to calling `resetFit()` and `fit()`. Useful to call this after the element,
+     * the window, or the `fitInfo` element has been resized.
+     */
+    refit: function() {
+      this.resetFit();
+      this.fit();
+    },
+
+    /**
+     * Constrains the size of the element to the window or `fitInfo` by setting `max-height`
+     * and/or `max-width`.
+     */
+    constrain: function() {
+      var info = this._fitInfo;
+      // position at (0px, 0px) if not already positioned, so we can measure the natural size.
+      if (!this._fitInfo.positionedBy.vertically) {
+        this.style.top = '0px';
+      }
+      if (!this._fitInfo.positionedBy.horizontally) {
+        this.style.left = '0px';
+      }
+      if (!this._fitInfo.positionedBy.vertically || !this._fitInfo.positionedBy.horizontally) {
+        // need position:fixed to properly size the element
+        this.style.position = 'fixed';
+      }
+      // need border-box for margin/padding
+      this.sizingTarget.style.boxSizing = 'border-box';
+      // constrain the width and height if not already set
+      var rect = this.getBoundingClientRect();
+      if (!info.sizedBy.height) {
+        this._sizeDimension(rect, info.positionedBy.vertically, 'top', 'bottom', 'Height');
+      }
+      if (!info.sizedBy.width) {
+        this._sizeDimension(rect, info.positionedBy.horizontally, 'left', 'right', 'Width');
+      }
+    },
+
+    _sizeDimension: function(rect, positionedBy, start, end, extent) {
+      var info = this._fitInfo;
+      var max = extent === 'Width' ? this._fitWidth : this._fitHeight;
+      var flip = (positionedBy === end);
+      var offset = flip ? max - rect[end] : rect[start];
+      var margin = info.margin[flip ? start : end];
+      var offsetExtent = 'offset' + extent;
+      var sizingOffset = this[offsetExtent] - this.sizingTarget[offsetExtent];
+      this.sizingTarget.style['max' + extent] = (max - margin - offset - sizingOffset) + 'px';
+    },
+
+    /**
+     * Centers horizontally and vertically if not already positioned. This also sets
+     * `position:fixed`.
+     */
+    center: function() {
+      if (!this._fitInfo.positionedBy.vertically || !this._fitInfo.positionedBy.horizontally) {
+        // need position:fixed to center
+        this.style.position = 'fixed';
+      }
+      if (!this._fitInfo.positionedBy.vertically) {
+        var top = (this._fitHeight - this.offsetHeight) / 2 + this._fitTop;
+        top -= this._fitInfo.margin.top;
+        this.style.top = top + 'px';
+      }
+      if (!this._fitInfo.positionedBy.horizontally) {
+        var left = (this._fitWidth - this.offsetWidth) / 2 + this._fitLeft;
+        left -= this._fitInfo.margin.left;
+        this.style.left = left + 'px';
+      }
+    }
+
+  };
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+
+  /**
+   * @struct
+   * @constructor
+   */
+  Polymer.IronOverlayManagerClass = function() {
+    this._overlays = [];
+    /**
+     * iframes have a default z-index of 100, so this default should be at least
+     * that.
+     * @private {number}
+     */
+    this._minimumZ = 101;
+
+    this._backdrops = [];
+
+    this._backdropElement = null;
+    Object.defineProperty(this, 'backdropElement', {
+      get: function() {
+        if (!this._backdropElement) {
+          this._backdropElement = document.createElement('iron-overlay-backdrop');
+        }
+        return this._backdropElement;
+      }.bind(this)
+    });
+  }
+
+  Polymer.IronOverlayManagerClass.prototype._applyOverlayZ = function(overlay, aboveZ) {
+    this._setZ(overlay, aboveZ + 2);
+  };
+
+  Polymer.IronOverlayManagerClass.prototype._setZ = function(element, z) {
+    element.style.zIndex = z;
+  };
+
+  /**
+   * track overlays for z-index and focus managemant
+   */
+  Polymer.IronOverlayManagerClass.prototype.addOverlay = function(overlay) {
+    var minimumZ = Math.max(this.currentOverlayZ(), this._minimumZ);
+    this._overlays.push(overlay);
+    var newZ = this.currentOverlayZ();
+    if (newZ <= minimumZ) {
+      this._applyOverlayZ(overlay, minimumZ);
+    }
+  };
+
+  Polymer.IronOverlayManagerClass.prototype.removeOverlay = function(overlay) {
+    var i = this._overlays.indexOf(overlay);
+    if (i >= 0) {
+      this._overlays.splice(i, 1);
+      this._setZ(overlay, '');
+    }
+  };
+
+  Polymer.IronOverlayManagerClass.prototype.currentOverlay = function() {
+    var i = this._overlays.length - 1;
+    while (this._overlays[i] && !this._overlays[i].opened) {
+      --i;
+    }
+    return this._overlays[i];
+  };
+
+  Polymer.IronOverlayManagerClass.prototype.currentOverlayZ = function() {
+    return this._getOverlayZ(this.currentOverlay());
+  };
+
+  /**
+   * Ensures that the minimum z-index of new overlays is at least `minimumZ`.
+   * This does not effect the z-index of any existing overlays.
+   *
+   * @param {number} minimumZ
+   */
+  Polymer.IronOverlayManagerClass.prototype.ensureMinimumZ = function(minimumZ) {
+    this._minimumZ = Math.max(this._minimumZ, minimumZ);
+  };
+
+  Polymer.IronOverlayManagerClass.prototype.focusOverlay = function() {
+    var current = this.currentOverlay();
+    // We have to be careful to focus the next overlay _after_ any current
+    // transitions are complete (due to the state being toggled prior to the
+    // transition). Otherwise, we risk infinite recursion when a transitioning
+    // (closed) overlay becomes the current overlay.
+    //
+    // NOTE: We make the assumption that any overlay that completes a transition
+    // will call into focusOverlay to kick the process back off. Currently:
+    // transitionend -> _applyFocus -> focusOverlay.
+    if (current && !current.transitioning) {
+      current._applyFocus();
+    }
+  };
+
+  Polymer.IronOverlayManagerClass.prototype.trackBackdrop = function(element) {
+    // backdrops contains the overlays with a backdrop that are currently
+    // visible
+    var index = this._backdrops.indexOf(element);
+    if (element.opened && element.withBackdrop) {
+      // no duplicates
+      if (index === -1) {
+        this._backdrops.push(element);
+      }
+    } else if (index >= 0) {
+      this._backdrops.splice(index, 1);
+    }
+  };
+
+  Polymer.IronOverlayManagerClass.prototype.getBackdrops = function() {
+    return this._backdrops;
+  };
+
+  /**
+   * Returns the z-index for the backdrop.
+   */
+  Polymer.IronOverlayManagerClass.prototype.backdropZ = function() {
+    return this._getOverlayZ(this._overlayWithBackdrop()) - 1;
+  };
+
+  /**
+   * Returns the first opened overlay that has a backdrop.
+   */
+  Polymer.IronOverlayManagerClass.prototype._overlayWithBackdrop = function() {
+    for (var i = 0; i < this._overlays.length; i++) {
+      if (this._overlays[i].opened && this._overlays[i].withBackdrop) {
+        return this._overlays[i];
+      }
+    }
+  };
+
+  /**
+   * Calculates the minimum z-index for the overlay.
+   */
+  Polymer.IronOverlayManagerClass.prototype._getOverlayZ = function(overlay) {
+    var z = this._minimumZ;
+    if (overlay) {
+      var z1 = Number(window.getComputedStyle(overlay).zIndex);
+      // Check if is a number
+      // Number.isNaN not supported in IE 10+
+      if (z1 === z1) {
+        z = z1;
+      }
+    }
+    return z;
+  };
+
+  Polymer.IronOverlayManager = new Polymer.IronOverlayManagerClass();
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+`iron-overlay-backdrop` is a backdrop used by `Polymer.IronOverlayBehavior`. It should be a
+singleton.
+
+### Styling
+
+The following custom properties and mixins are available for styling.
+
+Custom property | Description | Default
+-------------------------------------------|------------------------|---------
+`--iron-overlay-backdrop-background-color` | Backdrop background color                                     | #000
+`--iron-overlay-backdrop-opacity`          | Backdrop opacity                                              | 0.6
+`--iron-overlay-backdrop`                  | Mixin applied to `iron-overlay-backdrop`.                      | {}
+`--iron-overlay-backdrop-opened`           | Mixin applied to `iron-overlay-backdrop` when it is displayed | {}
+-->
+
+<dom-module id="iron-overlay-backdrop" assetpath="bower_components/iron-overlay-behavior/">
+
+  <style>
+
+    :host {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--iron-overlay-backdrop-background-color, #000);
+      opacity: 0;
+      transition: opacity 0.2s;
+
+      @apply(--iron-overlay-backdrop);
+    }
+
+    :host([opened]) {
+      opacity: var(--iron-overlay-backdrop-opacity, 0.6);
+
+      @apply(--iron-overlay-backdrop-opened);
+    }
+
+  </style>
+
+  <template>
+    <content></content>
+  </template>
+
+</dom-module>
+
+<script>
+
+(function() {
+
+  Polymer({
+
+    is: 'iron-overlay-backdrop',
+
+    properties: {
+
+      /**
+       * Returns true if the backdrop is opened.
+       */
+      opened: {
+        readOnly: true,
+        reflectToAttribute: true,
+        type: Boolean,
+        value: false
+      },
+
+      _manager: {
+        type: Object,
+        value: Polymer.IronOverlayManager
+      }
+
+    },
+
+    listeners: {
+      'transitionend' : '_onTransitionend'
+    },
+
+    /**
+     * Appends the backdrop to document body and sets its `z-index` to be below the latest overlay.
+     */
+    prepare: function() {
+      // Always update z-index
+      this.style.zIndex = this._manager.backdropZ();
+      if (!this.parentNode) {
+        Polymer.dom(document.body).appendChild(this);
+      }
+    },
+
+    /**
+     * Shows the backdrop if needed.
+     */
+    open: function() {
+      // only need to make the backdrop visible if this is called by the first overlay with a backdrop
+      if (this._manager.getBackdrops().length < 2) {
+        this._setOpened(true);
+      }
+    },
+
+    /**
+     * Hides the backdrop if needed.
+     */
+    close: function() {
+      // Always update z-index
+      this.style.zIndex = this._manager.backdropZ();
+      // close only if no element with backdrop is left
+      if (this._manager.getBackdrops().length === 0) {
+        // Read style before setting opened.
+        var cs = getComputedStyle(this);
+        var noAnimation = (cs.transitionDuration === '0s' || cs.opacity == 0);
+        this._setOpened(false);
+        // In case of no animations, complete
+        if (noAnimation) {
+          this.complete();
+        }
+      }
+    },
+
+    /**
+     * Removes the backdrop from document body if needed.
+     */
+    complete: function() {
+      // only remove the backdrop if there are no more overlays with backdrops
+      if (this._manager.getBackdrops().length === 0 && this.parentNode) {
+        Polymer.dom(this.parentNode).removeChild(this);
+      }
+    },
+
+    _onTransitionend: function (event) {
+      if (event && event.target === this) {
+        this.complete();
+      }
+    }
+
+  });
+
+})();
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+
+/**
+Use `Polymer.IronOverlayBehavior` to implement an element that can be hidden or shown, and displays
+on top of other content. It includes an optional backdrop, and can be used to implement a variety
+of UI controls including dialogs and drop downs. Multiple overlays may be displayed at once.
+
+### Closing and canceling
+
+A dialog may be hidden by closing or canceling. The difference between close and cancel is user
+intent. Closing generally implies that the user acknowledged the content on the overlay. By default,
+it will cancel whenever the user taps outside it or presses the escape key. This behavior is
+configurable with the `no-cancel-on-esc-key` and the `no-cancel-on-outside-click` properties.
+`close()` should be called explicitly by the implementer when the user interacts with a control
+in the overlay element. When the dialog is canceled, the overlay fires an 'iron-overlay-canceled'
+event. Call `preventDefault` on this event to prevent the overlay from closing.
+
+### Positioning
+
+By default the element is sized and positioned to fit and centered inside the window. You can
+position and size it manually using CSS. See `Polymer.IronFitBehavior`.
+
+### Backdrop
+
+Set the `with-backdrop` attribute to display a backdrop behind the overlay. The backdrop is
+appended to `<body>` and is of type `<iron-overlay-backdrop>`. See its doc page for styling
+options.
+
+### Limitations
+
+The element is styled to appear on top of other content by setting its `z-index` property. You
+must ensure no element has a stacking context with a higher `z-index` than its parent stacking
+context. You should place this element as a child of `<body>` whenever possible.
+
+@demo demo/index.html
+@polymerBehavior Polymer.IronOverlayBehavior
+*/
+
+  Polymer.IronOverlayBehaviorImpl = {
+
+    properties: {
+
+      /**
+       * True if the overlay is currently displayed.
+       */
+      opened: {
+        observer: '_openedChanged',
+        type: Boolean,
+        value: false,
+        notify: true
+      },
+
+      /**
+       * True if the overlay was canceled when it was last closed.
+       */
+      canceled: {
+        observer: '_canceledChanged',
+        readOnly: true,
+        type: Boolean,
+        value: false
+      },
+
+      /**
+       * Set to true to display a backdrop behind the overlay.
+       */
+      withBackdrop: {
+        observer: '_withBackdropChanged',
+        type: Boolean
+      },
+
+      /**
+       * Set to true to disable auto-focusing the overlay or child nodes with
+       * the `autofocus` attribute` when the overlay is opened.
+       */
+      noAutoFocus: {
+        type: Boolean,
+        value: false
+      },
+
+      /**
+       * Set to true to disable canceling the overlay with the ESC key.
+       */
+      noCancelOnEscKey: {
+        type: Boolean,
+        value: false
+      },
+
+      /**
+       * Set to true to disable canceling the overlay by clicking outside it.
+       */
+      noCancelOnOutsideClick: {
+        type: Boolean,
+        value: false
+      },
+
+      /**
+       * Returns the reason this dialog was last closed.
+       */
+      closingReason: {
+        // was a getter before, but needs to be a property so other
+        // behaviors can override this.
+        type: Object
+      },
+
+      _manager: {
+        type: Object,
+        value: Polymer.IronOverlayManager
+      },
+
+      _boundOnCaptureClick: {
+        type: Function,
+        value: function() {
+          return this._onCaptureClick.bind(this);
+        }
+      },
+
+      _boundOnCaptureKeydown: {
+        type: Function,
+        value: function() {
+          return this._onCaptureKeydown.bind(this);
+        }
+      },
+
+      _boundOnCaptureFocus: {
+        type: Function,
+        value: function() {
+          return this._onCaptureFocus.bind(this);
+        }
+      },
+
+      /** @type {?Node} */
+      _focusedChild: {
+        type: Object
+      }
+
+    },
+
+    listeners: {
+      'iron-resize': '_onIronResize'
+    },
+
+    /**
+     * The backdrop element.
+     * @type Node
+     */
+    get backdropElement() {
+      return this._manager.backdropElement;
+    },
+
+    get _focusNode() {
+      return this._focusedChild || Polymer.dom(this).querySelector('[autofocus]') || this;
+    },
+
+    ready: function() {
+      // with-backdrop need tabindex to be set in order to trap the focus.
+      // If it is not set, IronOverlayBehavior will set it, and remove it if with-backdrop = false.
+      this.__shouldRemoveTabIndex = false;
+      this._ensureSetup();
+    },
+
+    attached: function() {
+      // Call _openedChanged here so that position can be computed correctly.
+      if (this._callOpenedWhenReady) {
+        this._openedChanged();
+      }
+    },
+
+    detached: function() {
+      this.opened = false;
+      this._manager.trackBackdrop(this);
+      this._manager.removeOverlay(this);
+    },
+
+    /**
+     * Toggle the opened state of the overlay.
+     */
+    toggle: function() {
+      this._setCanceled(false);
+      this.opened = !this.opened;
+    },
+
+    /**
+     * Open the overlay.
+     */
+    open: function() {
+      this._setCanceled(false);
+      this.opened = true;
+    },
+
+    /**
+     * Close the overlay.
+     */
+    close: function() {
+      this._setCanceled(false);
+      this.opened = false;
+    },
+
+    /**
+     * Cancels the overlay.
+     */
+    cancel: function() {
+      var cancelEvent = this.fire('iron-overlay-canceled', undefined, {cancelable: true});
+      if (cancelEvent.defaultPrevented) {
+        return;
+      }
+
+      this._setCanceled(true);
+      this.opened = false;
+    },
+
+    _ensureSetup: function() {
+      if (this._overlaySetup) {
+        return;
+      }
+      this._overlaySetup = true;
+      this.style.outline = 'none';
+      this.style.display = 'none';
+    },
+
+    _openedChanged: function() {
+      if (this.opened) {
+        this.removeAttribute('aria-hidden');
+      } else {
+        this.setAttribute('aria-hidden', 'true');
+        Polymer.dom(this).unobserveNodes(this._observer);
+      }
+
+      // wait to call after ready only if we're initially open
+      if (!this._overlaySetup) {
+        this._callOpenedWhenReady = this.opened;
+        return;
+      }
+
+      this._manager.trackBackdrop(this);
+
+      if (this.opened) {
+        this._prepareRenderOpened();
+      }
+
+      if (this._openChangedAsync) {
+        this.cancelAsync(this._openChangedAsync);
+      }
+      // Async here to allow overlay layer to become visible, and to avoid
+      // listeners to immediately close via a click.
+      this._openChangedAsync = this.async(function() {
+        // overlay becomes visible here
+        this.style.display = '';
+        // Force layout to ensure transition will go. Set offsetWidth to itself
+        // so that compilers won't remove it.
+        this.offsetWidth = this.offsetWidth;
+        if (this.opened) {
+          this._renderOpened();
+        } else {
+          this._renderClosed();
+        }
+        this._toggleListeners();
+        this._openChangedAsync = null;
+      }, 1);
+    },
+
+    _canceledChanged: function() {
+      this.closingReason = this.closingReason || {};
+      this.closingReason.canceled = this.canceled;
+    },
+
+    _withBackdropChanged: function() {
+      // If tabindex is already set, no need to override it.
+      if (this.withBackdrop && !this.hasAttribute('tabindex')) {
+        this.setAttribute('tabindex', '-1');
+        this.__shouldRemoveTabIndex = true;
+      } else if (this.__shouldRemoveTabIndex) {
+        this.removeAttribute('tabindex');
+        this.__shouldRemoveTabIndex = false;
+      }
+      if (this.opened) {
+        this._manager.trackBackdrop(this);
+        if (this.withBackdrop) {
+          this.backdropElement.prepare();
+          // Give time to be added to document.
+          this.async(function(){
+            this.backdropElement.open();
+          }, 1);
+        } else {
+          this.backdropElement.close();
+        }
+      }
+    },
+
+    _toggleListener: function(enable, node, event, boundListener, capture) {
+      if (enable) {
+        // enable document-wide tap recognizer
+        if (event === 'tap') {
+          Polymer.Gestures.add(document, 'tap', null);
+        }
+        node.addEventListener(event, boundListener, capture);
+      } else {
+        // disable document-wide tap recognizer
+        if (event === 'tap') {
+          Polymer.Gestures.remove(document, 'tap', null);
+        }
+        node.removeEventListener(event, boundListener, capture);
+      }
+    },
+
+    _toggleListeners: function () {
+      this._toggleListener(this.opened, document, 'tap', this._boundOnCaptureClick, true);
+      this._toggleListener(this.opened, document, 'keydown', this._boundOnCaptureKeydown, true);
+      this._toggleListener(this.opened, document, 'focus', this._boundOnCaptureFocus, true);
+    },
+
+    // tasks which must occur before opening; e.g. making the element visible
+    _prepareRenderOpened: function() {
+      this._manager.addOverlay(this);
+
+      this._preparePositioning();
+      this.fit();
+      this._finishPositioning();
+
+      if (this.withBackdrop) {
+        this.backdropElement.prepare();
+      }
+    },
+
+    // tasks which cause the overlay to actually open; typically play an
+    // animation
+    _renderOpened: function() {
+      if (this.withBackdrop) {
+        this.backdropElement.open();
+      }
+      this._finishRenderOpened();
+    },
+
+    _renderClosed: function() {
+      if (this.withBackdrop) {
+        this.backdropElement.close();
+      }
+      this._finishRenderClosed();
+    },
+
+    _finishRenderOpened: function() {
+      // focus the child node with [autofocus]
+      this._applyFocus();
+
+      this._observer = Polymer.dom(this).observeNodes(this.notifyResize);
+      this.fire('iron-overlay-opened');
+    },
+
+    _finishRenderClosed: function() {
+      // hide the overlay and remove the backdrop
+      this.resetFit();
+      this.style.display = 'none';
+      this._manager.removeOverlay(this);
+
+      this._focusedChild = null;
+      this._applyFocus();
+
+      this.notifyResize();
+      this.fire('iron-overlay-closed', this.closingReason);
+    },
+
+    _preparePositioning: function() {
+      this.style.transition = this.style.webkitTransition = 'none';
+      this.style.transform = this.style.webkitTransform = 'none';
+      this.style.display = '';
+    },
+
+    _finishPositioning: function() {
+      this.style.display = 'none';
+      this.style.transform = this.style.webkitTransform = '';
+      // force layout to avoid application of transform
+      /** @suppress {suspiciousCode} */ this.offsetWidth;
+      this.style.transition = this.style.webkitTransition = '';
+    },
+
+    _applyFocus: function() {
+      if (this.opened) {
+        if (!this.noAutoFocus) {
+          this._focusNode.focus();
+        }
+      } else {
+        this._focusNode.blur();
+        this._manager.focusOverlay();
+      }
+    },
+
+    _onCaptureClick: function(event) {
+      if (this._manager.currentOverlay() === this &&
+          Polymer.dom(event).path.indexOf(this) === -1) {
+        if (this.noCancelOnOutsideClick) {
+          this._applyFocus();
+        } else {
+          this.cancel();
+        }
+      }
+    },
+
+    _onCaptureKeydown: function(event) {
+      var ESC = 27;
+      if (this._manager.currentOverlay() === this &&
+          !this.noCancelOnEscKey &&
+          event.keyCode === ESC) {
+        this.cancel();
+      }
+    },
+
+    _onCaptureFocus: function (event) {
+      if (this._manager.currentOverlay() === this &&
+          this.withBackdrop) {
+        var path = Polymer.dom(event).path;
+        if (path.indexOf(this) === -1) {
+          event.stopPropagation();
+          this._applyFocus();
+        } else {
+          this._focusedChild = path[0];
+        }
+      }
+    },
+
+    _onIronResize: function() {
+      if (this.opened) {
+        this.refit();
+      }
+    }
+
+/**
+ * Fired after the `iron-overlay` opens.
+ * @event iron-overlay-opened
+ */
+
+/**
+ * Fired when the `iron-overlay` is canceled, but before it is closed.
+ * Cancel the event to prevent the `iron-overlay` from closing.
+ * @event iron-overlay-canceled
+ */
+
+/**
+ * Fired after the `iron-overlay` closes.
+ * @event iron-overlay-closed
+ * @param {{canceled: (boolean|undefined)}} set to the `closingReason` attribute
+ */
+  };
+
+  /** @polymerBehavior */
+  Polymer.IronOverlayBehavior = [Polymer.IronFitBehavior, Polymer.IronResizableBehavior, Polymer.IronOverlayBehaviorImpl];
+
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+
+  /**
+   * Use `Polymer.NeonAnimationBehavior` to implement an animation.
+   * @polymerBehavior
+   */
+  Polymer.NeonAnimationBehavior = {
+
+    properties: {
+
+      /**
+       * Defines the animation timing.
+       */
+      animationTiming: {
+        type: Object,
+        value: function() {
+          return {
+            duration: 500,
+            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+            fill: 'both'
+          }
+        }
+      }
+
+    },
+
+    registered: function() {
+      new Polymer.IronMeta({type: 'animation', key: this.is, value: this.constructor});
+    },
+
+    /**
+     * Do any animation configuration here.
+     */
+    // configure: function(config) {
+    // },
+
+    /**
+     * Returns the animation timing by mixing in properties from `config` to the defaults defined
+     * by the animation.
+     */
+    timingFromConfig: function(config) {
+      if (config.timing) {
+        for (var property in config.timing) {
+          this.animationTiming[property] = config.timing[property];
+        }
+      }
+      return this.animationTiming;
+    },
+
+    /**
+     * Sets `transform` and `transformOrigin` properties along with the prefixed versions.
+     */
+    setPrefixedProperty: function(node, property, value) {
+      var map = {
+        'transform': ['webkitTransform'],
+        'transformOrigin': ['mozTransformOrigin', 'webkitTransformOrigin']
+      };
+      var prefixes = map[property];
+      for (var prefix, index = 0; prefix = prefixes[index]; index++) {
+        node.style[prefix] = value;
+      }
+      node.style[property] = value;
+    },
+
+    /**
+     * Called when the animation finishes.
+     */
+    complete: function() {}
+
+  };
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script src="bower_components/web-animations-js/web-animations-next-lite.min.js"></script>
+<script>
+
+  Polymer({
+
+    is: 'opaque-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      node.style.opacity = '0';
+      this._effect = new KeyframeEffect(node, [
+        {'opacity': '1'},
+        {'opacity': '1'}
+      ], this.timingFromConfig(config));
+      return this._effect;
+    },
+
+    complete: function(config) {
+      config.node.style.opacity = '';
+    }
+
+  });
+
+</script><!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+`<opaque-animation>` makes an element `opacity:1` for the duration of the animation. Used to prevent
+webkit/safari from drawing a frame before an animation for elements that animate from display:none.
+-->
+
+
+<script>
+
+  /**
+   * `Polymer.NeonAnimatableBehavior` is implemented by elements containing animations for use with
+   * elements implementing `Polymer.NeonAnimationRunnerBehavior`.
+   * @polymerBehavior
+   */
+  Polymer.NeonAnimatableBehavior = {
+
+    properties: {
+
+      /**
+       * Animation configuration. See README for more info.
+       */
+      animationConfig: {
+        type: Object
+      },
+
+      /**
+       * Convenience property for setting an 'entry' animation. Do not set `animationConfig.entry`
+       * manually if using this. The animated node is set to `this` if using this property.
+       */
+      entryAnimation: {
+        observer: '_entryAnimationChanged',
+        type: String
+      },
+
+      /**
+       * Convenience property for setting an 'exit' animation. Do not set `animationConfig.exit`
+       * manually if using this. The animated node is set to `this` if using this property.
+       */
+      exitAnimation: {
+        observer: '_exitAnimationChanged',
+        type: String
+      }
+
+    },
+
+    _entryAnimationChanged: function() {
+      this.animationConfig = this.animationConfig || {};
+      if (this.entryAnimation !== 'fade-in-animation') {
+        // insert polyfill hack
+        this.animationConfig['entry'] = [{
+          name: 'opaque-animation',
+          node: this
+        }, {
+          name: this.entryAnimation,
+          node: this
+        }];
+      } else {
+        this.animationConfig['entry'] = [{
+          name: this.entryAnimation,
+          node: this
+        }];
+      }
+    },
+
+    _exitAnimationChanged: function() {
+      this.animationConfig = this.animationConfig || {};
+      this.animationConfig['exit'] = [{
+        name: this.exitAnimation,
+        node: this
+      }];
+    },
+
+    _copyProperties: function(config1, config2) {
+      // shallowly copy properties from config2 to config1
+      for (var property in config2) {
+        config1[property] = config2[property];
+      }
+    },
+
+    _cloneConfig: function(config) {
+      var clone = {
+        isClone: true
+      };
+      this._copyProperties(clone, config);
+      return clone;
+    },
+
+    _getAnimationConfigRecursive: function(type, map, allConfigs) {
+      if (!this.animationConfig) {
+        return;
+      }
+
+      if(this.animationConfig.value && typeof this.animationConfig.value === 'function') {
+      	this._warn(this._logf('playAnimation', "Please put 'animationConfig' inside of your components 'properties' object instead of outside of it."));
+      	return;
+      }
+
+      // type is optional
+      var thisConfig;
+      if (type) {
+        thisConfig = this.animationConfig[type];
+      } else {
+        thisConfig = this.animationConfig;
+      }
+
+      if (!Array.isArray(thisConfig)) {
+        thisConfig = [thisConfig];
+      }
+
+      // iterate animations and recurse to process configurations from child nodes
+      if (thisConfig) {
+        for (var config, index = 0; config = thisConfig[index]; index++) {
+          if (config.animatable) {
+            config.animatable._getAnimationConfigRecursive(config.type || type, map, allConfigs);
+          } else {
+            if (config.id) {
+              var cachedConfig = map[config.id];
+              if (cachedConfig) {
+                // merge configurations with the same id, making a clone lazily
+                if (!cachedConfig.isClone) {
+                  map[config.id] = this._cloneConfig(cachedConfig)
+                  cachedConfig = map[config.id];
+                }
+                this._copyProperties(cachedConfig, config);
+              } else {
+                // put any configs with an id into a map
+                map[config.id] = config;
+              }
+            } else {
+              allConfigs.push(config);
+            }
+          }
+        }
+      }
+    },
+
+    /**
+     * An element implementing `Polymer.NeonAnimationRunnerBehavior` calls this method to configure
+     * an animation with an optional type. Elements implementing `Polymer.NeonAnimatableBehavior`
+     * should define the property `animationConfig`, which is either a configuration object
+     * or a map of animation type to array of configuration objects.
+     */
+    getAnimationConfig: function(type) {
+      var map = {};
+      var allConfigs = [];
+      this._getAnimationConfigRecursive(type, map, allConfigs);
+      // append the configurations saved in the map to the array
+      for (var key in map) {
+        allConfigs.push(map[key]);
+      }
+      return allConfigs;
+    }
+
+  };
+
+</script>
+<script>
+
+  /**
+   * `Polymer.NeonAnimationRunnerBehavior` adds a method to run animations.
+   *
+   * @polymerBehavior Polymer.NeonAnimationRunnerBehavior
+   */
+  Polymer.NeonAnimationRunnerBehaviorImpl = {
+
+    properties: {
+
+      _animationMeta: {
+        type: Object,
+        value: function() {
+          return new Polymer.IronMeta({type: 'animation'});
+        }
+      },
+
+      /** @type {?Object} */
+      _player: {
+        type: Object
+      }
+
+    },
+
+    _configureAnimationEffects: function(allConfigs) {
+      var allAnimations = [];
+      if (allConfigs.length > 0) {
+        for (var config, index = 0; config = allConfigs[index]; index++) {
+          var animationConstructor = this._animationMeta.byKey(config.name);
+          if (animationConstructor) {
+            var animation = animationConstructor && new animationConstructor();
+            var effect = animation.configure(config);
+            if (effect) {
+              allAnimations.push({
+                animation: animation,
+                config: config,
+                effect: effect
+              });
+            }
+          } else {
+            console.warn(this.is + ':', config.name, 'not found!');
+          }
+        }
+      }
+      return allAnimations;
+    },
+
+    _runAnimationEffects: function(allEffects) {
+      return document.timeline.play(new GroupEffect(allEffects));
+    },
+
+    _completeAnimations: function(allAnimations) {
+      for (var animation, index = 0; animation = allAnimations[index]; index++) {
+        animation.animation.complete(animation.config);
+      }
+    },
+
+    /**
+     * Plays an animation with an optional `type`.
+     * @param {string=} type
+     * @param {!Object=} cookie
+     */
+    playAnimation: function(type, cookie) {
+      var allConfigs = this.getAnimationConfig(type);
+      if (!allConfigs) {
+        return;
+      }
+      var allAnimations = this._configureAnimationEffects(allConfigs);
+      var allEffects = allAnimations.map(function(animation) {
+        return animation.effect;
+      });
+
+      if (allEffects.length > 0) {
+        this._player = this._runAnimationEffects(allEffects);
+        this._player.onfinish = function() {
+          this._completeAnimations(allAnimations);
+
+          if (this._player) {
+            this._player.cancel();
+            this._player = null;
+          }
+
+          this.fire('neon-animation-finish', cookie, {bubbles: false});
+        }.bind(this);
+
+      } else {
+        this.fire('neon-animation-finish', cookie, {bubbles: false});
+      }
+    },
+
+    /**
+     * Cancels the currently running animation.
+     */
+    cancelAnimation: function() {
+      if (this._player) {
+        this._player.cancel();
+      }
+    }
+  };
+
+  /** @polymerBehavior Polymer.NeonAnimationRunnerBehavior */
+  Polymer.NeonAnimationRunnerBehavior = [
+    Polymer.NeonAnimatableBehavior,
+    Polymer.NeonAnimationRunnerBehaviorImpl
+  ];
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+  (function() {
+    'use strict';
+
+    /**
+     * The IronDropdownScrollManager is intended to provide a central source
+     * of authority and control over which elements in a document are currently
+     * allowed to scroll.
+     */
+
+    Polymer.IronDropdownScrollManager = {
+
+      /**
+       * The current element that defines the DOM boundaries of the
+       * scroll lock. This is always the most recently locking element.
+       */
+      get currentLockingElement() {
+        return this._lockingElements[this._lockingElements.length - 1];
+      },
+
+
+      /**
+       * Returns true if the provided element is "scroll locked," which is to
+       * say that it cannot be scrolled via pointer or keyboard interactions.
+       *
+       * @param {HTMLElement} element An HTML element instance which may or may
+       * not be scroll locked.
+       */
+      elementIsScrollLocked: function(element) {
+        var currentLockingElement = this.currentLockingElement;
+
+        if (currentLockingElement === undefined)
+          return false;
+
+        var scrollLocked;
+
+        if (this._hasCachedLockedElement(element)) {
+          return true;
+        }
+
+        if (this._hasCachedUnlockedElement(element)) {
+          return false;
+        }
+
+        scrollLocked = !!currentLockingElement &&
+          currentLockingElement !== element &&
+          !this._composedTreeContains(currentLockingElement, element);
+
+        if (scrollLocked) {
+          this._lockedElementCache.push(element);
+        } else {
+          this._unlockedElementCache.push(element);
+        }
+
+        return scrollLocked;
+      },
+
+      /**
+       * Push an element onto the current scroll lock stack. The most recently
+       * pushed element and its children will be considered scrollable. All
+       * other elements will not be scrollable.
+       *
+       * Scroll locking is implemented as a stack so that cases such as
+       * dropdowns within dropdowns are handled well.
+       *
+       * @param {HTMLElement} element The element that should lock scroll.
+       */
+      pushScrollLock: function(element) {
+        // Prevent pushing the same element twice
+        if (this._lockingElements.indexOf(element) >= 0) {
+          return;
+        }
+
+        if (this._lockingElements.length === 0) {
+          this._lockScrollInteractions();
+        }
+
+        this._lockingElements.push(element);
+
+        this._lockedElementCache = [];
+        this._unlockedElementCache = [];
+      },
+
+      /**
+       * Remove an element from the scroll lock stack. The element being
+       * removed does not need to be the most recently pushed element. However,
+       * the scroll lock constraints only change when the most recently pushed
+       * element is removed.
+       *
+       * @param {HTMLElement} element The element to remove from the scroll
+       * lock stack.
+       */
+      removeScrollLock: function(element) {
+        var index = this._lockingElements.indexOf(element);
+
+        if (index === -1) {
+          return;
+        }
+
+        this._lockingElements.splice(index, 1);
+
+        this._lockedElementCache = [];
+        this._unlockedElementCache = [];
+
+        if (this._lockingElements.length === 0) {
+          this._unlockScrollInteractions();
+        }
+      },
+
+      _lockingElements: [],
+
+      _lockedElementCache: null,
+
+      _unlockedElementCache: null,
+
+      _originalBodyStyles: {},
+
+      _isScrollingKeypress: function(event) {
+        return Polymer.IronA11yKeysBehavior.keyboardEventMatchesKeys(
+          event, 'pageup pagedown home end up left down right');
+      },
+
+      _hasCachedLockedElement: function(element) {
+        return this._lockedElementCache.indexOf(element) > -1;
+      },
+
+      _hasCachedUnlockedElement: function(element) {
+        return this._unlockedElementCache.indexOf(element) > -1;
+      },
+
+      _composedTreeContains: function(element, child) {
+        // NOTE(cdata): This method iterates over content elements and their
+        // corresponding distributed nodes to implement a contains-like method
+        // that pierces through the composed tree of the ShadowDOM. Results of
+        // this operation are cached (elsewhere) on a per-scroll-lock basis, to
+        // guard against potentially expensive lookups happening repeatedly as
+        // a user scrolls / touchmoves.
+        var contentElements;
+        var distributedNodes;
+        var contentIndex;
+        var nodeIndex;
+
+        if (element.contains(child)) {
+          return true;
+        }
+
+        contentElements = Polymer.dom(element).querySelectorAll('content');
+
+        for (contentIndex = 0; contentIndex < contentElements.length; ++contentIndex) {
+
+          distributedNodes = Polymer.dom(contentElements[contentIndex]).getDistributedNodes();
+
+          for (nodeIndex = 0; nodeIndex < distributedNodes.length; ++nodeIndex) {
+
+            if (this._composedTreeContains(distributedNodes[nodeIndex], child)) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+      },
+
+      _scrollInteractionHandler: function(event) {
+        if (Polymer
+              .IronDropdownScrollManager
+              .elementIsScrollLocked(Polymer.dom(event).rootTarget)) {
+          if (event.type === 'keydown' &&
+              !Polymer.IronDropdownScrollManager._isScrollingKeypress(event)) {
+            return;
+          }
+
+          event.preventDefault();
+        }
+      },
+
+      _lockScrollInteractions: function() {
+        // Memoize body inline styles:
+        this._originalBodyStyles.overflow = document.body.style.overflow;
+        this._originalBodyStyles.overflowX = document.body.style.overflowX;
+        this._originalBodyStyles.overflowY = document.body.style.overflowY;
+
+        // Disable overflow scrolling on body:
+        // TODO(cdata): It is technically not sufficient to hide overflow on
+        // body alone. A better solution might be to traverse all ancestors of
+        // the current scroll locking element and hide overflow on them. This
+        // becomes expensive, though, as it would have to be redone every time
+        // a new scroll locking element is added.
+        document.body.style.overflow = 'hidden';
+        document.body.style.overflowX = 'hidden';
+        document.body.style.overflowY = 'hidden';
+
+        // Modern `wheel` event for mouse wheel scrolling:
+        document.addEventListener('wheel', this._scrollInteractionHandler, true);
+        // Older, non-standard `mousewheel` event for some FF:
+        document.addEventListener('mousewheel', this._scrollInteractionHandler, true);
+        // IE:
+        document.addEventListener('DOMMouseScroll', this._scrollInteractionHandler, true);
+        // Mobile devices can scroll on touch move:
+        document.addEventListener('touchmove', this._scrollInteractionHandler, true);
+        // Capture keydown to prevent scrolling keys (pageup, pagedown etc.)
+        document.addEventListener('keydown', this._scrollInteractionHandler, true);
+      },
+
+      _unlockScrollInteractions: function() {
+        document.body.style.overflow = this._originalBodyStyles.overflow;
+        document.body.style.overflowX = this._originalBodyStyles.overflowX;
+        document.body.style.overflowY = this._originalBodyStyles.overflowY;
+
+        document.removeEventListener('wheel', this._scrollInteractionHandler, true);
+        document.removeEventListener('mousewheel', this._scrollInteractionHandler, true);
+        document.removeEventListener('DOMMouseScroll', this._scrollInteractionHandler, true);
+        document.removeEventListener('touchmove', this._scrollInteractionHandler, true);
+        document.removeEventListener('keydown', this._scrollInteractionHandler, true);
+      }
+    };
+  })();
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+`<iron-dropdown>` is a generalized element that is useful when you have
+hidden content (`.dropdown-content`) that is revealed due to some change in
+state that should cause it to do so.
+
+Note that this is a low-level element intended to be used as part of other
+composite elements that cause dropdowns to be revealed.
+
+Examples of elements that might be implemented using an `iron-dropdown`
+include comboboxes, menubuttons, selects. The list goes on.
+
+The `<iron-dropdown>` element exposes attributes that allow the position
+of the `.dropdown-content` relative to the `.dropdown-trigger` to be
+configured.
+
+    <iron-dropdown horizontal-align="right" vertical-align="top">
+      <div class="dropdown-content">Hello!</div>
+    </iron-dropdown>
+
+In the above example, the `<div>` with class `.dropdown-content` will be
+hidden until the dropdown element has `opened` set to true, or when the `open`
+method is called on the element.
+
+@demo demo/index.html
+-->
+
+<dom-module id="iron-dropdown" assetpath="bower_components/iron-dropdown/">
+  <style>
+    :host {
+      position: fixed;
+    }
+
+    #contentWrapper ::content > * {
+      overflow: auto;
+    }
+
+    #contentWrapper.animating ::content > * {
+      overflow: hidden;
+    }
+  </style>
+  <template>
+    <div id="contentWrapper">
+      <content id="content" select=".dropdown-content"></content>
+    </div>
+  </template>
+
+  <script>
+    (function() {
+      'use strict';
+
+      Polymer({
+        is: 'iron-dropdown',
+
+        behaviors: [
+          Polymer.IronControlState,
+          Polymer.IronA11yKeysBehavior,
+          Polymer.IronOverlayBehavior,
+          Polymer.NeonAnimationRunnerBehavior
+        ],
+
+        properties: {
+          /**
+           * The orientation against which to align the dropdown content
+           * horizontally relative to the dropdown trigger.
+           */
+          horizontalAlign: {
+            type: String,
+            value: 'left',
+            reflectToAttribute: true
+          },
+
+          /**
+           * The orientation against which to align the dropdown content
+           * vertically relative to the dropdown trigger.
+           */
+          verticalAlign: {
+            type: String,
+            value: 'top',
+            reflectToAttribute: true
+          },
+
+          /**
+           * A pixel value that will be added to the position calculated for the
+           * given `horizontalAlign`, in the direction of alignment. You can think
+           * of it as increasing or decreasing the distance to the side of the
+           * screen given by `horizontalAlign`.
+           *
+           * If `horizontalAlign` is "left", this offset will increase or decrease
+           * the distance to the left side of the screen: a negative offset will
+           * move the dropdown to the left; a positive one, to the right.
+           *
+           * Conversely if `horizontalAlign` is "right", this offset will increase
+           * or decrease the distance to the right side of the screen: a negative
+           * offset will move the dropdown to the right; a positive one, to the left.
+           */
+          horizontalOffset: {
+            type: Number,
+            value: 0,
+            notify: true
+          },
+
+          /**
+           * A pixel value that will be added to the position calculated for the
+           * given `verticalAlign`, in the direction of alignment. You can think
+           * of it as increasing or decreasing the distance to the side of the
+           * screen given by `verticalAlign`.
+           *
+           * If `verticalAlign` is "top", this offset will increase or decrease
+           * the distance to the top side of the screen: a negative offset will
+           * move the dropdown upwards; a positive one, downwards.
+           *
+           * Conversely if `verticalAlign` is "bottom", this offset will increase
+           * or decrease the distance to the bottom side of the screen: a negative
+           * offset will move the dropdown downwards; a positive one, upwards.
+           */
+          verticalOffset: {
+            type: Number,
+            value: 0,
+            notify: true
+          },
+
+          /**
+           * The element that should be used to position the dropdown when
+           * it is opened.
+           */
+          positionTarget: {
+            type: Object,
+            observer: '_positionTargetChanged'
+          },
+
+          /**
+           * An animation config. If provided, this will be used to animate the
+           * opening of the dropdown.
+           */
+          openAnimationConfig: {
+            type: Object
+          },
+
+          /**
+           * An animation config. If provided, this will be used to animate the
+           * closing of the dropdown.
+           */
+          closeAnimationConfig: {
+            type: Object
+          },
+
+          /**
+           * If provided, this will be the element that will be focused when
+           * the dropdown opens.
+           */
+          focusTarget: {
+            type: Object
+          },
+
+          /**
+           * Set to true to disable animations when opening and closing the
+           * dropdown.
+           */
+          noAnimations: {
+            type: Boolean,
+            value: false
+          },
+
+          /**
+           * By default, the dropdown will constrain scrolling on the page
+           * to itself when opened.
+           * Set to true in order to prevent scroll from being constrained
+           * to the dropdown when it opens.
+           */
+          allowOutsideScroll: {
+            type: Boolean,
+            value: false
+          },
+
+          /**
+           * We memoize the positionTarget bounding rectangle so that we can
+           * limit the number of times it is queried per resize / relayout.
+           * @type {?Object}
+           */
+          _positionRectMemo: {
+            type: Object
+          }
+        },
+
+        listeners: {
+          'neon-animation-finish': '_onNeonAnimationFinish'
+        },
+
+        observers: [
+          '_updateOverlayPosition(verticalAlign, horizontalAlign, verticalOffset, horizontalOffset)'
+        ],
+
+        attached: function() {
+          if (this.positionTarget === undefined) {
+            this.positionTarget = this._defaultPositionTarget;
+          }
+        },
+
+        /**
+         * The element that is contained by the dropdown, if any.
+         */
+        get containedElement() {
+          return Polymer.dom(this.$.content).getDistributedNodes()[0];
+        },
+
+        /**
+         * The element that should be focused when the dropdown opens.
+         * @deprecated
+         */
+        get _focusTarget() {
+          return this.focusTarget || this.containedElement;
+        },
+
+        /**
+         * Whether the text direction is RTL
+         */
+        _isRTL: function() {
+          return window.getComputedStyle(this).direction == 'rtl';
+        },
+
+        /**
+         * The element that should be used to position the dropdown when
+         * it opens, if no position target is configured.
+         */
+        get _defaultPositionTarget() {
+          var parent = Polymer.dom(this).parentNode;
+
+          if (parent.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+            parent = parent.host;
+          }
+
+          return parent;
+        },
+
+        /**
+         * The bounding rect of the position target.
+         */
+        get _positionRect() {
+          if (!this._positionRectMemo && this.positionTarget) {
+            this._positionRectMemo = this.positionTarget.getBoundingClientRect();
+          }
+
+          return this._positionRectMemo;
+        },
+
+        /**
+         * The horizontal offset value used to position the dropdown.
+         */
+        get _horizontalAlignTargetValue() {
+          var target;
+
+          // In RTL, the direction flips, so what is "right" in LTR becomes "left".
+          var isRTL = this._isRTL();
+          if ((!isRTL && this.horizontalAlign === 'right') ||
+              (isRTL && this.horizontalAlign === 'left')) {
+            target = document.documentElement.clientWidth - this._positionRect.right;
+          } else {
+            target = this._positionRect.left;
+          }
+
+          target += this.horizontalOffset;
+
+          return Math.max(target, 0);
+        },
+
+        /**
+         * The vertical offset value used to position the dropdown.
+         */
+        get _verticalAlignTargetValue() {
+          var target;
+
+          if (this.verticalAlign === 'bottom') {
+            target = document.documentElement.clientHeight - this._positionRect.bottom;
+          } else {
+            target = this._positionRect.top;
+          }
+
+          target += this.verticalOffset;
+
+          return Math.max(target, 0);
+        },
+
+        /**
+         * The horizontal align value, accounting for the RTL/LTR text direction.
+         */
+        get _localeHorizontalAlign() {
+          // In RTL, "left" becomes "right".
+          if (this._isRTL()) {
+            return this.horizontalAlign === 'right' ? 'left' : 'right';
+          } else {
+            return this.horizontalAlign;
+          }
+        },
+
+        /**
+         * Called when the value of `opened` changes.
+         *
+         * @param {boolean} opened True if the dropdown is opened.
+         */
+        _openedChanged: function(opened) {
+          if (opened && this.disabled) {
+            this.cancel();
+          } else {
+            this.cancelAnimation();
+            this._prepareDropdown();
+            Polymer.IronOverlayBehaviorImpl._openedChanged.apply(this, arguments);
+          }
+        },
+
+        /**
+         * Overridden from `IronOverlayBehavior`.
+         */
+        _renderOpened: function() {
+          if (!this.allowOutsideScroll) {
+            Polymer.IronDropdownScrollManager.pushScrollLock(this);
+          }
+
+          if (!this.noAnimations && this.animationConfig && this.animationConfig.open) {
+            this.$.contentWrapper.classList.add('animating');
+            this.playAnimation('open');
+          } else {
+            Polymer.IronOverlayBehaviorImpl._renderOpened.apply(this, arguments);
+          }
+        },
+
+        /**
+         * Overridden from `IronOverlayBehavior`.
+         */
+        _renderClosed: function() {
+          Polymer.IronDropdownScrollManager.removeScrollLock(this);
+          if (!this.noAnimations && this.animationConfig && this.animationConfig.close) {
+            this.$.contentWrapper.classList.add('animating');
+            this.playAnimation('close');
+          } else {
+            Polymer.IronOverlayBehaviorImpl._renderClosed.apply(this, arguments);
+          }
+        },
+
+        /**
+         * Called when animation finishes on the dropdown (when opening or
+         * closing). Responsible for "completing" the process of opening or
+         * closing the dropdown by positioning it or setting its display to
+         * none.
+         */
+        _onNeonAnimationFinish: function() {
+          this.$.contentWrapper.classList.remove('animating');
+          if (this.opened) {
+            Polymer.IronOverlayBehaviorImpl._renderOpened.apply(this);
+          } else {
+            Polymer.IronOverlayBehaviorImpl._renderClosed.apply(this);
+          }
+        },
+
+        /**
+         * Called when an `iron-resize` event fires.
+         */
+        _onIronResize: function() {
+          var containedElement = this.containedElement;
+          var scrollTop;
+          var scrollLeft;
+
+          if (this.opened && containedElement) {
+            scrollTop = containedElement.scrollTop;
+            scrollLeft = containedElement.scrollLeft;
+          }
+
+          if (this.opened) {
+            this._updateOverlayPosition();
+          }
+
+          Polymer.IronOverlayBehaviorImpl._onIronResize.apply(this, arguments);
+
+          if (this.opened && containedElement) {
+            containedElement.scrollTop = scrollTop;
+            containedElement.scrollLeft = scrollLeft;
+          }
+        },
+
+        /**
+         * Called when the `positionTarget` property changes.
+         */
+        _positionTargetChanged: function() {
+          this._updateOverlayPosition();
+        },
+
+        /**
+         * Constructs the final animation config from different properties used
+         * to configure specific parts of the opening and closing animations.
+         */
+        _updateAnimationConfig: function() {
+          var animationConfig = {};
+          var animations = [];
+
+          if (this.openAnimationConfig) {
+            // NOTE(cdata): When making `display:none` elements visible in Safari,
+            // the element will paint once in a fully visible state, causing the
+            // dropdown to flash before it fades in. We prepend an
+            // `opaque-animation` to fix this problem:
+            animationConfig.open = [{
+              name: 'opaque-animation',
+            }].concat(this.openAnimationConfig);
+            animations = animations.concat(animationConfig.open);
+          }
+
+          if (this.closeAnimationConfig) {
+            animationConfig.close = this.closeAnimationConfig;
+            animations = animations.concat(animationConfig.close);
+          }
+
+          animations.forEach(function(animation) {
+            animation.node = this.containedElement;
+          }, this);
+
+          this.animationConfig = animationConfig;
+        },
+
+        /**
+         * Prepares the dropdown for opening by updating measured layout
+         * values.
+         */
+        _prepareDropdown: function() {
+          this.sizingTarget = this.containedElement || this.sizingTarget;
+          this._updateAnimationConfig();
+          this._updateOverlayPosition();
+        },
+
+        /**
+         * Updates the overlay position based on configured horizontal
+         * and vertical alignment, and re-memoizes these values for the sake
+         * of behavior in `IronFitBehavior`.
+         */
+        _updateOverlayPosition: function() {
+          this._positionRectMemo = null;
+
+          if (!this.positionTarget) {
+            return;
+          }
+
+          this.style[this._localeHorizontalAlign] =
+            this._horizontalAlignTargetValue + 'px';
+
+          this.style[this.verticalAlign] =
+            this._verticalAlignTargetValue + 'px';
+
+          // NOTE(cdata): We re-memoize inline styles here, otherwise
+          // calling `refit` from `IronFitBehavior` will reset inline styles
+          // to whatever they were when the dropdown first opened.
+          if (this._fitInfo) {
+            this._fitInfo.inlineStyle[this.horizontalAlign] =
+              this.style[this.horizontalAlign];
+
+            this._fitInfo.inlineStyle[this.verticalAlign] =
+              this.style[this.verticalAlign];
+          }
+        },
+
+        /**
+         * Apply focus to focusTarget or containedElement
+         */
+        _applyFocus: function () {
+          var focusTarget = this.focusTarget || this.containedElement;
+          if (focusTarget && this.opened && !this.noAutoFocus) {
+            focusTarget.focus();
+          } else {
+            Polymer.IronOverlayBehaviorImpl._applyFocus.apply(this, arguments);
+          }
+        }
+      });
+    })();
+  </script>
+</dom-module>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+`<fade-in-animation>` animates the opacity of an element from 0 to 1.
+
+Configuration:
+```
+{
+  name: 'fade-in-animation',
+  node: <node>
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'fade-in-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      this._effect = new KeyframeEffect(node, [
+        {'opacity': '0'},
+        {'opacity': '1'}
+      ], this.timingFromConfig(config));
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+`<fade-out-animation>` animates the opacity of an element from 1 to 0.
+
+Configuration:
+```
+{
+  name: 'fade-out-animation',
+  node: <node>
+  timing: <animation-timing>
+}
+```
+-->
+
+<script>
+
+  Polymer({
+
+    is: 'fade-out-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      this._effect = new KeyframeEffect(node, [
+        {'opacity': '1'},
+        {'opacity': '0'}
+      ], this.timingFromConfig(config));
+      return this._effect;
+    }
+
+  });
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+  Polymer({
+    is: 'paper-menu-grow-height-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      var rect = node.getBoundingClientRect();
+      var height = rect.height;
+
+      this._effect = new KeyframeEffect(node, [{
+        height: (height / 2) + 'px'
+      }, {
+        height: height + 'px'
+      }], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+  });
+
+  Polymer({
+    is: 'paper-menu-grow-width-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      var rect = node.getBoundingClientRect();
+      var width = rect.width;
+
+      this._effect = new KeyframeEffect(node, [{
+        width: (width / 2) + 'px'
+      }, {
+        width: width + 'px'
+      }], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+  });
+
+  Polymer({
+    is: 'paper-menu-shrink-width-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      var rect = node.getBoundingClientRect();
+      var width = rect.width;
+
+      this._effect = new KeyframeEffect(node, [{
+        width: width + 'px'
+      }, {
+        width: width - (width / 20) + 'px'
+      }], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+  });
+
+  Polymer({
+    is: 'paper-menu-shrink-height-animation',
+
+    behaviors: [
+      Polymer.NeonAnimationBehavior
+    ],
+
+    configure: function(config) {
+      var node = config.node;
+      var rect = node.getBoundingClientRect();
+      var height = rect.height;
+      var top = rect.top;
+
+      this.setPrefixedProperty(node, 'transformOrigin', '0 0');
+
+      this._effect = new KeyframeEffect(node, [{
+        height: height + 'px',
+        transform: 'translateY(0)'
+      }, {
+        height: height / 2 + 'px',
+        transform: 'translateY(-20px)'
+      }], this.timingFromConfig(config));
+
+      return this._effect;
+    }
+  });
+</script>
+
+
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+Material design: [Dropdown buttons](https://www.google.com/design/spec/components/buttons.html#buttons-dropdown-buttons)
+
+`paper-menu-button` allows one to compose a designated "trigger" element with
+another element that represents "content", to create a dropdown menu that
+displays the "content" when the "trigger" is clicked.
+
+The child element with the class `dropdown-trigger` will be used as the
+"trigger" element. The child element with the class `dropdown-content` will be
+used as the "content" element.
+
+The `paper-menu-button` is sensitive to its content's `iron-select` events. If
+the "content" element triggers an `iron-select` event, the `paper-menu-button`
+will close automatically.
+
+Example:
+
+    <paper-menu-button>
+      <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
+      <paper-menu class="dropdown-content">
+        <paper-item>Share</paper-item>
+        <paper-item>Settings</paper-item>
+        <paper-item>Help</paper-item>
+      </paper-menu>
+    </paper-menu-button>
+
+### Styling
+
+The following custom properties and mixins are also available for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--paper-menu-button-dropdown-background` | Background color of the paper-menu-button dropdown | `#fff`
+`--paper-menu-button` | Mixin applied to the paper-menu-button | `{}`
+`--paper-menu-button-disabled` | Mixin applied to the paper-menu-button when disabled | `{}`
+`--paper-menu-button-dropdown` | Mixin applied to the paper-menu-button dropdown | `{}`
+`--paper-menu-button-content` | Mixin applied to the paper-menu-button content | `{}`
+
+@hero hero.svg
+@demo demo/index.html
+-->
+
+<dom-module id="paper-menu-button" assetpath="bower_components/paper-menu-button/">
+  <style>
+    :host {
+      display: inline-block;
+      position: relative;
+      padding: 8px;
+      outline: none;
+
+      @apply(--paper-menu-button);
+    }
+
+    :host([disabled]) {
+      cursor: auto;
+      color: var(--disabled-text-color);
+
+      @apply(--paper-menu-button-disabled);
+    }
+
+    :host([vertical-align="top"]) paper-material {
+      margin-bottom: 20px;
+      margin-top: -10px;
+      top: 10px;
+    }
+
+    :host([vertical-align="bottom"]) paper-material {
+      bottom: 10px;
+      margin-bottom: -10px;
+      margin-top: 20px;
+    }
+
+    iron-dropdown {
+      @apply(--paper-menu-button-dropdown);
+    }
+
+    .dropdown-content {
+      border-radius: 2px;
+      background-color: var(--paper-menu-button-dropdown-background, --primary-background-color);
+      @apply(--paper-menu-button-content);
+    }
+  </style>
+  <template>
+    <div id="trigger" on-tap="open">
+      <content select=".dropdown-trigger"></content>
+    </div>
+    <iron-dropdown id="dropdown" opened="{{opened}}" horizontal-align="[[horizontalAlign]]" vertical-align="[[verticalAlign]]" horizontal-offset="[[horizontalOffset]]" vertical-offset="[[verticalOffset]]" open-animation-config="[[openAnimationConfig]]" close-animation-config="[[closeAnimationConfig]]" no-animations="[[noAnimations]]" focus-target="[[_dropdownContent]]">
+      <paper-material class="dropdown-content">
+        <content id="content" select=".dropdown-content"></content>
+      </paper-material>
+    </iron-dropdown>
+  </template>
+</dom-module>
+<script>
+  (function() {
+    'use strict';
+
+    var PaperMenuButton = Polymer({
+      is: 'paper-menu-button',
+
+      /**
+       * Fired when the dropdown opens.
+       *
+       * @event paper-dropdown-open
+       */
+
+      /**
+       * Fired when the dropdown closes.
+       *
+       * @event paper-dropdown-close
+       */
+
+      behaviors: [
+        Polymer.IronA11yKeysBehavior,
+        Polymer.IronControlState
+      ],
+
+      properties: {
+
+        /**
+         * True if the content is currently displayed.
+         */
+        opened: {
+          type: Boolean,
+          value: false,
+          notify: true,
+          observer: '_openedChanged'
+        },
+
+        /**
+         * The orientation against which to align the menu dropdown
+         * horizontally relative to the dropdown trigger.
+         */
+        horizontalAlign: {
+          type: String,
+          value: 'left',
+          reflectToAttribute: true
+        },
+
+        /**
+         * The orientation against which to align the menu dropdown
+         * vertically relative to the dropdown trigger.
+         */
+        verticalAlign: {
+          type: String,
+          value: 'top',
+          reflectToAttribute: true
+        },
+
+        /**
+         * A pixel value that will be added to the position calculated for the
+         * given `horizontalAlign`. Use a negative value to offset to the
+         * left, or a positive value to offset to the right.
+         */
+        horizontalOffset: {
+          type: Number,
+          value: 0,
+          notify: true
+        },
+
+        /**
+         * A pixel value that will be added to the position calculated for the
+         * given `verticalAlign`. Use a negative value to offset towards the
+         * top, or a positive value to offset towards the bottom.
+         */
+        verticalOffset: {
+          type: Number,
+          value: 0,
+          notify: true
+        },
+
+        /**
+         * Set to true to disable animations when opening and closing the
+         * dropdown.
+         */
+        noAnimations: {
+          type: Boolean,
+          value: false
+        },
+
+        /**
+         * Set to true to disable automatically closing the dropdown after
+         * a selection has been made.
+         */
+        ignoreSelect: {
+          type: Boolean,
+          value: false
+        },
+
+        /**
+         * An animation config. If provided, this will be used to animate the
+         * opening of the dropdown.
+         */
+        openAnimationConfig: {
+          type: Object,
+          value: function() {
+            return [{
+              name: 'fade-in-animation',
+              timing: {
+                delay: 100,
+                duration: 200
+              }
+            }, {
+              name: 'paper-menu-grow-width-animation',
+              timing: {
+                delay: 100,
+                duration: 150,
+                easing: PaperMenuButton.ANIMATION_CUBIC_BEZIER
+              }
+            }, {
+              name: 'paper-menu-grow-height-animation',
+              timing: {
+                delay: 100,
+                duration: 275,
+                easing: PaperMenuButton.ANIMATION_CUBIC_BEZIER
+              }
+            }];
+          }
+        },
+
+        /**
+         * An animation config. If provided, this will be used to animate the
+         * closing of the dropdown.
+         */
+        closeAnimationConfig: {
+          type: Object,
+          value: function() {
+            return [{
+              name: 'fade-out-animation',
+              timing: {
+                duration: 150
+              }
+            }, {
+              name: 'paper-menu-shrink-width-animation',
+              timing: {
+                delay: 100,
+                duration: 50,
+                easing: PaperMenuButton.ANIMATION_CUBIC_BEZIER
+              }
+            }, {
+              name: 'paper-menu-shrink-height-animation',
+              timing: {
+                duration: 200,
+                easing: 'ease-in'
+              }
+            }];
+          }
+        },
+
+        /**
+         * This is the element intended to be bound as the focus target
+         * for the `iron-dropdown` contained by `paper-menu-button`.
+         */
+        _dropdownContent: {
+          type: Object
+        }
+      },
+
+      hostAttributes: {
+        role: 'group',
+        'aria-haspopup': 'true'
+      },
+
+      listeners: {
+        'iron-select': '_onIronSelect'
+      },
+
+      /**
+       * The content element that is contained by the menu button, if any.
+       */
+      get contentElement() {
+        return Polymer.dom(this.$.content).getDistributedNodes()[0];
+      },
+
+      /**
+       * Make the dropdown content appear as an overlay positioned relative
+       * to the dropdown trigger.
+       */
+      open: function() {
+        if (this.disabled) {
+          return;
+        }
+
+        this.$.dropdown.open();
+      },
+
+      /**
+       * Hide the dropdown content.
+       */
+      close: function() {
+        this.$.dropdown.close();
+      },
+
+      /**
+       * When an `iron-select` event is received, the dropdown should
+       * automatically close on the assumption that a value has been chosen.
+       *
+       * @param {CustomEvent} event A CustomEvent instance with type
+       * set to `"iron-select"`.
+       */
+      _onIronSelect: function(event) {
+        if (!this.ignoreSelect) {
+          this.close();
+        }
+      },
+
+      /**
+       * When the dropdown opens, the `paper-menu-button` fires `paper-open`.
+       * When the dropdown closes, the `paper-menu-button` fires `paper-close`.
+       *
+       * @param {boolean} opened True if the dropdown is opened, otherwise false.
+       * @param {boolean} oldOpened The previous value of `opened`.
+       */
+      _openedChanged: function(opened, oldOpened) {
+        if (opened) {
+          // TODO(cdata): Update this when we can measure changes in distributed
+          // children in an idiomatic way.
+          // We poke this property in case the element has changed. This will
+          // cause the focus target for the `iron-dropdown` to be updated as
+          // necessary:
+          this._dropdownContent = this.contentElement;
+          this.fire('paper-dropdown-open');
+        } else if (oldOpened != null) {
+          this.fire('paper-dropdown-close');
+        }
+      },
+
+      /**
+       * If the dropdown is open when disabled becomes true, close the
+       * dropdown.
+       *
+       * @param {boolean} disabled True if disabled, otherwise false.
+       */
+      _disabledChanged: function(disabled) {
+        Polymer.IronControlState._disabledChanged.apply(this, arguments);
+        if (disabled && this.opened) {
+          this.close();
+        }
+      }
+    });
+
+    PaperMenuButton.ANIMATION_CUBIC_BEZIER = 'cubic-bezier(.3,.95,.5,1)';
+    PaperMenuButton.MAX_ANIMATION_TIME_MS = 400;
+
+    Polymer.PaperMenuButton = PaperMenuButton;
+  })();
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
   /**
    * The `iron-iconset-svg` element allows users to define their own icon sets
    * that contain svg icons. The svg icon elements should be children of the
@@ -18337,18 +20986,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <div class="title">Friends</div>
         </paper-toolbar>
         <div id="drawerContent">
-          <template is="dom-if" if="{{!showFriendSearch}}">
-            <paper-button on-tap="toggleFriendSearch">
-                <iron-icon icon="social:person-add"></iron-icon>
-                add a friend
-            </paper-button>
-          </template>
-          <template is="dom-if" if="{{showFriendSearch}}">
-              <template is="dom-if" if="{{!hasFriendSearchResults}}">
-                <paper-input placeholder="username" value="{{searchQuery}}">
-                </paper-input>
-                <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
-              </template>
+          <paper-menu-button>
+            <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
+            <paper-menu class="dropdown-content">
+              <paper-item on-tap="selectMessagesList"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
+              <paper-item on-tap="selectFriendList"><paper-icon-button icon="social:people"></paper-icon-button>Friends</paper-item>
+              <paper-item on-tap="selectFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
+            </paper-menu>
+          </paper-menu-button>
+            <template is="dom-if" if="{{showMessagesList}}">
+              <paper-menu selected="{{selectedContact}}">
+                <template is="dom-repeat" items="{{friends}}">
+                  <paper-item>
+                    <contact-element name="{{item.username}}" online="{{item.online}}" img="{{item.img}}">
+                    </contact-element>
+                  </paper-item>
+                </template>
+              </paper-menu>
+            </template>
+            <template is="dom-if" if="{{showFriendList}}">
+              <paper-item>zero</paper-item>
+              <paper-item>one</paper-item>
+              <paper-item>two</paper-item>
+              <paper-item>three</paper-item>
+              <paper-item>four</paper-item>
+              <paper-item>five</paper-item>
+              <paper-item>six</paper-item>
+            </template>
+            <template is="dom-if" if="{{showFriendSearch}}">
+              <paper-item>
+              <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
+              <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
+              </paper-item>
               <template is="dom-if" if="{{hasFriendSearchResults}}">
                 <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
                   <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, friends, userId)}}">
@@ -18366,16 +21035,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   </paper-button>
                 </template>
               </template>
-              <paper-button icon="close" title="close" on-tap="toggleFriendSearch">Close</paper-button>
-          </template>
-          <paper-menu selected="{{selectedContact}}">
-            <template is="dom-repeat" items="{{friends}}">
-              <paper-item>
-                <contact-element name="{{item.username}}" online="{{item.online}}" img="{{item.img}}">
-                </contact-element>
-              </paper-item>
             </template>
-          </paper-menu>
         </div>
       </paper-header-panel>
       <paper-header-panel main="">
@@ -18496,6 +21156,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           notify: true
         },
         showFriendSearch: {
+          type: Boolean,
+          value: false
+        },
+        showMessagesList: {
+          type: Boolean,
+          value: false
+        },
+        showFriendList: {
           type: Boolean,
           value: false
         },
@@ -18799,7 +21467,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.set("friendSearchResults", {});
         this.hasFriendSearchResults = false;
       },
-
+      selectFriendSearch: function() {
+        this.showFriendSearch = true;
+        this.searchQuery = "";
+        this.set("friendSearchResults", {});
+        this.hasFriendSearchResults = false;
+        this.showMessagesList = false;
+        this.showFriendList = false;
+      },
+      selectMessagesList: function() {
+        this.showFriendSearch = false;
+        this.showMessagesList = true;
+        this.showFriendList = false;
+      },
+      selectFriendList: function() {
+        this.showFriendSearch = false;
+        this.showMessagesList = false;
+        this.showFriendList = true;
+      },
       containsError: function(e) {
         if(e && e.error) {
           errorHandler(e);
@@ -21087,391 +23772,6 @@ Custom property | Description | Default
   </script>
 </dom-module>
 <!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
---><script>
-
-  /**
-   * Use `Polymer.NeonAnimationBehavior` to implement an animation.
-   * @polymerBehavior
-   */
-  Polymer.NeonAnimationBehavior = {
-
-    properties: {
-
-      /**
-       * Defines the animation timing.
-       */
-      animationTiming: {
-        type: Object,
-        value: function() {
-          return {
-            duration: 500,
-            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            fill: 'both'
-          }
-        }
-      }
-
-    },
-
-    registered: function() {
-      new Polymer.IronMeta({type: 'animation', key: this.is, value: this.constructor});
-    },
-
-    /**
-     * Do any animation configuration here.
-     */
-    // configure: function(config) {
-    // },
-
-    /**
-     * Returns the animation timing by mixing in properties from `config` to the defaults defined
-     * by the animation.
-     */
-    timingFromConfig: function(config) {
-      if (config.timing) {
-        for (var property in config.timing) {
-          this.animationTiming[property] = config.timing[property];
-        }
-      }
-      return this.animationTiming;
-    },
-
-    /**
-     * Sets `transform` and `transformOrigin` properties along with the prefixed versions.
-     */
-    setPrefixedProperty: function(node, property, value) {
-      var map = {
-        'transform': ['webkitTransform'],
-        'transformOrigin': ['mozTransformOrigin', 'webkitTransformOrigin']
-      };
-      var prefixes = map[property];
-      for (var prefix, index = 0; prefix = prefixes[index]; index++) {
-        node.style[prefix] = value;
-      }
-      node.style[property] = value;
-    },
-
-    /**
-     * Called when the animation finishes.
-     */
-    complete: function() {}
-
-  };
-
-</script>
-<!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
---><script src="bower_components/web-animations-js/web-animations-next-lite.min.js"></script>
-<script>
-
-  Polymer({
-
-    is: 'opaque-animation',
-
-    behaviors: [
-      Polymer.NeonAnimationBehavior
-    ],
-
-    configure: function(config) {
-      var node = config.node;
-      node.style.opacity = '0';
-      this._effect = new KeyframeEffect(node, [
-        {'opacity': '1'},
-        {'opacity': '1'}
-      ], this.timingFromConfig(config));
-      return this._effect;
-    },
-
-    complete: function(config) {
-      config.node.style.opacity = '';
-    }
-
-  });
-
-</script><!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
---><!--
-`<opaque-animation>` makes an element `opacity:1` for the duration of the animation. Used to prevent
-webkit/safari from drawing a frame before an animation for elements that animate from display:none.
--->
-
-
-<script>
-
-  /**
-   * `Polymer.NeonAnimatableBehavior` is implemented by elements containing animations for use with
-   * elements implementing `Polymer.NeonAnimationRunnerBehavior`.
-   * @polymerBehavior
-   */
-  Polymer.NeonAnimatableBehavior = {
-
-    properties: {
-
-      /**
-       * Animation configuration. See README for more info.
-       */
-      animationConfig: {
-        type: Object
-      },
-
-      /**
-       * Convenience property for setting an 'entry' animation. Do not set `animationConfig.entry`
-       * manually if using this. The animated node is set to `this` if using this property.
-       */
-      entryAnimation: {
-        observer: '_entryAnimationChanged',
-        type: String
-      },
-
-      /**
-       * Convenience property for setting an 'exit' animation. Do not set `animationConfig.exit`
-       * manually if using this. The animated node is set to `this` if using this property.
-       */
-      exitAnimation: {
-        observer: '_exitAnimationChanged',
-        type: String
-      }
-
-    },
-
-    _entryAnimationChanged: function() {
-      this.animationConfig = this.animationConfig || {};
-      if (this.entryAnimation !== 'fade-in-animation') {
-        // insert polyfill hack
-        this.animationConfig['entry'] = [{
-          name: 'opaque-animation',
-          node: this
-        }, {
-          name: this.entryAnimation,
-          node: this
-        }];
-      } else {
-        this.animationConfig['entry'] = [{
-          name: this.entryAnimation,
-          node: this
-        }];
-      }
-    },
-
-    _exitAnimationChanged: function() {
-      this.animationConfig = this.animationConfig || {};
-      this.animationConfig['exit'] = [{
-        name: this.exitAnimation,
-        node: this
-      }];
-    },
-
-    _copyProperties: function(config1, config2) {
-      // shallowly copy properties from config2 to config1
-      for (var property in config2) {
-        config1[property] = config2[property];
-      }
-    },
-
-    _cloneConfig: function(config) {
-      var clone = {
-        isClone: true
-      };
-      this._copyProperties(clone, config);
-      return clone;
-    },
-
-    _getAnimationConfigRecursive: function(type, map, allConfigs) {
-      if (!this.animationConfig) {
-        return;
-      }
-
-      if(this.animationConfig.value && typeof this.animationConfig.value === 'function') {
-      	this._warn(this._logf('playAnimation', "Please put 'animationConfig' inside of your components 'properties' object instead of outside of it."));
-      	return;
-      }
-
-      // type is optional
-      var thisConfig;
-      if (type) {
-        thisConfig = this.animationConfig[type];
-      } else {
-        thisConfig = this.animationConfig;
-      }
-
-      if (!Array.isArray(thisConfig)) {
-        thisConfig = [thisConfig];
-      }
-
-      // iterate animations and recurse to process configurations from child nodes
-      if (thisConfig) {
-        for (var config, index = 0; config = thisConfig[index]; index++) {
-          if (config.animatable) {
-            config.animatable._getAnimationConfigRecursive(config.type || type, map, allConfigs);
-          } else {
-            if (config.id) {
-              var cachedConfig = map[config.id];
-              if (cachedConfig) {
-                // merge configurations with the same id, making a clone lazily
-                if (!cachedConfig.isClone) {
-                  map[config.id] = this._cloneConfig(cachedConfig)
-                  cachedConfig = map[config.id];
-                }
-                this._copyProperties(cachedConfig, config);
-              } else {
-                // put any configs with an id into a map
-                map[config.id] = config;
-              }
-            } else {
-              allConfigs.push(config);
-            }
-          }
-        }
-      }
-    },
-
-    /**
-     * An element implementing `Polymer.NeonAnimationRunnerBehavior` calls this method to configure
-     * an animation with an optional type. Elements implementing `Polymer.NeonAnimatableBehavior`
-     * should define the property `animationConfig`, which is either a configuration object
-     * or a map of animation type to array of configuration objects.
-     */
-    getAnimationConfig: function(type) {
-      var map = {};
-      var allConfigs = [];
-      this._getAnimationConfigRecursive(type, map, allConfigs);
-      // append the configurations saved in the map to the array
-      for (var key in map) {
-        allConfigs.push(map[key]);
-      }
-      return allConfigs;
-    }
-
-  };
-
-</script>
-<script>
-
-  /**
-   * `Polymer.NeonAnimationRunnerBehavior` adds a method to run animations.
-   *
-   * @polymerBehavior Polymer.NeonAnimationRunnerBehavior
-   */
-  Polymer.NeonAnimationRunnerBehaviorImpl = {
-
-    properties: {
-
-      _animationMeta: {
-        type: Object,
-        value: function() {
-          return new Polymer.IronMeta({type: 'animation'});
-        }
-      },
-
-      /** @type {?Object} */
-      _player: {
-        type: Object
-      }
-
-    },
-
-    _configureAnimationEffects: function(allConfigs) {
-      var allAnimations = [];
-      if (allConfigs.length > 0) {
-        for (var config, index = 0; config = allConfigs[index]; index++) {
-          var animationConstructor = this._animationMeta.byKey(config.name);
-          if (animationConstructor) {
-            var animation = animationConstructor && new animationConstructor();
-            var effect = animation.configure(config);
-            if (effect) {
-              allAnimations.push({
-                animation: animation,
-                config: config,
-                effect: effect
-              });
-            }
-          } else {
-            console.warn(this.is + ':', config.name, 'not found!');
-          }
-        }
-      }
-      return allAnimations;
-    },
-
-    _runAnimationEffects: function(allEffects) {
-      return document.timeline.play(new GroupEffect(allEffects));
-    },
-
-    _completeAnimations: function(allAnimations) {
-      for (var animation, index = 0; animation = allAnimations[index]; index++) {
-        animation.animation.complete(animation.config);
-      }
-    },
-
-    /**
-     * Plays an animation with an optional `type`.
-     * @param {string=} type
-     * @param {!Object=} cookie
-     */
-    playAnimation: function(type, cookie) {
-      var allConfigs = this.getAnimationConfig(type);
-      if (!allConfigs) {
-        return;
-      }
-      var allAnimations = this._configureAnimationEffects(allConfigs);
-      var allEffects = allAnimations.map(function(animation) {
-        return animation.effect;
-      });
-
-      if (allEffects.length > 0) {
-        this._player = this._runAnimationEffects(allEffects);
-        this._player.onfinish = function() {
-          this._completeAnimations(allAnimations);
-
-          if (this._player) {
-            this._player.cancel();
-            this._player = null;
-          }
-
-          this.fire('neon-animation-finish', cookie, {bubbles: false});
-        }.bind(this);
-
-      } else {
-        this.fire('neon-animation-finish', cookie, {bubbles: false});
-      }
-    },
-
-    /**
-     * Cancels the currently running animation.
-     */
-    cancelAnimation: function() {
-      if (this._player) {
-        this._player.cancel();
-      }
-    }
-  };
-
-  /** @polymerBehavior Polymer.NeonAnimationRunnerBehavior */
-  Polymer.NeonAnimationRunnerBehavior = [
-    Polymer.NeonAnimatableBehavior,
-    Polymer.NeonAnimationRunnerBehaviorImpl
-  ];
-</script>
-<!--
 Material design: [Meaningful transitions](https://www.google.com/design/spec/animation/meaningful-transitions.html)
 
 `neon-animated-pages` manages a set of pages and runs an animation when switching between them. Its
@@ -21817,92 +24117,6 @@ Configuration:
       for (var animation, index = 0; animation = this._animations[index]; index++) {
         animation.complete(animation.config);
       }
-    }
-
-  });
-
-</script>
-<!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
---><!--
-`<fade-in-animation>` animates the opacity of an element from 0 to 1.
-
-Configuration:
-```
-{
-  name: 'fade-in-animation',
-  node: <node>
-  timing: <animation-timing>
-}
-```
--->
-
-<script>
-
-  Polymer({
-
-    is: 'fade-in-animation',
-
-    behaviors: [
-      Polymer.NeonAnimationBehavior
-    ],
-
-    configure: function(config) {
-      var node = config.node;
-      this._effect = new KeyframeEffect(node, [
-        {'opacity': '0'},
-        {'opacity': '1'}
-      ], this.timingFromConfig(config));
-      return this._effect;
-    }
-
-  });
-
-</script>
-<!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
---><!--
-`<fade-out-animation>` animates the opacity of an element from 1 to 0.
-
-Configuration:
-```
-{
-  name: 'fade-out-animation',
-  node: <node>
-  timing: <animation-timing>
-}
-```
--->
-
-<script>
-
-  Polymer({
-
-    is: 'fade-out-animation',
-
-    behaviors: [
-      Polymer.NeonAnimationBehavior
-    ],
-
-    configure: function(config) {
-      var node = config.node;
-      this._effect = new KeyframeEffect(node, [
-        {'opacity': '1'},
-        {'opacity': '0'}
-      ], this.timingFromConfig(config));
-      return this._effect;
     }
 
   });
