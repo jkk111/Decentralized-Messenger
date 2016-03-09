@@ -21060,8 +21060,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 </paper-card>
               </div>
             </template>
-            <template is="dom-if" if="{{!showWelcome}}">
-              Select a conversation on the left!
+            <template is="dom-if" if="{{!showMessagesList}}">
+              <template is="dom-if" if="{{!showFriendList}}">
+                <template is="dom-if" if="{{!showFriendSearch}}">
+                  Select a view from the menu on the left!
+                </template>
+              </template>
+            </template>
+            <template is="dom-if" if="{{showMessagesList}}">
+              <template is="dom-if" if="{{!showWelcome}}">
+                Select a conversation to view or send messages!
+              </template>
+            </template>
+            <template is="dom-if" if="{{showFriendList}}">
+              View your friends!
+            </template>
+            <template is="dom-if" if="{{showFriendSearch}}">
+              enter a username and search to add a friend!
             </template>
           </template>
           <template is="dom-if" if="{{!isPending(selectedContact)}}">
