@@ -20945,8 +20945,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="improt" href="bower_components/iron-ajax/iron-ajax.html">
 <dom-module id="messenger-view" assetpath="/">
   <style>
-    paper-card {
-      float:right;
+    .tip-card {
+      padding: 14px;
+    }
+    paper-input {
+      color: #4caf50;
     }
     paper-menu {
       padding-top: 0;
@@ -20956,7 +20959,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }
     paper-toolbar {
       background-color: #4CAF50;
-    };
+    }
     .searchFriend {
       cursor: pointer;
     }
@@ -20984,15 +20987,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <paper-header-panel drawer="">
         <paper-toolbar>
           <div class="title">
-            <template is="dom-if" if="{{showMessagesList}}">
-              Messages
-            </template>
-            <template is="dom-if" if="{{showFriendList}}">
-              Friends
-            </template>
-            <template is="dom-if" if="{{showFriendSearch}}">
-              Search
-            </template>
+            {{drawerTitle}}
           </div>
         </paper-toolbar>
         <div id="drawerContent">
@@ -21054,40 +21049,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-toolbar>
         <div id="mainContent">
           <template is="dom-if" if="{{noneSelected(selectedContact)}}">
-            <template is="dom-if" if="{{showWelcome}}">
-              <div>
-                <paper-card elevation="2" heading="A Decentralized Messenger">
-                  <div class="card-content">
-                    Welcome To A Decentralized Messenger.
-                    <br>Select a friend to view or send messages.
-                    <br><br>Enjoy.
-                  </div>
-                  <div class="card-actions">
-                    <paper-button on-tap="hideWelcome">Got it</paper-button>
-                    <paper-button>FAQ</paper-button>
-                    <paper-button>Contact</paper-button>
-                  </div>
-                </paper-card>
-              </div>
-            </template>
-            <template is="dom-if" if="{{!showMessagesList}}">
-              <template is="dom-if" if="{{!showFriendList}}">
-                <template is="dom-if" if="{{!showFriendSearch}}">
-                  Select a view from the menu on the left!
-                </template>
-              </template>
-            </template>
-            <template is="dom-if" if="{{showMessagesList}}">
-              <template is="dom-if" if="{{!showWelcome}}">
-                Select a conversation to view or send messages!
-              </template>
-            </template>
-            <template is="dom-if" if="{{showFriendList}}">
-              View your friends!
-            </template>
-            <template is="dom-if" if="{{showFriendSearch}}">
-              enter a username and search to add a friend!
-            </template>
+            <paper-card class="tip-card">{{tip}}</paper-card>
           </template>
           <template is="dom-if" if="{{!isPending(selectedContact)}}">
             <div>
@@ -21191,6 +21153,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         showFriendList: {
           type: Boolean,
           value: false
+        },
+        drawerTitle: {
+          type: String,
+          value: ""
+        },
+        tip: {
+          type: String,
+          value: "Select a view from the menu on the left!"
         },
         hasFriendSearchResults: {
           type: Boolean,
@@ -21499,16 +21469,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.hasFriendSearchResults = false;
         this.showMessagesList = false;
         this.showFriendList = false;
+        this.drawerTitle = "Search";
+        this.tip = "Search for a user to add them as friend!";
       },
       selectMessagesList: function() {
         this.showFriendSearch = false;
         this.showMessagesList = true;
         this.showFriendList = false;
+        this.drawerTitle = "Messages";
+        this.tip = "Select a conversation to view or send messages!";
       },
       selectFriendList: function() {
         this.showFriendSearch = false;
         this.showMessagesList = false;
         this.showFriendList = true;
+        this.drawerTitle = "Friends";
+        this.tip = "View Your Friends";
       },
       containsError: function(e) {
         if(e && e.error) {
