@@ -64,7 +64,17 @@
     <paper-drawer-panel>
       <paper-header-panel drawer>
         <paper-toolbar>
-          <div class="title">Friends</div>
+          <div class="title">
+            <template is="dom-if" if="{{showMessagesList}}">
+              Messages
+            </template>
+            <template is="dom-if" if="{{showFriendList}}">
+              Friends
+            </template>
+            <template is="dom-if" if="{{showFriendSearch}}">
+              Search
+            </template>
+          </div>
         </paper-toolbar>
         <div id="drawerContent">
           <paper-menu-button>
