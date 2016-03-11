@@ -157,7 +157,7 @@ module.exports = function(config) {
         console.log(err);
         return cb({error: "DATABASE_ERROR"})
       } else {
-        cb(results.changedRows > 0);
+        return cb(results.changedRows > 0 || results.affectedRows > 0);
       }
     })
   }
@@ -167,8 +167,8 @@ module.exports = function(config) {
     var q = "INSERT INTO users (username, password) VALUES(?, ?)";
     conn.query(q, [user, hash], function(err, results) {
       if(err)
-        return cb({error: "DATABASE_ERROR"})
-      return cb(true);
+        return cb({error: "DATABASE_ERROR"});
+      return cb(results.insertId);
     })
   }
 

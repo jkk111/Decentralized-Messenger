@@ -86,7 +86,7 @@ module.exports = function(app, storage) {
                 handleResult(success, res, function() {
                   storage.login(user, password, function(success) {
                     handleResult(success, res);
-                  })
+                  });
                 });
               });
             } else {
@@ -273,8 +273,9 @@ function badKeys(res, keys, req, missing) {
 }
 
 function handleResult(result, res, cb) {
+  console.log(typeof result)
   if(typeof result == "boolean") {
-    if(result) {
+    if(result !== false) {
       if(cb)
         cb();
       else
@@ -282,8 +283,13 @@ function handleResult(result, res, cb) {
     }
     else
       res.send({success: false});
-  } else {
+  } else if(typeof result == "object") {
     res.send(result)
+  } else {
+    if(cb)
+      cb();
+    else
+      res.send({error: "UNKNOWN_ERROR"});
   }
 }
 
