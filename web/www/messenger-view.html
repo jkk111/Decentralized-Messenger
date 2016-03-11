@@ -15,6 +15,7 @@
 <link rel="import" href="bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="bower_components/paper-menu/paper-menu.html">
 <link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="contact-element.html">
 
 <dom-module id="messenger-view">
@@ -72,65 +73,49 @@
           </div>
         </paper-toolbar>
         <div id="drawerContent">
-          <paper-menu-button>
-            <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
-            <paper-menu class="dropdown-content">
-              <paper-item on-tap="selectMessagesList"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
-              <paper-item on-tap="selectFriendList"><paper-icon-button icon="social:people"></paper-icon-button>Friends</paper-item>
-              <paper-item on-tap="selectFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
-            </paper-menu>
-          </paper-menu-button>
-            <template is="dom-if" if="{{showMessagesList}}">
+          <paper-item on-tap="toggleMessages"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
+          <iron-collapse id="collapseMessages">
+            <div>
               <paper-menu selected="{{selectedContact}}">
                 <template is="dom-repeat" items="{{friends}}">
                   <paper-item>
                     <contact-element
-                      name="{{item.username}}"
-                      online="{{item.online}}"
-                      img="{{item.img}}">
+                      name = "{{item.username}}"
+                      online = "{{item.online}}"
+                      img = "{{item.img}}">
                     </contact-element>
                   </paper-item>
                 </template>
               </paper-menu>
-            </template>
-            <template is="dom-if" if="{{showFriendList}}">
-              <paper-item>zero</paper-item>
-              <paper-item>one</paper-item>
-              <paper-item>two</paper-item>
-              <paper-item>three</paper-item>
-              <paper-item>four</paper-item>
-              <paper-item>five</paper-item>
-              <paper-item>six</paper-item>
-            </template>
-            <template is="dom-if" if="{{showFriendSearch}}">
-              <paper-item>
-              <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
-              <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
-              </paper-item>
-              <template is="dom-if" if="{{hasFriendSearchResults}}">
-                <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
-                  <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, friends, userId)}}">
-                    <div userId="{{itemId}}">
-                      <paper-item on-tap="addFriend" user-id="{{item.id}}" class="searchFriend">
-                        {{item.username}}
-                      </paper-item>
-                    </div>
-                  </template>
-                </template>
-                <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
-                  <div>No Results</div>
-                  <paper-button on-tap="returnToSearch">
-                    Return
-                  </paper-button>
+            </div>
+          </iron-collapse>
+          <paper-item on-tap="toggleFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
+          <iron-collapse id="collapseFriendSearch">
+            <paper-item>
+            <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
+            <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
+            </paper-item>
+            <template is="dom-if" if="{{hasFriendSearchResults}}">
+              <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
+                <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, friends, userId)}}">
+                  <div userId="{{itemId}}">
+                    <paper-item on-tap="addFriend" user-id="{{item.id}}" class="searchFriend">
+                      {{item.username}}
+                    </paper-item>
+                  </div>
                 </template>
               </template>
+              <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
+                <div>No Results</div>
+                <paper-button on-tap="returnToSearch">
+                  Return
+                </paper-button>
+              </template>
             </template>
+          </iron-collapse>
         </div>
       </paper-header-panel>
       <paper-header-panel main>
-        <paper-toolbar>
-          <div class="title">{{generateContactName(selectedContact)}}</div>
-        </paper-toolbar>
         <div id="mainContent">
           <template is="dom-if" if="{{noneSelected(selectedContact)}}">
             <paper-card class="tip-card">{{tip}}</paper-card>
@@ -139,7 +124,7 @@
             <div>
               <paper-dialog-scrollable id="messages">
                 <div id="messagesContainer">
-                <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
+                  <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
                   <template is="dom-if" if="{{item.fromSelf}}">
                     <div class="selfMessage">{{item.message}}</div>
                   </template>
@@ -148,7 +133,7 @@
                   </template>
                 </template>
               </div>
-            </paper-dialog-scrollable>
+              </paper-dialog-scrollable>
               <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
                 <div>
                   <paper-input on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
@@ -166,6 +151,9 @@
             </template>
           </template>
         </div>
+        <paper-toolbar>
+          <div class="title">{{generateContactName(selectedContact)}}</div>
+        </paper-toolbar>
       </paper-header-panel>
     </paper-drawer-panel>
   </template>
@@ -540,35 +528,15 @@
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
       },
+
+      toggleMessages: function() {
+        this.$.collapseMessages.toggle();
+      },
       toggleFriendSearch: function() {
-        this.showFriendSearch = !this.showFriendSearch;
+        this.$.collapseFriendSearch.toggle();
         this.searchQuery = "";
         this.set("friendSearchResults", {});
         this.hasFriendSearchResults = false;
-      },
-      selectFriendSearch: function() {
-        this.showFriendSearch = true;
-        this.searchQuery = "";
-        this.set("friendSearchResults", {});
-        this.hasFriendSearchResults = false;
-        this.showMessagesList = false;
-        this.showFriendList = false;
-        this.drawerTitle = "Search";
-        this.tip = "Search for a user to add them as friend!";
-      },
-      selectMessagesList: function() {
-        this.showFriendSearch = false;
-        this.showMessagesList = true;
-        this.showFriendList = false;
-        this.drawerTitle = "Messages";
-        this.tip = "Select a conversation to view or send messages!";
-      },
-      selectFriendList: function() {
-        this.showFriendSearch = false;
-        this.showMessagesList = false;
-        this.showFriendList = true;
-        this.drawerTitle = "Friends";
-        this.tip = "View Your Friends";
       },
       containsError: function(e) {
         if(e && e.error) {

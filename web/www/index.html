@@ -20040,6 +20040,249 @@ The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
 The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
 Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+`iron-collapse` creates a collapsible block of content.  By default, the content
+will be collapsed.  Use `opened` or `toggle()` to show/hide the content.
+
+    <button on-click="toggle">toggle collapse</button>
+
+    <iron-collapse id="collapse">
+      <div>Content goes here...</div>
+    </iron-collapse>
+
+    ...
+
+    toggle: function() {
+      this.$.collapse.toggle();
+    }
+
+`iron-collapse` adjusts the height/width of the collapsible element to show/hide
+the content.  So avoid putting padding/margin/border on the collapsible directly,
+and instead put a div inside and style that.
+
+    <style>
+      .collapse-content {
+        padding: 15px;
+        border: 1px solid #dedede;
+      }
+    </style>
+
+    <iron-collapse>
+      <div class="collapse-content">
+        <div>Content goes here...</div>
+      </div>
+    </iron-collapse>
+
+@group Iron Elements
+@hero hero.svg
+@demo demo/index.html
+@element iron-collapse
+-->
+
+<dom-module id="iron-collapse" assetpath="bower_components/iron-collapse/">
+
+  <style>
+
+    :host {
+      display: block;
+      transition-duration: 300ms;
+      overflow: visible;
+    }
+
+    :host(.iron-collapse-closed) {
+      display: none;
+    }
+
+    :host(:not(.iron-collapse-opened)) {
+      overflow: hidden;
+    }
+
+  </style>
+
+  <template>
+
+    <content></content>
+
+  </template>
+
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'iron-collapse',
+
+    behaviors: [
+      Polymer.IronResizableBehavior
+    ],
+
+    properties: {
+
+      /**
+       * If true, the orientation is horizontal; otherwise is vertical.
+       *
+       * @attribute horizontal
+       */
+      horizontal: {
+        type: Boolean,
+        value: false,
+        observer: '_horizontalChanged'
+      },
+
+      /**
+       * Set opened to true to show the collapse element and to false to hide it.
+       *
+       * @attribute opened
+       */
+      opened: {
+        type: Boolean,
+        value: false,
+        notify: true,
+        observer: '_openedChanged'
+      },
+
+      /**
+       * Set noAnimation to true to disable animations
+       *
+       * @attribute noAnimation
+       */
+      noAnimation: {
+        type: Boolean
+      },
+
+    },
+
+    get dimension() {
+      return this.horizontal ? 'width' : 'height';
+    },
+
+    hostAttributes: {
+      role: 'group',
+      'aria-hidden': 'true',
+      'aria-expanded': 'false'
+    },
+
+    listeners: {
+      transitionend: '_transitionEnd'
+    },
+
+    attached: function() {
+      // It will take care of setting correct classes and styles.
+      this._transitionEnd();
+    },
+
+    /**
+     * Toggle the opened state.
+     *
+     * @method toggle
+     */
+    toggle: function() {
+      this.opened = !this.opened;
+    },
+
+    show: function() {
+      this.opened = true;
+    },
+
+    hide: function() {
+      this.opened = false;
+    },
+
+    updateSize: function(size, animated) {
+      // No change!
+      if (this.style[this.dimension] === size) {
+        return;
+      }
+
+      this._updateTransition(false);
+      // If we can animate, must do some prep work.
+      if (animated && !this.noAnimation) {
+        // Animation will start at the current size.
+        var startSize = this._calcSize();
+        // For `auto` we must calculate what is the final size for the animation.
+        // After the transition is done, _transitionEnd will set the size back to `auto`.
+        if (size === 'auto') {
+          this.style[this.dimension] = size;
+          size = this._calcSize();
+        }
+        // Go to startSize without animation.
+        this.style[this.dimension] = startSize;
+        // Force layout to ensure transition will go. Set offsetHeight to itself
+        // so that compilers won't remove it.
+        this.offsetHeight = this.offsetHeight;
+        // Enable animation.
+        this._updateTransition(true);
+      }
+      // Set the final size.
+      this.style[this.dimension] = size;
+    },
+
+    /**
+     * enableTransition() is deprecated, but left over so it doesn't break existing code.
+     * Please use `noAnimation` property instead.
+     *
+     * @method enableTransition
+     * @deprecated since version 1.0.4
+     */
+    enableTransition: function(enabled) {
+      console.warn('`enableTransition()` is deprecated, use `noAnimation` instead.');
+      this.noAnimation = !enabled;
+    },
+
+    _updateTransition: function(enabled) {
+      this.style.transitionDuration = (enabled && !this.noAnimation) ? '' : '0s';
+    },
+
+    _horizontalChanged: function() {
+      this.style.transitionProperty = this.dimension;
+      var otherDimension = this.dimension === 'width' ? 'height' : 'width';
+      this.style[otherDimension] = '';
+      this.updateSize(this.opened ? 'auto' : '0px', false);
+    },
+
+    _openedChanged: function() {
+      this.setAttribute('aria-expanded', this.opened);
+      this.setAttribute('aria-hidden', !this.opened);
+
+      this.toggleClass('iron-collapse-closed', false);
+      this.toggleClass('iron-collapse-opened', false);
+      this.updateSize(this.opened ? 'auto' : '0px', true);
+
+      // Focus the current collapse.
+      if (this.opened) {
+        this.focus();
+      }
+      if (this.noAnimation) {
+        this._transitionEnd();
+      }
+    },
+
+    _transitionEnd: function() {
+      if (this.opened) {
+        this.style[this.dimension] = 'auto';
+      }
+      this.toggleClass('iron-collapse-closed', !this.opened);
+      this.toggleClass('iron-collapse-opened', this.opened);
+      this._updateTransition(false);
+      this.notifyResize();
+    },
+
+    _calcSize: function() {
+      return this.getBoundingClientRect()[this.dimension] + 'px';
+    }
+
+  });
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 --><script>
   /**
    * The `iron-iconset-svg` element allows users to define their own icon sets
@@ -20992,15 +21235,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </div>
         </paper-toolbar>
         <div id="drawerContent">
-          <paper-menu-button>
-            <paper-icon-button icon="menu" class="dropdown-trigger"></paper-icon-button>
-            <paper-menu class="dropdown-content">
-              <paper-item on-tap="selectMessagesList"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
-              <paper-item on-tap="selectFriendList"><paper-icon-button icon="social:people"></paper-icon-button>Friends</paper-item>
-              <paper-item on-tap="selectFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
-            </paper-menu>
-          </paper-menu-button>
-            <template is="dom-if" if="{{showMessagesList}}">
+          <paper-item on-tap="toggleMessages"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
+          <iron-collapse id="collapseMessages">
+            <div>
               <paper-menu selected="{{selectedContact}}">
                 <template is="dom-repeat" items="{{friends}}">
                   <paper-item>
@@ -21009,45 +21246,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   </paper-item>
                 </template>
               </paper-menu>
-            </template>
-            <template is="dom-if" if="{{showFriendList}}">
-              <paper-item>zero</paper-item>
-              <paper-item>one</paper-item>
-              <paper-item>two</paper-item>
-              <paper-item>three</paper-item>
-              <paper-item>four</paper-item>
-              <paper-item>five</paper-item>
-              <paper-item>six</paper-item>
-            </template>
-            <template is="dom-if" if="{{showFriendSearch}}">
-              <paper-item>
-              <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
-              <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
-              </paper-item>
-              <template is="dom-if" if="{{hasFriendSearchResults}}">
-                <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
-                  <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, friends, userId)}}">
-                    <div userid="{{itemId}}">
-                      <paper-item on-tap="addFriend" user-id="{{item.id}}" class="searchFriend">
-                        {{item.username}}
-                      </paper-item>
-                    </div>
-                  </template>
-                </template>
-                <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
-                  <div>No Results</div>
-                  <paper-button on-tap="returnToSearch">
-                    Return
-                  </paper-button>
+            </div>
+          </iron-collapse>
+          <paper-item on-tap="toggleFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
+          <iron-collapse id="collapseFriendSearch">
+            <paper-item>
+            <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
+            <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
+            </paper-item>
+            <template is="dom-if" if="{{hasFriendSearchResults}}">
+              <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
+                <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, friends, userId)}}">
+                  <div userid="{{itemId}}">
+                    <paper-item on-tap="addFriend" user-id="{{item.id}}" class="searchFriend">
+                      {{item.username}}
+                    </paper-item>
+                  </div>
                 </template>
               </template>
+              <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
+                <div>No Results</div>
+                <paper-button on-tap="returnToSearch">
+                  Return
+                </paper-button>
+              </template>
             </template>
+          </iron-collapse>
         </div>
       </paper-header-panel>
       <paper-header-panel main="">
-        <paper-toolbar>
-          <div class="title">{{generateContactName(selectedContact)}}</div>
-        </paper-toolbar>
         <div id="mainContent">
           <template is="dom-if" if="{{noneSelected(selectedContact)}}">
             <paper-card class="tip-card">{{tip}}</paper-card>
@@ -21056,7 +21283,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <div>
               <paper-dialog-scrollable id="messages">
                 <div id="messagesContainer">
-                <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
+                  <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
                   <template is="dom-if" if="{{item.fromSelf}}">
                     <div class="selfMessage">{{item.message}}</div>
                   </template>
@@ -21065,7 +21292,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   </template>
                 </template>
               </div>
-            </paper-dialog-scrollable>
+              </paper-dialog-scrollable>
               <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
                 <div>
                   <paper-input on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
@@ -21083,6 +21310,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </template>
           </template>
         </div>
+        <paper-toolbar>
+          <div class="title">{{generateContactName(selectedContact)}}</div>
+        </paper-toolbar>
       </paper-header-panel>
     </paper-drawer-panel>
   </template>
@@ -21457,35 +21687,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
       },
+
+      toggleMessages: function() {
+        this.$.collapseMessages.toggle();
+      },
       toggleFriendSearch: function() {
-        this.showFriendSearch = !this.showFriendSearch;
+        this.$.collapseFriendSearch.toggle();
         this.searchQuery = "";
         this.set("friendSearchResults", {});
         this.hasFriendSearchResults = false;
-      },
-      selectFriendSearch: function() {
-        this.showFriendSearch = true;
-        this.searchQuery = "";
-        this.set("friendSearchResults", {});
-        this.hasFriendSearchResults = false;
-        this.showMessagesList = false;
-        this.showFriendList = false;
-        this.drawerTitle = "Search";
-        this.tip = "Search for a user to add them as friend!";
-      },
-      selectMessagesList: function() {
-        this.showFriendSearch = false;
-        this.showMessagesList = true;
-        this.showFriendList = false;
-        this.drawerTitle = "Messages";
-        this.tip = "Select a conversation to view or send messages!";
-      },
-      selectFriendList: function() {
-        this.showFriendSearch = false;
-        this.showMessagesList = false;
-        this.showFriendList = true;
-        this.drawerTitle = "Friends";
-        this.tip = "View Your Friends";
       },
       containsError: function(e) {
         if(e && e.error) {
@@ -23757,7 +23967,8 @@ Custom property | Description | Default
         // Generate keypair
         var enc = new JSEncrypt({default_key_size: 2048});
         enc.getKey();
-        console.log(enc.getPrivateKey())
+        this.privateKey = enc.getPrivateKey();
+        this.publicKey = enc.getPublicKey();
         this.$.registerAjax.generateRequest();
       },
 
