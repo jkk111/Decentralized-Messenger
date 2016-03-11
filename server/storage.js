@@ -18,7 +18,9 @@ module.exports = function(config) {
     console.log("You didn't specify a storage method! exiting");
     process.exit(1);
   }
-
+  /*
+   * This may look redundant, but it allows a plugin to be specified in the configuration file, without modifying the api or anything that depends on it.
+   */
   var storageEngine = require(storageScript)(config);
 
   this.search = storageEngine.search;
@@ -50,6 +52,8 @@ module.exports = function(config) {
   this.cancelFriendRequest = storageEngine.cancelFriendRequest;
 
   this.checkFriendship = storageEngine.checkFriendship;
+
+  this.setKeys = storageEngine.setKeys;
 
   return this;
 }

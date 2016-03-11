@@ -76,7 +76,8 @@ function buildTables() {
   var table = "CREATE TABLE users (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, \
                                    username VARCHAR(100) UNIQUE NOT NULL, \
                                    password BLOB NOT NULL, \
-                                   lastActive TIMESTAMP DEFAULT NOW()); \
+                                   lastActive TIMESTAMP DEFAULT NOW(), \
+                                   isManaged BOOLEAN DEFAULT TRUE); \
                CREATE TABLE messages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, \
                                       sender INT UNSIGNED NOT NULL, \
                                       recipient INT UNSIGNED NOT NULL, \
@@ -88,7 +89,10 @@ function buildTables() {
                                      user1 INT UNSIGNED NOT NULL, \
                                      user2 INT UNSIGNED NOT NULL, \
                                      secret TEXT(60000) NOT NULL, \
-                                     pending BOOLEAN DEFAULT TRUE);";
+                                     pending BOOLEAN DEFAULT TRUE); \
+                   CREATE TABLE keypairs (id INT UNSIGNED UNIQUE, \
+                                      private TEXT(60000) NOT NULL, \
+                                      public TEXT(60000) NOT NULL);";
   conn.query(table, function(err, results) {
     if(err)
       console.log(err);

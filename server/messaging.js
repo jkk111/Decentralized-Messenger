@@ -75,14 +75,26 @@ module.exports = function(app, storage) {
     }
     var user = req.body.user;
     var password = req.body.password;
+    var privKey = req.body.privKey;
+    var pubKey = req.body.pubKey;
     storage.userExists(user, function(exists) {
       handleResult((exists === false) ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
         storage.register(user, password, function(success) {
           handleResult(success, res, function() {
-            storage.login(user, password, function(success) {
-              console.log(success);
-              handleResult(success, res);
-            });
+            if(privKey && pubKey) {
+              storage.setKeys(privKey, pubKey, function(success) {
+                handleResult(success, res, function() {
+                  storage.login(user, password, function(success) {
+                    handleResult(success, res);
+                  })
+                });
+              });
+            } else {
+              storage.login(user, password, function(success) {
+                console.log(success);
+                handleResult(success, res);
+              });
+            }
           });
         });
       });

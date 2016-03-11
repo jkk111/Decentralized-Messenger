@@ -150,6 +150,18 @@ module.exports = function(config) {
     })
   }
 
+  connector.setKeys = function(id, priv, pub, cb) {
+    var q = "INSERT INTO keys (id, privateKey, publicKey) VALUES(?, ?, ?) ON DUPLICATE UPDATE privateKey = ? publicKey = ?;";
+    conn.query(q, [id, priv, pub, priv, pub], function(err, results) {
+      if(err) {
+        console.log(err);
+        return cb({error: "DATABASE_ERROR"})
+      } else {
+        cb(results.changedRows > 0);
+      }
+    })
+  }
+
   connector.register = function(user, pass, cb) {
     var hash = generateHash(pass);
     var q = "INSERT INTO users (username, password) VALUES(?, ?)";
