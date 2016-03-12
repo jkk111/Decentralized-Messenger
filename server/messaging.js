@@ -81,8 +81,10 @@ module.exports = function(app, storage) {
       handleResult((exists === false) ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
         storage.register(user, password, function(success) {
           handleResult(success, res, function() {
+            console.log("registered")
             if(privKey && pubKey) {
-              storage.setKeys(privKey, pubKey, function(success) {
+              storage.setKeys(success, privKey, pubKey, function(success) {
+                console.log(success);
                 handleResult(success, res, function() {
                   storage.login(user, password, function(success) {
                     handleResult(success, res);

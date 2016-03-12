@@ -23899,9 +23899,17 @@ Custom property | Description | Default
           type: String,
           value: "/register"
         },
+        privateKey: {
+          type: String,
+          value: ""
+        },
+        publicKey: {
+          type: String,
+          value: ""
+        },
         registerBody: {
           type: Object,
-          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword, registerPasswordConfirm)'
+          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword, publicKey, privateKey)'
         },
         loginUrl: {
           type: String,
@@ -23964,7 +23972,6 @@ Custom property | Description | Default
         if(this.registerUser == "" || this.registerPassword == "" || this.registerEmail == "" || this.registerPassword != this.registerPasswordConfirm)
           return;
         this.checkEmail(this.registerEmail);
-        // Generate keypair
         var enc = new JSEncrypt({default_key_size: 2048});
         enc.getKey();
         this.privateKey = enc.getPrivateKey();
@@ -23972,8 +23979,8 @@ Custom property | Description | Default
         this.$.registerAjax.generateRequest();
       },
 
-      computeRegisterBody: function(email, user, pass) {
-        return { user: user, password: pass, email: email };
+      computeRegisterBody: function(email, user, pass, publicKey, privateKey) {
+        return { user: user, password: pass, email: email, pubKey: publicKey, privKey: privateKey };
       },
 
       computeLoginBody: function(user, pass) {

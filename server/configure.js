@@ -66,33 +66,32 @@ function buildDatabase() {
 }
 
 function buildKeys(cb) {
-  // TODO (john): implement key storage
   console.log("Coming soon to a messenger near you. Encryption!");
   cb();
 }
 
-// Am I in callback hell yet?
 function buildTables() {
-  var table = "CREATE TABLE users (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, \
-                                   username VARCHAR(100) UNIQUE NOT NULL, \
-                                   password BLOB NOT NULL, \
-                                   lastActive TIMESTAMP DEFAULT NOW(), \
-                                   isManaged BOOLEAN DEFAULT TRUE); \
-               CREATE TABLE messages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, \
-                                      sender INT UNSIGNED NOT NULL, \
-                                      recipient INT UNSIGNED NOT NULL, \
-                                      message TEXT(60000) NOT NULL); \
-               CREATE TABLE tokens (user INT UNSIGNED NOT NULL, \
-                                    token VARCHAR(100) NOT NULL, \
-                                    expiry DATETIME NOT NULL); \
-               CREATE TABLE friends (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, \
-                                     user1 INT UNSIGNED NOT NULL, \
-                                     user2 INT UNSIGNED NOT NULL, \
-                                     secret TEXT(60000) NOT NULL, \
-                                     pending BOOLEAN DEFAULT TRUE); \
-                   CREATE TABLE keypairs (id INT UNSIGNED UNIQUE, \
-                                      private TEXT(60000) NOT NULL, \
-                                      public TEXT(60000) NOT NULL);";
+  var table = `CREATE TABLE users (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                                   username VARCHAR(100) UNIQUE NOT NULL,
+                                   password BLOB NOT NULL,
+                                   lastActive TIMESTAMP DEFAULT NOW(),
+                                   isManaged BOOLEAN DEFAULT TRUE,
+                                   publicKeyShared BOOLEAN DEFAULT TRUE);
+               CREATE TABLE messages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                                      sender INT UNSIGNED NOT NULL,
+                                      recipient INT UNSIGNED NOT NULL,
+                                      message TEXT(60000) NOT NULL);
+               CREATE TABLE tokens (user INT UNSIGNED NOT NULL,
+                                    token VARCHAR(100) NOT NULL,
+                                    expiry DATETIME NOT NULL);
+               CREATE TABLE friends (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                                     user1 INT UNSIGNED NOT NULL,
+                                     user2 INT UNSIGNED NOT NULL,
+                                     secret TEXT(60000) NOT NULL,
+                                     pending BOOLEAN DEFAULT TRUE);
+               CREATE TABLE keypairs (id INT UNSIGNED UNIQUE,
+                                      private TEXT(60000) NOT NULL,
+                                      public TEXT(60000) NOT NULL);`;
   conn.query(table, function(err, results) {
     if(err)
       console.log(err);

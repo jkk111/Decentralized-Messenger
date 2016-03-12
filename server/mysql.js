@@ -1,7 +1,6 @@
 var mysql = require("mysql");
 var crypto = require("crypto");
-var salt, databaseUser, databasePassword, databaseHost
-    ,databaseName, databasePort, connector, conn, tokenCache;
+var salt, databaseUser, databasePassword, databaseHost, databaseName, databasePort, connector, conn, tokenCache;
 module.exports = function(config) {
   connector = {};
   databaseUser = config.databaseUser;
@@ -47,7 +46,7 @@ module.exports = function(config) {
         q = "UPDATE users set lastActive = NOW() WHERE id = ?;";
         conn.query(q, [user], function(err2, results2) {
           if(err2) {
-            cb({error: "USER_STATUS_UPDATE_ERROR"});
+            cb({error: "DATABASE_ERROR", type: "USER_STATUS_UPDATE_ERROR"});
           }
           if(results && results[0]) {
             tokenCache[token] = { user: user, expiry: new Date(results[0].expiry) };
@@ -151,8 +150,9 @@ module.exports = function(config) {
   }
 
   connector.setKeys = function(id, priv, pub, cb) {
-    var q = "INSERT INTO keys (id, privateKey, publicKey) VALUES(?, ?, ?) ON DUPLICATE UPDATE privateKey = ? publicKey = ?;";
-    conn.query(q, [id, priv, pub, priv, pub], function(err, results) {
+    console.log("THE ID IS: " +id);
+    var q = "INSERT INTO keypairs (id, private, public) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE private = VALUES(private), public = VALUES(public);";
+    conn.query(q, [id, priv, pub], function(err, results) {
       if(err) {
         console.log(err);
         return cb({error: "DATABASE_ERROR"})
@@ -166,8 +166,10 @@ module.exports = function(config) {
     var hash = generateHash(pass);
     var q = "INSERT INTO users (username, password) VALUES(?, ?)";
     conn.query(q, [user, hash], function(err, results) {
-      if(err)
+      if(err) {
+        console.log(err);
         return cb({error: "DATABASE_ERROR"});
+      }
       return cb(results.insertId);
     })
   }
