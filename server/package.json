@@ -1,12 +1,12 @@
 {
   "name": "decentralized-messenger",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "main": "app.js",
   "dependencies": {
     "body-parser": "^1.14.2",
     "cookie-parser": "^1.4.1",
     "express": "^4.13.3",
-    "mysql": "^2.10.2",
+    "mysql2": "^1.0.0-rc.1",
     "node-rsa": "^0.3.2",
     "prompt": "^0.2.14",
     "request": "^2.69.0",

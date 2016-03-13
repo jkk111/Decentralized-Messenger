@@ -1,4 +1,4 @@
-var mysql = require("mysql");
+var mysql = require("mysql2");
 var crypto = require("crypto");
 var salt, databaseUser, databasePassword, databaseHost, databaseName, databasePort, connector, conn, tokenCache;
 module.exports = function(config) {
@@ -16,7 +16,8 @@ module.exports = function(config) {
     host: databaseHost,
     port: databasePort,
     database: databaseName,
-    multipleStatements: true
+    multipleStatements: true,
+    namedPlaceholders: true
   });
 
   tokenCache = {}
@@ -106,15 +107,21 @@ module.exports = function(config) {
   }
 
   connector.login = function(user, pass, cb) {
-    var q = "SELECT id FROM users WHERE username = ? AND password = ?";
     pass = generateHash(pass);
+    var q = `SELECT CASE
+              WHEN users.isManaged = 1 THEN (SELECT private FROM keypairs where keypairs.id = users.id)
+              ELSE FALSE
+            END AS "private", id, username FROM users where username = ? AND password = ?`;
     conn.query(q, [user, pass], function(err, results) {
       if(err) {
         console.log(err);
         return cb({error: "DATABASE_ERROR"});
       }
-      if(results && results.length > 0)
-        generateToken(results[0].id, cb);
+      if(results && results.length > 0) {
+        if(results[0].private === 0)
+          results[0].private = false;
+        generateToken(results[0], cb);
+      }
       else
         cb({ error: "ERROR_BAD_LOGIN" });
     });
@@ -248,22 +255,41 @@ module.exports = function(config) {
       cb(messages);
     })
   }
-
+    // friendshipId: users[i].id, id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false, initiatedBySelf
   connector.getFriends = function (sender, cb) {
-    var q = "SELECT * FROM friends where user1 = ? OR user2 = ?";
-    console.log(sender);
-    conn.query(q, [sender, sender], function(err, results) {
-      if(err) {
+    var q = `SELECT CASE
+              WHEN friends.pending = 1 AND friends.user1 = :user THEN true
+              WHEN friends.pending = 1 THEN false
+              ELSE FALSE
+            END AS "initiatedBySelf", friends.pending, users.username, keypairs.public, friends.user1, friends.user2, friends.id as friendshipId
+            FROM friends
+            LEFT JOIN users ON
+              friends.user1=users.id AND users.id != :user OR friends.user2=users.id AND users.id != :user
+            LEFT JOIN keypairs ON
+              friends.user1=keypairs.id AND keypairs.id!=:user OR friends.user2=keypairs.id AND keypairs.id!=:user
+            WHERE friends.user1=:user OR friends.user2=:user`;
+    conn.query(q, {user: sender}, function(err, results) {
+      if(err || !results) {
         console.log(err);
         cb({error: "DATABASE_ERROR"});
       }
       else {
-        console.log(results);
-        console.log(results != undefined ? results.length : undefined);
         if(results.length === 0) {
           return cb({error: "ERROR_NO_FRIENDS"});
         }
-        getUsernames(results, sender, cb);
+        for(var i = 0 ; i < results.length; i++) {
+          if(results[i].pending) {
+            results[i].pending = true;
+            if(results[i].initiatedBySelf) {
+              results[i].initiatedBySelf = true;
+            } else {
+              results[i].initiatedBySelf = false;
+            }
+          } else {
+            results[i].pending = false;
+          }
+        }
+        return cb(results)
       }
     })
   }
@@ -331,13 +357,14 @@ function generateHash(pass) {
 function addToken(user, token, cb) {
   console.log("Adding token: %s", token);
   var q = "INSERT INTO tokens VALUES(?, ?, NOW() + INTERVAL 2 HOUR);"
-  conn.query(q, [user, token], function(err, rows, fields) {
+  conn.query(q, [user.id, token], function(err, rows, fields) {
     if(err) {
       console.log(err);
       return cb({ success: false, error: "Storing token failed" });
     }
-    console.log(rows)
-    cb({ success: true, id: user, token: token });
+    user.success = true;
+    user.token = token;
+    return cb(user);
   })
 }
 
@@ -352,41 +379,41 @@ function generateToken(user, cb) {
   addToken(user, token, cb);
 }
 
-function getUsernames(users, sender, cb) {
-  console.log(users + ":"+ sender)
-  var ids = [];
-  for(var i = 0 ; i < users.length; i++) {
-    var user;
-    if(users[i]["user1"] != sender) {
-     ids.push(users[i]["user1"]);
-     users[i].isFirst = true
-    }
-    else
-      ids.push(users[i]["user2"])
-  }
-  var q = "SELECT username, id from users where id in (";
-  for(var i = 0 ; i < ids.length; i++) {
-    if(i > 0)
-      q += ",";
-      q += "?";
-  }
-  q += ");";
-  conn.query(q, ids, function(err, results) {
-    if(err) {
-      console.log(err);
-      cb({ error: "DATABASE_ERROR", info: err});
-      return
-    }
-    var response = [];
-    for(var i = 0 ; i < results.length; i++) {
-      var item = { friendshipId: users[i].id, id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false};
-      if(item.pending)
-        item.initiatedBySelf = users[i].isFirst !== true;
-      response.push(item);
-    }
-    console.log(response);
-    cb(response);
-  })
-}
+// function getUsernames(users, sender, cb) {
+//   console.log(users + ":"+ sender)
+//   var ids = [];
+//   for(var i = 0 ; i < users.length; i++) {
+//     var user;
+//     if(users[i]["user1"] != sender) {
+//      ids.push(users[i]["user1"]);
+//      users[i].isFirst = true
+//     }
+//     else
+//       ids.push(users[i]["user2"])
+//   }
+//   var q = "SELECT username, id from users where id in (";
+//   for(var i = 0 ; i < ids.length; i++) {
+//     if(i > 0)
+//       q += ",";
+//       q += "?";
+//   }
+//   q += ");";
+//   conn.query(q, ids, function(err, results) {
+//     if(err) {
+//       console.log(err);
+//       cb({ error: "DATABASE_ERROR", info: err});
+//       return
+//     }
+//     var response = [];
+//     for(var i = 0 ; i < results.length; i++) {
+//       var item = { friendshipId: users[i].id, id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false};
+//       if(item.pending)
+//         item.initiatedBySelf = users[i].isFirst !== true;
+//       response.push(item);
+//     }
+//     console.log(response);
+//     cb(response);
+//   })
+// }
 
 setInterval(pruneExpiredTokens, 1000 * 60);
