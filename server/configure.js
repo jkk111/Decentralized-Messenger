@@ -90,7 +90,7 @@ function buildTables() {
                                      secret TEXT(60000) NOT NULL,
                                      pending BOOLEAN DEFAULT TRUE);
                CREATE TABLE keypairs (id INT UNSIGNED UNIQUE,
-                                      private TEXT(60000) NOT NULL,
+                                      private TEXT(60000),
                                       public TEXT(60000) NOT NULL);`;
   conn.query(table, function(err, results) {
     if(err)

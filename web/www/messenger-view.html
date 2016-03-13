@@ -507,7 +507,7 @@
       },
       checkSubmit: function(e) {
         if(e.keyCode == 13) {
-          this.messageBody = this.computeMessageBody()
+          this.messageBody = this.computeMessageBody();
           this.message = "";
           this.$.messageAjax.generateRequest();
         }

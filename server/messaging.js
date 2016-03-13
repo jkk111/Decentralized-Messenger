@@ -75,8 +75,8 @@ module.exports = function(app, storage) {
     }
     var user = req.body.user;
     var password = req.body.password;
-    var privKey = req.body.privKey;
-    var pubKey = req.body.pubKey;
+    var privKey = req.body.privKey || null;
+    var pubKey = req.body.pubKey || null;
     storage.userExists(user, function(exists) {
       handleResult((exists === false) ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
         storage.register(user, password, function(success) {

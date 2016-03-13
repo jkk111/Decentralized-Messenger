@@ -261,7 +261,11 @@ module.exports = function(config) {
               WHEN friends.pending = 1 AND friends.user1 = :user THEN true
               WHEN friends.pending = 1 THEN false
               ELSE FALSE
-            END AS "initiatedBySelf", friends.pending, users.username, keypairs.public, friends.user1, friends.user2, friends.id as friendshipId
+            END AS "initiatedBySelf",
+            CASE
+              WHEN friends.user1 = :user THEN friends.user2
+              ELSE friends.user2
+            END AS "id", friends.pending, users.username, keypairs.public, friends.id as friendshipId
             FROM friends
             LEFT JOIN users ON
               friends.user1=users.id AND users.id != :user OR friends.user2=users.id AND users.id != :user
