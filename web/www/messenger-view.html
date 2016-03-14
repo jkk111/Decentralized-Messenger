@@ -41,6 +41,9 @@
     .selfMessage {
       background-color: #eee;
     }
+    .collapse {
+      cursor: pointer;
+    }
 
   </style>
   <template>
@@ -73,7 +76,7 @@
           </div>
         </paper-toolbar>
         <div id="drawerContent">
-          <paper-item on-tap="toggleMessages"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
+          <paper-item class="collapse" on-tap="toggleMessages"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
           <iron-collapse id="collapseMessages" opened>
             <div>
               <paper-menu selected="{{selectedContact}}">
@@ -89,7 +92,7 @@
               </paper-menu>
             </div>
           </iron-collapse>
-          <paper-item on-tap="toggleFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
+          <paper-item class="collapse" on-tap="toggleFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
           <iron-collapse id="collapseFriendSearch">
             <paper-item>
             <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
@@ -488,6 +491,8 @@
               if(!this.friends[j].messages)
                 this.friends[j].messages = [];
               for(var k = 0; k < messages[ids[i]].length; k++) {
+                if(this.hasMessage(ids[i], messages[ids[i]][k].id))
+                  continue;
                 console.log(messages[ids[i]][k].id)
                 if(messages[ids[i]][k].id > this.highestReceived || this.highestReceived == NaN || this.highestReceived === undefined) {
                   console.log("changing highestReceived")
@@ -496,7 +501,6 @@
                   console.log("not pushing %d, %d", this.highestReceived, messages[ids[i]][k].id);
                   console.log(this.highestReceived)
                 }
-                // this.friends[j].messages.push(messages[ids[i]][k])
                 console.log("friends."+j+".messages");
                 this.push("friends." + j + ".messages", this.decryptMessage(messages[ids[i]][k]));
                 this.notifyPath("friends", this.friends.slice());
@@ -505,6 +509,15 @@
             }
           }
         }
+      },
+      hasMessage: function(friend, id) {
+        if(!this.friends[friend] || ! this.friends[friend].messages || this.friends[friend].messages.length == 0)
+          return false;
+        for(var i = 0 ; i < this.friends[friend].messages.length; i++) {
+          if(this.friends[friend].messages[i].id == id)
+            return true;
+        }
+        return false;
       },
       checkSubmit: function(e) {
         if(e.keyCode == 13) {
