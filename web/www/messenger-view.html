@@ -279,7 +279,6 @@
         return { sender: id, token: token, query: searchQuery }
       },
       friendConfirmed: function(e, res) {
-        // this.$.confirmFriendAjax.generateRequest();
         console.log(res.response);
         this.$.friendsajax.generateRequest();
       },
@@ -433,6 +432,17 @@
           return
         return friends[contact].messages;
       },
+      encryptMessage: function(message, key) {
+        var enc = new JSEncrypt();
+        enc.setPublicKey(key);
+        return enc.encrypt(message);
+      },
+      decryptMessage: function(message) {
+        var dec = new JSEncrypt();
+        dec.setPrivateKey(this.privateKey);
+        console.log(message)
+        return { id: message.id, message: dec.decrypt(message.message), fromSelf: message.fromSelf };
+      },
       getSelectedFriend: function(contact) {
         return this.friends[contact]
       },
@@ -444,16 +454,6 @@
       },
       noneSelected: function(friend) {
         return friend < 0;
-      },
-      encrypt: function(str) {
-        var encStr = "";
-
-        return encStr;
-      },
-      decrypt: function(str) {
-        var decStr = "";
-
-        return decStr;
       },
       pollResponse: function(e, res) {
         if(!res || !res.response || this.containsError(res.response)) {
@@ -497,7 +497,7 @@
                 }
                 // this.friends[j].messages.push(messages[ids[i]][k])
                 console.log("friends."+j+".messages");
-                this.push("friends." + j + ".messages", messages[ids[i]][k]);
+                this.push("friends." + j + ".messages", this.decryptMessage(messages[ids[i]][k]));
                 this.notifyPath("friends", this.friends.slice());
                 this.notifyPath("friends."+j+".messages", this.friends[j].messages.slice());
               }
@@ -514,7 +514,10 @@
       },
       computeMessageBody: function() {
         console.log({ sender: this.userId, dest: this.friends[this.selectedContact].id, message: this.message, token: this.token });
-        return { sender: this.userId, dest: this.friends[this.selectedContact].id, message: this.message, token: this.token }
+        return { sender: this.userId, dest: this.friends[this.selectedContact].id,
+                 messageRecipient: this.encryptMessage(this.message, this.friends[this.selectedContact].public),
+                 messageSender: this.encryptMessage(this.message, this.publicKey), message: "OUTDATED CLIENT", token: this.token }
+                 // this.friends[this.selectedContact].public
       },
       friendsResponse: function(e, res) {
         if(res.response && !res.response.error) {

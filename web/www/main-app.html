@@ -25,7 +25,7 @@
   </style>
   <template>
     <user-login id="login" on-logged-in="openMessenger"></user-login>
-    <messenger-view id="messenger" on-relogin="relogin" user-id="{{userId}}" token="{{token}}"></messenger-view>
+    <messenger-view id="messenger" on-relogin="relogin" user-id="{{userId}}" token="{{token}}" private-key="{{privateKey}}" public-key="{{publicKey}}"></messenger-view>
     <div id="loadingMessenger">
       <paper-spinner id="loading"></paper-spinner>
     </div>
@@ -43,6 +43,14 @@
           value: -1
         },
         token: {
+          type: String,
+          value: ""
+        },
+        privateKey: {
+          type: String,
+          value: ""
+        },
+        publicKey: {
           type: String,
           value: ""
         },
@@ -149,6 +157,8 @@
         this.$.loading.active = true;
         this.userId = data.id;
         this.token = data.token;
+        this.privateKey = data.private;
+        this.publicKey = data.public;
         // this.$.login.style.display = "none";
         // this.$.messenger.style.display = "block";
         this.playAnimation('closeLogin', 'closeLogin');

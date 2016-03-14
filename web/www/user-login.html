@@ -192,7 +192,7 @@
       loggedIn: function(e, response) {
         console.log(response.response);
         if(response.response.success)
-          this.goToMessenger(response.response.id, response.response.token);
+          this.goToMessenger(response.response);
       },
 
       secretReceived: function(e, response) {
@@ -206,8 +206,8 @@
         this.$.loginAjax.generateRequest();
       },
 
-      goToMessenger: function(id, token) {
-        this.fire('logged-in', { id: id, token: token });
+      goToMessenger: function(response) {
+        this.fire('logged-in', response);
       },
 
       doRegister: function() {

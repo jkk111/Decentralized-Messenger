@@ -21438,7 +21438,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return { sender: id, token: token, query: searchQuery }
       },
       friendConfirmed: function(e, res) {
-        // this.$.confirmFriendAjax.generateRequest();
         console.log(res.response);
         this.$.friendsajax.generateRequest();
       },
@@ -21592,6 +21591,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return
         return friends[contact].messages;
       },
+      encryptMessage: function(message, key) {
+        var enc = new JSEncrypt();
+        enc.setPublicKey(key);
+        return enc.encrypt(message);
+      },
+      decryptMessage: function(message) {
+        var dec = new JSEncrypt();
+        dec.setPrivateKey(this.privateKey);
+        console.log(message)
+        return { id: message.id, message: dec.decrypt(message.message), fromSelf: message.fromSelf };
+      },
       getSelectedFriend: function(contact) {
         return this.friends[contact]
       },
@@ -21603,16 +21613,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       noneSelected: function(friend) {
         return friend < 0;
-      },
-      encrypt: function(str) {
-        var encStr = "";
-
-        return encStr;
-      },
-      decrypt: function(str) {
-        var decStr = "";
-
-        return decStr;
       },
       pollResponse: function(e, res) {
         if(!res || !res.response || this.containsError(res.response)) {
@@ -21656,7 +21656,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 }
                 // this.friends[j].messages.push(messages[ids[i]][k])
                 console.log("friends."+j+".messages");
-                this.push("friends." + j + ".messages", messages[ids[i]][k]);
+                this.push("friends." + j + ".messages", this.decryptMessage(messages[ids[i]][k]));
                 this.notifyPath("friends", this.friends.slice());
                 this.notifyPath("friends."+j+".messages", this.friends[j].messages.slice());
               }
@@ -21666,14 +21666,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       checkSubmit: function(e) {
         if(e.keyCode == 13) {
-          this.messageBody = this.computeMessageBody()
+          this.messageBody = this.computeMessageBody();
           this.message = "";
           this.$.messageAjax.generateRequest();
         }
       },
       computeMessageBody: function() {
         console.log({ sender: this.userId, dest: this.friends[this.selectedContact].id, message: this.message, token: this.token });
-        return { sender: this.userId, dest: this.friends[this.selectedContact].id, message: this.message, token: this.token }
+        return { sender: this.userId, dest: this.friends[this.selectedContact].id,
+                 messageRecipient: this.encryptMessage(this.message, this.friends[this.selectedContact].public),
+                 messageSender: this.encryptMessage(this.message, this.publicKey), message: "OUTDATED CLIENT", token: this.token }
+                 // this.friends[this.selectedContact].public
       },
       friendsResponse: function(e, res) {
         if(res.response && !res.response.error) {
@@ -23950,7 +23953,7 @@ Custom property | Description | Default
       loggedIn: function(e, response) {
         console.log(response.response);
         if(response.response.success)
-          this.goToMessenger(response.response.id, response.response.token);
+          this.goToMessenger(response.response);
       },
 
       secretReceived: function(e, response) {
@@ -23964,8 +23967,8 @@ Custom property | Description | Default
         this.$.loginAjax.generateRequest();
       },
 
-      goToMessenger: function(id, token) {
-        this.fire('logged-in', { id: id, token: token });
+      goToMessenger: function(response) {
+        this.fire('logged-in', response);
       },
 
       doRegister: function() {
@@ -25323,7 +25326,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </style>
   <template>
     <user-login id="login" on-logged-in="openMessenger"></user-login>
-    <messenger-view id="messenger" on-relogin="relogin" user-id="{{userId}}" token="{{token}}"></messenger-view>
+    <messenger-view id="messenger" on-relogin="relogin" user-id="{{userId}}" token="{{token}}" private-key="{{privateKey}}" public-key="{{publicKey}}"></messenger-view>
     <div id="loadingMessenger">
       <paper-spinner id="loading"></paper-spinner>
     </div>
@@ -25341,6 +25344,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           value: -1
         },
         token: {
+          type: String,
+          value: ""
+        },
+        privateKey: {
+          type: String,
+          value: ""
+        },
+        publicKey: {
           type: String,
           value: ""
         },
@@ -25447,6 +25458,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.$.loading.active = true;
         this.userId = data.id;
         this.token = data.token;
+        this.privateKey = data.private;
+        this.publicKey = data.public;
         // this.$.login.style.display = "none";
         // this.$.messenger.style.display = "block";
         this.playAnimation('closeLogin', 'closeLogin');

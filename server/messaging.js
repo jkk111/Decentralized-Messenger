@@ -231,7 +231,8 @@ module.exports = function(app, storage) {
     }
     var sender = req.body.sender;
     var dest = req.body.dest;
-    var message = req.body.message;
+    var messageSender = req.body.messageSender || req.body.message;
+    var messageRecipient = req.body.messageRecipient || req.body.message;
     var token = req.body.token;
     storage.verifyToken(sender, token, function(success) {
       console.log("verified: %s", success)
@@ -239,7 +240,7 @@ module.exports = function(app, storage) {
         storage.checkFriendship(sender, dest, function(success) {
           console.log("friends: %s", success)
           handleResult(success, res, function() {
-            storage.addMessage(sender, dest, message, function(success) {
+            storage.addMessage(sender, dest, messageSender, messageRecipient, function(success) {
               console.log("message added: %s", success)
               handleResult(success, res);
             });

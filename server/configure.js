@@ -80,7 +80,8 @@ function buildTables() {
                CREATE TABLE messages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                                       sender INT UNSIGNED NOT NULL,
                                       recipient INT UNSIGNED NOT NULL,
-                                      message TEXT(60000) NOT NULL);
+                                      messageSender TEXT(60000) NOT NULL,
+                                      messageRecipient TEXT(60000) NOT NULL);
                CREATE TABLE tokens (user INT UNSIGNED NOT NULL,
                                     token VARCHAR(100) NOT NULL,
                                     expiry DATETIME NOT NULL);
