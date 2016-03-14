@@ -286,6 +286,9 @@
         setCookie("showWelcome", false, 365);
         this.showWelcome = false;
       },
+      messageSentResponse: function() {
+        this.$.pollajax.generateRequest();
+      },
       friendSearchEmpty: function(results) {
         console.log(!(results === undefined || results.users === undefined || results.users.length < 1 ||
                  results.users.length == 1 && this.isSelf(userId, results.users[0].id)));
@@ -365,7 +368,6 @@
       acceptFriendRequest: function() {
         this.confirmFriendRequest = false;
         this.$.confirmFriendAjax.generateRequest();
-        this.$.friendsajax.generateRequest();
       },
       rejectFriendRequest: function() {
         this.confirmFriendRequest = true;
@@ -407,8 +409,11 @@
           if(!this.polling) {
             console.log("polling")
             this.polling = true;
-            this.$.pollajax.generateRequest();
-            this.$.friendsajax.generateRequest();
+            var self = this;
+            setInterval(function() {
+              self.$.pollajax.generateRequest();
+              self.$.friendsajax.generateRequest();
+            }, 1000);
           }
         }
       },
@@ -441,7 +446,7 @@
         var dec = new JSEncrypt();
         dec.setPrivateKey(this.privateKey);
         console.log(message)
-        return { id: message.id, message: dec.decrypt(message.message), fromSelf: message.fromSelf };
+        return { id: message.id, message: dec.decrypt(message.message) || "COULDNT DECRYPT", fromSelf: message.fromSelf };
       },
       getSelectedFriend: function(contact) {
         return this.friends[contact]
@@ -474,10 +479,6 @@
           this.pollTime = 100;
           this.addMessagesToFriends(res.response);
         }
-        var self = this;
-        setTimeout(function() {
-          self.$.pollajax.generateRequest();
-        }, this.pollTime)
       },
       addMessagesToFriends: function(messages) {
         var ids = Object.keys(messages);
@@ -523,15 +524,34 @@
         if(res.response && !res.response.error) {
           var tmp = res.response;
           console.log(tmp);
-          this.set("friends", tmp || []);
+          console.log("LENGTH: " + tmp.length)
+          for(var i = 0 ; i < tmp.length; i++) {
+            if(!this.haveFriend(tmp[i].id)) {
+              this.friends.push(tmp[i]);
+              console.log("pushing friend", tmp[i]);
+            } else {
+              console.log("not pushing friend");
+            }
+          }
+          this.notifyPath("friends", this.friends.slice());
+          console.log("===================================")
+          console.log(this.friends)
+          console.log("===================================")
         } else if (res.response && res.response.error === "ERROR_NO_FRIENDS") {
           this.set("friends", []);
+          console.log("Clearing friends");
         }
       },
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
       },
-
+      haveFriend: function(id) {
+        for(var i = 0 ; i < this.friends.length; i++) {
+          if(this.friends[i].id == id)
+            return true;
+        }
+        return false;
+      },
       toggleMessages: function() {
         this.$.collapseMessages.toggle();
       },

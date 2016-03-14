@@ -187,6 +187,7 @@ module.exports = function(config) {
   }
 
   connector.addMessage = function(sender, dest, messageSender, messageRecipient, cb) {
+    console.log("Equal: ", messageSender == messageRecipient);
     connector.userIdExists(dest, function(exists) {
       if(exists) {
         console.log(messageSender, messageRecipient)
@@ -246,11 +247,13 @@ module.exports = function(config) {
       if(results) {
         console.log(results)
         for(var i = 0 ; i < results.length; i++) {
+          console.log(results[i].recipient + "" + results[i].sender);
           var item = results[i];
-          if(!messages[item.sender])
-            messages[item.sender] = [];
-          if(item.sender != sender)
+          if(item.sender != sender) {
+            if(!messages[item.sender])
+              messages[item.sender] = [];
             messages[item.sender].push({id: item.id, message: item.message, fromSelf: false});
+          }
           else {
             if(!messages[item.recipient])
               messages[item.recipient] = [];

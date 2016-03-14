@@ -1,6 +1,8 @@
 <link rel="import" href="bower_components/polymer/polymer.html">
 <link rel="import" href="bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="bower_components/paper-material/paper-material.html">
+<link rel="import" href="bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="bower_components/paper-input/paper-input.html">
 <link rel="import" href="bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="bower_components/paper-button/paper-button.html">
@@ -104,6 +106,7 @@
         <paper-input value="{{registerEmail}}" placeholder="email"></paper-input>
         <paper-input value="{{registerPassword}}" type="password" placeholder="password"></paper-input>
         <paper-input value="{{registerPasswordConfirm}}" type="password" placeholder="confirm password"></paper-input>
+        <paper-dialog>Managed Mode</paper-dialog><paper-checkbox checked="{{registerManaged}}"></paper-checkbox>
         <paper-button raised on-tap="doRegister" class="green">Sign Up</paper-button>
       </div>
     </paper-material>
@@ -149,9 +152,13 @@
           type: String,
           value: ""
         },
+        registerManaged: {
+          type: Boolean,
+          value: true
+        },
         registerBody: {
           type: Object,
-          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword, publicKey, privateKey)'
+          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword, registerManaged, publicKey, privateKey)'
         },
         loginUrl: {
           type: String,
@@ -186,7 +193,7 @@
         if(!response || ! response.response)
           return;
         if(response.response.success)
-          this.goToMessenger(response.response.id, response.response.token);
+          this.goToMessenger(response.response);
       },
 
       loggedIn: function(e, response) {
@@ -221,8 +228,8 @@
         this.$.registerAjax.generateRequest();
       },
 
-      computeRegisterBody: function(email, user, pass, publicKey, privateKey) {
-        return { user: user, password: pass, email: email, pubKey: publicKey, privKey: privateKey };
+      computeRegisterBody: function(email, user, pass, managed, publicKey, privateKey) {
+        return { user: user, password: pass, email: email, managed: managed, pubKey: publicKey, privKey: privateKey };
       },
 
       computeLoginBody: function(user, pass) {

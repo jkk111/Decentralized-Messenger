@@ -21445,6 +21445,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         setCookie("showWelcome", false, 365);
         this.showWelcome = false;
       },
+      messageSentResponse: function() {
+        this.$.pollajax.generateRequest();
+      },
       friendSearchEmpty: function(results) {
         console.log(!(results === undefined || results.users === undefined || results.users.length < 1 ||
                  results.users.length == 1 && this.isSelf(userId, results.users[0].id)));
@@ -21524,7 +21527,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       acceptFriendRequest: function() {
         this.confirmFriendRequest = false;
         this.$.confirmFriendAjax.generateRequest();
-        this.$.friendsajax.generateRequest();
       },
       rejectFriendRequest: function() {
         this.confirmFriendRequest = true;
@@ -21566,8 +21568,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if(!this.polling) {
             console.log("polling")
             this.polling = true;
-            this.$.pollajax.generateRequest();
-            this.$.friendsajax.generateRequest();
+            var self = this;
+            setInterval(function() {
+              self.$.pollajax.generateRequest();
+              self.$.friendsajax.generateRequest();
+            }, 1000);
           }
         }
       },
@@ -21600,7 +21605,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         var dec = new JSEncrypt();
         dec.setPrivateKey(this.privateKey);
         console.log(message)
-        return { id: message.id, message: dec.decrypt(message.message), fromSelf: message.fromSelf };
+        return { id: message.id, message: dec.decrypt(message.message) || "COULDNT DECRYPT", fromSelf: message.fromSelf };
       },
       getSelectedFriend: function(contact) {
         return this.friends[contact]
@@ -21633,10 +21638,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.pollTime = 100;
           this.addMessagesToFriends(res.response);
         }
-        var self = this;
-        setTimeout(function() {
-          self.$.pollajax.generateRequest();
-        }, this.pollTime)
       },
       addMessagesToFriends: function(messages) {
         var ids = Object.keys(messages);
@@ -21682,15 +21683,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if(res.response && !res.response.error) {
           var tmp = res.response;
           console.log(tmp);
-          this.set("friends", tmp || []);
+          console.log("LENGTH: " + tmp.length)
+          for(var i = 0 ; i < tmp.length; i++) {
+            if(!this.haveFriend(tmp[i].id)) {
+              this.friends.push(tmp[i]);
+              console.log("pushing friend", tmp[i]);
+            } else {
+              console.log("not pushing friend");
+            }
+          }
+          this.notifyPath("friends", this.friends.slice());
+          console.log("===================================")
+          console.log(this.friends)
+          console.log("===================================")
         } else if (res.response && res.response.error === "ERROR_NO_FRIENDS") {
           this.set("friends", []);
+          console.log("Clearing friends");
         }
       },
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
       },
-
+      haveFriend: function(id) {
+        for(var i = 0 ; i < this.friends.length; i++) {
+          if(this.friends[i].id == id)
+            return true;
+        }
+        return false;
+      },
       toggleMessages: function() {
         this.$.collapseMessages.toggle();
       },
@@ -22655,6 +22675,810 @@ element.
 -->
 
 
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+
+  /**
+   * Use `Polymer.IronCheckedElementBehavior` to implement a custom element
+   * that has a `checked` property, which can be used for validation if the
+   * element is also `required`. Element instances implementing this behavior
+   * will also be registered for use in an `iron-form` element.
+   *
+   * @demo demo/index.html
+   * @polymerBehavior Polymer.IronCheckedElementBehavior
+   */
+  Polymer.IronCheckedElementBehaviorImpl = {
+
+    properties: {
+      /**
+       * Fired when the checked state changes.
+       *
+       * @event iron-change
+       */
+
+      /**
+       * Gets or sets the state, `true` is checked and `false` is unchecked.
+       */
+      checked: {
+        type: Boolean,
+        value: false,
+        reflectToAttribute: true,
+        notify: true,
+        observer: '_checkedChanged'
+      },
+
+      /**
+       * If true, the button toggles the active state with each tap or press
+       * of the spacebar.
+       */
+      toggles: {
+        type: Boolean,
+        value: true,
+        reflectToAttribute: true
+      },
+
+      /* Overriden from Polymer.IronFormElementBehavior */
+      value: {
+        type: String,
+        value: 'on',
+        observer: '_valueChanged'
+      }
+    },
+
+    observers: [
+      '_requiredChanged(required)'
+    ],
+
+    created: function() {
+      // Used by `iron-form` to handle the case that an element with this behavior
+      // doesn't have a role of 'checkbox' or 'radio', but should still only be
+      // included when the form is serialized if `this.checked === true`.
+      this._hasIronCheckedElementBehavior = true;
+    },
+
+    /**
+     * Returns false if the element is required and not checked, and true otherwise.
+     * @param {*=} _value Ignored.
+     * @return {boolean} true if `required` is false, or if `required` and `checked` are both true.
+     */
+    _getValidity: function(_value) {
+      return this.disabled || !this.required || (this.required && this.checked);
+    },
+
+    /**
+     * Update the aria-required label when `required` is changed.
+     */
+    _requiredChanged: function() {
+      if (this.required) {
+        this.setAttribute('aria-required', 'true');
+      } else {
+        this.removeAttribute('aria-required');
+      }
+    },
+
+    /**
+     * Fire `iron-changed` when the checked state changes.
+     */
+    _checkedChanged: function() {
+      this.active = this.checked;
+      this.fire('iron-change');
+    },
+
+    /**
+     * Reset value to 'on' if it is set to `undefined`.
+     */
+    _valueChanged: function() {
+      if (this.value === undefined || this.value === null) {
+        this.value = 'on';
+      }
+    }
+  };
+
+  /** @polymerBehavior Polymer.IronCheckedElementBehavior */
+  Polymer.IronCheckedElementBehavior = [
+    Polymer.IronFormElementBehavior,
+    Polymer.IronValidatableBehavior,
+    Polymer.IronCheckedElementBehaviorImpl
+  ];
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+
+  /**
+   * Use `Polymer.PaperCheckedElementBehavior` to implement a custom element
+   * that has a `checked` property similar to `Polymer.IronCheckedElementBehavior`
+   * and is compatible with having a ripple effect.
+   * @polymerBehavior Polymer.PaperCheckedElementBehavior
+   */
+  Polymer.PaperCheckedElementBehaviorImpl = {
+
+    /**
+     * Synchronizes the element's checked state with its ripple effect.
+     */
+    _checkedChanged: function() {
+      Polymer.IronCheckedElementBehaviorImpl._checkedChanged.call(this);
+      if (this.hasRipple()) {
+        if (this.checked) {
+          this._ripple.setAttribute('checked', '');
+        } else {
+          this._ripple.removeAttribute('checked');
+        }
+      }
+    },
+
+    /**
+     * Synchronizes the element's `active` and `checked` state.
+     */
+    _buttonStateChanged: function() {
+      Polymer.PaperRippleBehavior._buttonStateChanged.call(this);
+      if (this.disabled) {
+        return;
+      }
+      if (this.isAttached) {
+        this.checked = this.active;
+      }
+    }
+
+  };
+
+  /** @polymerBehavior Polymer.PaperCheckedElementBehavior */
+  Polymer.PaperCheckedElementBehavior = [
+    Polymer.PaperInkyFocusBehavior,
+    Polymer.IronCheckedElementBehavior,
+    Polymer.PaperCheckedElementBehaviorImpl
+  ];
+
+</script>
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+Material design: [Checkbox](https://www.google.com/design/spec/components/selection-controls.html#selection-controls-checkbox)
+
+`paper-checkbox` is a button that can be either checked or unchecked.  User
+can tap the checkbox to check or uncheck it.  Usually you use checkboxes
+to allow user to select multiple options from a set.  If you have a single
+ON/OFF option, avoid using a single checkbox and use `paper-toggle-button`
+instead.
+
+Example:
+
+    <paper-checkbox>label</paper-checkbox>
+
+    <paper-checkbox checked> label</paper-checkbox>
+
+### Styling
+
+The following custom properties and mixins are available for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--paper-checkbox-unchecked-background-color` | Checkbox background color when the input is not checked | `transparent`
+`--paper-checkbox-unchecked-color` | Checkbox border color when the input is not checked | `--primary-text-color`
+`--paper-checkbox-unchecked-ink-color` | Selected/focus ripple color when the input is not checked | `--primary-text-color`
+`--paper-checkbox-checked-color` | Checkbox color when the input is checked | `--primary-color`
+`--paper-checkbox-checked-ink-color` | Selected/focus ripple color when the input is checked | `--primary-color`
+`--paper-checkbox-checkmark-color` | Checkmark color | `white`
+`--paper-checkbox-label-color` | Label color | `--primary-text-color`
+`--paper-checkbox-label-spacing` | Spacing between the label and the checkbox | `8px`
+`--paper-checkbox-error-color` | Checkbox color when invalid | `--google-red-500`
+`--paper-checkbox-size` | Size of the checkbox | `18px`
+
+This element applies the mixin `--paper-font-common-base` but does not import `paper-styles/typography.html`.
+In order to apply the `Roboto` font to this element, make sure you've imported `paper-styles/typography.html`.
+
+@demo demo/index.html
+-->
+
+<dom-module id="paper-checkbox" assetpath="bower_components/paper-checkbox/">
+  <template strip-whitespace="">
+    <style>
+      :host {
+        display: inline-block;
+        white-space: nowrap;
+        cursor: pointer;
+        --calculated-paper-checkbox-size: var(--paper-checkbox-size, 18px);
+        @apply(--paper-font-common-base);
+        line-height: 0;
+      }
+
+      :host(:focus) {
+        outline: none;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      #checkboxContainer {
+        display: inline-block;
+        position: relative;
+        width: var(--calculated-paper-checkbox-size);
+        height: var(--calculated-paper-checkbox-size);
+        min-width: var(--calculated-paper-checkbox-size);
+        vertical-align: middle;
+        background-color: var(--paper-checkbox-unchecked-background-color, transparent);
+      }
+
+      #ink {
+        position: absolute;
+
+        /* Center the ripple in the checkbox by negative offsetting it by
+         * (inkWidth - rippleWidth) / 2 */
+        top: calc(0px - (2.66 * var(--calculated-paper-checkbox-size) - var(--calculated-paper-checkbox-size)) / 2);
+        left: calc(0px - (2.66 * var(--calculated-paper-checkbox-size) - var(--calculated-paper-checkbox-size)) / 2);
+        width: calc(2.66 * var(--calculated-paper-checkbox-size));
+        height: calc(2.66 * var(--calculated-paper-checkbox-size));
+        color: var(--paper-checkbox-unchecked-ink-color, --primary-text-color);
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      :host-context([dir="rtl"]) #ink {
+        right: calc(0px - (2.66 * var(--calculated-paper-checkbox-size) - var(--calculated-paper-checkbox-size)) / 2);
+        left: auto;
+      }
+
+      #ink[checked] {
+        color: var(--paper-checkbox-checked-ink-color, --primary-color);
+      }
+
+      #checkbox {
+        position: relative;
+        box-sizing: border-box;
+        height: 100%;
+        border: solid 2px;
+        border-color: var(--paper-checkbox-unchecked-color, --primary-text-color);
+        border-radius: 2px;
+        pointer-events: none;
+        -webkit-transition: background-color 140ms, border-color 140ms;
+        transition: background-color 140ms, border-color 140ms;
+      }
+
+      /* checkbox checked animations */
+      #checkbox.checked #checkmark {
+        -webkit-animation: checkmark-expand 140ms ease-out forwards;
+        animation: checkmark-expand 140ms ease-out forwards;
+      }
+
+      @-webkit-keyframes checkmark-expand {
+        0% {
+          -webkit-transform: scale(0, 0) rotate(45deg);
+        }
+        100% {
+          -webkit-transform: scale(1, 1) rotate(45deg);
+        }
+      }
+
+      @keyframes checkmark-expand {
+        0% {
+          transform: scale(0, 0) rotate(45deg);
+        }
+        100% {
+          transform: scale(1, 1) rotate(45deg);
+        }
+      }
+
+      #checkbox.checked {
+        background-color: var(--paper-checkbox-checked-color, --primary-color);
+        border-color: var(--paper-checkbox-checked-color, --primary-color);
+      }
+
+      #checkmark {
+        position: absolute;
+        width: 36%;
+        height: 70%;
+        border-style: solid;
+        border-top: none;
+        border-left: none;
+        border-right-width: calc(2/15 * var(--calculated-paper-checkbox-size));
+        border-bottom-width: calc(2/15 * var(--calculated-paper-checkbox-size));
+        border-color: var(--paper-checkbox-checkmark-color, white);
+        -webkit-transform-origin: 97% 86%;
+        transform-origin: 97% 86%;
+        box-sizing: content-box; /* protect against page-level box-sizing */
+      }
+
+      :host-context([dir="rtl"]) #checkmark {
+        -webkit-transform-origin: 50% 14%;
+        transform-origin: 50% 14%;
+      }
+
+      /* label */
+      #checkboxLabel {
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+        padding-left: var(--paper-checkbox-label-spacing, 8px);
+        white-space: normal;
+        line-height: normal;
+        pointer-events: none;
+        color: var(--paper-checkbox-label-color, --primary-text-color);
+      }
+
+      :host-context([dir="rtl"]) #checkboxLabel {
+        padding-right: var(--paper-checkbox-label-spacing, 8px);
+        padding-left: 0;
+      }
+
+      #checkboxLabel[hidden] {
+        display: none;
+      }
+
+      /* disabled state */
+      :host([disabled]) {
+        pointer-events: none;
+      }
+
+      :host([disabled]) #checkbox {
+        opacity: 0.5;
+        border-color: var(--paper-checkbox-unchecked-color, --primary-text-color);
+      }
+
+      :host([disabled][checked]) #checkbox {
+        background-color: var(--paper-checkbox-unchecked-color, --primary-text-color);
+        opacity: 0.5;
+      }
+
+      :host([disabled]) #checkboxLabel  {
+        opacity: 0.65;
+      }
+
+      /* invalid state */
+      #checkbox.invalid:not(.checked) {
+        border-color: var(--paper-checkbox-error-color, --google-red-500);
+      }
+    </style>
+
+    <div id="checkboxContainer">
+      <div id="checkbox" class$="[[_computeCheckboxClass(checked, invalid)]]">
+        <div id="checkmark" class$="[[_computeCheckmarkClass(checked)]]"></div>
+      </div>
+    </div>
+
+    <div id="checkboxLabel"><content></content></div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'paper-checkbox',
+
+      behaviors: [
+        Polymer.PaperCheckedElementBehavior
+      ],
+
+      hostAttributes: {
+        role: 'checkbox',
+        'aria-checked': false,
+        tabindex: 0
+      },
+
+      properties: {
+        /**
+         * Fired when the checked state changes due to user interaction.
+         *
+         * @event change
+         */
+
+        /**
+         * Fired when the checked state changes.
+         *
+         * @event iron-change
+         */
+        ariaActiveAttribute: {
+          type: String,
+          value: 'aria-checked'
+        }
+      },
+
+      _computeCheckboxClass: function(checked, invalid) {
+        var className = '';
+        if (checked) {
+          className += 'checked ';
+        }
+        if (invalid) {
+          className += 'invalid';
+        }
+        return className;
+      },
+
+      _computeCheckmarkClass: function(checked) {
+        return checked ? '' : 'hidden';
+      },
+
+      // create ripple inside the checkboxContainer
+      _createRipple: function() {
+        this._rippleContainer = this.$.checkboxContainer;
+        return Polymer.PaperInkyFocusBehaviorImpl._createRipple.call(this);
+      }
+
+    });
+  </script>
+</dom-module>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+
+/**
+Use `Polymer.PaperDialogBehavior` and `paper-dialog-shared-styles.html` to implement a Material Design
+dialog.
+
+For example, if `<paper-dialog-impl>` implements this behavior:
+
+    <paper-dialog-impl>
+        <h2>Header</h2>
+        <div>Dialog body</div>
+        <div class="buttons">
+            <paper-button dialog-dismiss>Cancel</paper-button>
+            <paper-button dialog-confirm>Accept</paper-button>
+        </div>
+    </paper-dialog-impl>
+
+`paper-dialog-shared-styles.html` provide styles for a header, content area, and an action area for buttons.
+Use the `<h2>` tag for the header and the `buttons` class for the action area. You can use the
+`paper-dialog-scrollable` element (in its own repository) if you need a scrolling content area.
+
+Use the `dialog-dismiss` and `dialog-confirm` attributes on interactive controls to close the
+dialog. If the user dismisses the dialog with `dialog-confirm`, the `closingReason` will update
+to include `confirmed: true`.
+
+### Styling
+
+The following custom properties and mixins are available for styling.
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--paper-dialog-background-color` | Dialog background color                     | `--primary-background-color`
+`--paper-dialog-color`            | Dialog foreground color                     | `--primary-text-color`
+`--paper-dialog`                  | Mixin applied to the dialog                 | `{}`
+`--paper-dialog-title`            | Mixin applied to the title (`<h2>`) element | `{}`
+`--paper-dialog-button-color`     | Button area foreground color                | `--default-primary-color`
+
+### Accessibility
+
+This element has `role="dialog"` by default. Depending on the context, it may be more appropriate
+to override this attribute with `role="alertdialog"`.
+
+If `modal` is set, the element will set `aria-modal` and prevent the focus from exiting the element.
+It will also ensure that focus remains in the dialog.
+
+The `aria-labelledby` attribute will be set to the header element, if one exists.
+
+@hero hero.svg
+@demo demo/index.html
+@polymerBehavior Polymer.PaperDialogBehavior
+*/
+
+  Polymer.PaperDialogBehaviorImpl = {
+
+    hostAttributes: {
+      'role': 'dialog',
+      'tabindex': '-1'
+    },
+
+    properties: {
+
+      /**
+       * If `modal` is true, this implies `no-cancel-on-outside-click`, `no-cancel-on-esc-key` and `with-backdrop`.
+       */
+      modal: {
+        type: Boolean,
+        value: false
+      }
+
+    },
+
+    observers: [
+      '_modalChanged(modal, _readied)'
+    ],
+
+    listeners: {
+      'tap': '_onDialogClick'
+    },
+
+    ready: function () {
+      // Only now these properties can be read.
+      this.__prevNoCancelOnOutsideClick = this.noCancelOnOutsideClick;
+      this.__prevNoCancelOnEscKey = this.noCancelOnEscKey;
+      this.__prevWithBackdrop = this.withBackdrop;
+    },
+
+    attached: function() {
+      // this._observer is used by iron-overlay-behavior
+      this._ariaObserver = Polymer.dom(this).observeNodes(this._updateAriaLabelledBy);
+      this._updateAriaLabelledBy();
+    },
+
+    detached: function() {
+      Polymer.dom(this).unobserveNodes(this._ariaObserver);
+    },
+
+    _modalChanged: function(modal, readied) {
+      if (modal) {
+        this.setAttribute('aria-modal', 'true');
+      } else {
+        this.setAttribute('aria-modal', 'false');
+      }
+
+      // modal implies noCancelOnOutsideClick, noCancelOnEscKey and withBackdrop.
+      // We need to wait for the element to be ready before we can read the
+      // properties values.
+      if (!readied) {
+        return;
+      }
+
+      if (modal) {
+        this.__prevNoCancelOnOutsideClick = this.noCancelOnOutsideClick;
+        this.__prevNoCancelOnEscKey = this.noCancelOnEscKey;
+        this.__prevWithBackdrop = this.withBackdrop;
+        this.noCancelOnOutsideClick = true;
+        this.noCancelOnEscKey = true;
+        this.withBackdrop = true;
+      } else {
+        // If the value was changed to false, let it false.
+        this.noCancelOnOutsideClick = this.noCancelOnOutsideClick &&
+          this.__prevNoCancelOnOutsideClick;
+        this.noCancelOnEscKey = this.noCancelOnEscKey &&
+          this.__prevNoCancelOnEscKey;
+        this.withBackdrop = this.withBackdrop && this.__prevWithBackdrop;
+      }
+    },
+
+    _updateAriaLabelledBy: function() {
+      var header = Polymer.dom(this).querySelector('h2');
+      if (!header) {
+        this.removeAttribute('aria-labelledby');
+        return;
+      }
+      var headerId = header.getAttribute('id');
+      if (headerId && this.getAttribute('aria-labelledby') === headerId) {
+        return;
+      }
+      // set aria-describedBy to the header element
+      var labelledById;
+      if (headerId) {
+        labelledById = headerId;
+      } else {
+        labelledById = 'paper-dialog-header-' + new Date().getUTCMilliseconds();
+        header.setAttribute('id', labelledById);
+      }
+      this.setAttribute('aria-labelledby', labelledById);
+    },
+
+    _updateClosingReasonConfirmed: function(confirmed) {
+      this.closingReason = this.closingReason || {};
+      this.closingReason.confirmed = confirmed;
+    },
+
+    /**
+     * Will dismiss the dialog if user clicked on an element with dialog-dismiss
+     * or dialog-confirm attribute.
+     */
+    _onDialogClick: function(event) {
+      // Search for the element with dialog-confirm or dialog-dismiss,
+      // from the root target until this (excluded).
+      var path = Polymer.dom(event).path;
+      for (var i = 0; i < path.indexOf(this); i++) {
+        var target = path[i];
+        if (target.hasAttribute && (target.hasAttribute('dialog-dismiss') || target.hasAttribute('dialog-confirm'))) {
+          this._updateClosingReasonConfirmed(target.hasAttribute('dialog-confirm'));
+          this.close();
+          event.stopPropagation();
+          break;
+        }
+      }
+    }
+
+  };
+
+  /** @polymerBehavior */
+  Polymer.PaperDialogBehavior = [Polymer.IronOverlayBehavior, Polymer.PaperDialogBehaviorImpl];
+
+</script>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><dom-module id="paper-dialog-shared-styles" assetpath="bower_components/paper-dialog-behavior/">
+  <template>
+    <style>
+      :host {
+        display: block;
+        margin: 24px 40px;
+        -webkit-overflow-scrolling: touch;
+
+        background: var(--paper-dialog-background-color, --primary-background-color);
+        color: var(--paper-dialog-color, --primary-text-color);
+
+        @apply(--paper-font-body1);
+        @apply(--shadow-elevation-16dp);
+        @apply(--paper-dialog);
+      }
+
+      :host > ::content > * {
+        margin-top: 20px;
+        padding: 0 24px;
+      }
+
+      :host > ::content > .no-padding {
+        padding: 0;
+      }
+
+      :host > ::content > *:first-child {
+        margin-top: 24px;
+      }
+
+      :host > ::content > *:last-child {
+        margin-bottom: 24px;
+      }
+
+      :host > ::content h2 {
+        position: relative;
+        margin: 0;
+        @apply(--paper-font-title);
+
+        @apply(--paper-dialog-title);
+      }
+
+      :host > ::content .buttons {
+        position: relative;
+        padding: 8px 8px 8px 24px;
+        margin: 0;
+
+        color: var(--paper-dialog-button-color, --primary-color);
+
+        @apply(--layout-horizontal);
+        @apply(--layout-end-justified);
+      }
+    </style>
+  </template>
+</dom-module>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+Material design: [Dialogs](https://www.google.com/design/spec/components/dialogs.html)
+
+`<paper-dialog>` is a dialog with Material Design styling and optional animations when it is
+opened or closed. It provides styles for a header, content area, and an action area for buttons.
+You can use the `<paper-dialog-scrollable>` element (in its own repository) if you need a scrolling
+content area. See `Polymer.PaperDialogBehavior` for specifics.
+
+For example, the following code implements a dialog with a header, scrolling content area and
+buttons.
+
+    <paper-dialog>
+      <h2>Header</h2>
+      <paper-dialog-scrollable>
+        Lorem ipsum...
+      </paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dismiss>Cancel</paper-button>
+        <paper-button dialog-confirm>Accept</paper-button>
+      </div>
+    </paper-dialog>
+
+### Styling
+
+See the docs for `Polymer.PaperDialogBehavior` for the custom properties available for styling
+this element.
+
+### Animations
+
+Set the `entry-animation` and/or `exit-animation` attributes to add an animation when the dialog
+is opened or closed. See the documentation in
+[PolymerElements/neon-animation](https://github.com/PolymerElements/neon-animation) for more info.
+
+For example:
+
+    <link rel="import" href="components/neon-animation/animations/scale-up-animation.html">
+    <link rel="import" href="components/neon-animation/animations/fade-out-animation.html">
+
+    <paper-dialog entry-animation="scale-up-animation"
+                  exit-animation="fade-out-animation">
+      <h2>Header</h2>
+      <div>Dialog body</div>
+    </paper-dialog>
+
+### Accessibility
+
+See the docs for `Polymer.PaperDialogBehavior` for accessibility features implemented by this
+element.
+
+@group Paper Elements
+@element paper-dialog
+@hero hero.svg
+@demo demo/index.html
+-->
+
+<dom-module id="paper-dialog" assetpath="bower_components/paper-dialog/">
+  <template>
+    <style include="paper-dialog-shared-styles"></style>
+    <content></content>
+  </template>
+</dom-module>
+
+<script>
+
+(function() {
+
+  Polymer({
+
+    is: 'paper-dialog',
+
+    behaviors: [
+      Polymer.PaperDialogBehavior,
+      Polymer.NeonAnimationRunnerBehavior
+    ],
+
+    listeners: {
+      'neon-animation-finish': '_onNeonAnimationFinish'
+    },
+
+    _renderOpened: function() {
+      this.cancelAnimation();
+      if (this.withBackdrop) {
+        this.backdropElement.open();
+      }
+      this.playAnimation('entry');
+    },
+
+    _renderClosed: function() {
+      this.cancelAnimation();
+      if (this.withBackdrop) {
+        this.backdropElement.close();
+      }
+      this.playAnimation('exit');
+    },
+
+    _onNeonAnimationFinish: function() {
+      if (this.opened) {
+        this._finishRenderOpened();
+      } else {
+        this._finishRenderClosed();
+      }
+    }
+
+  });
+
+})();
+
+</script>
 <!--
 @license
 Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
@@ -23865,6 +24689,7 @@ Custom property | Description | Default
         <paper-input value="{{registerEmail}}" placeholder="email"></paper-input>
         <paper-input value="{{registerPassword}}" type="password" placeholder="password"></paper-input>
         <paper-input value="{{registerPasswordConfirm}}" type="password" placeholder="confirm password"></paper-input>
+        <paper-dialog>Managed Mode</paper-dialog><paper-checkbox checked="{{registerManaged}}"></paper-checkbox>
         <paper-button raised="" on-tap="doRegister" class="green">Sign Up</paper-button>
       </div>
     </paper-material>
@@ -23910,9 +24735,13 @@ Custom property | Description | Default
           type: String,
           value: ""
         },
+        registerManaged: {
+          type: Boolean,
+          value: true
+        },
         registerBody: {
           type: Object,
-          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword, publicKey, privateKey)'
+          computed: 'computeRegisterBody(registerEmail, registerUser, registerPassword, registerManaged, publicKey, privateKey)'
         },
         loginUrl: {
           type: String,
@@ -23947,7 +24776,7 @@ Custom property | Description | Default
         if(!response || ! response.response)
           return;
         if(response.response.success)
-          this.goToMessenger(response.response.id, response.response.token);
+          this.goToMessenger(response.response);
       },
 
       loggedIn: function(e, response) {
@@ -23982,8 +24811,8 @@ Custom property | Description | Default
         this.$.registerAjax.generateRequest();
       },
 
-      computeRegisterBody: function(email, user, pass, publicKey, privateKey) {
-        return { user: user, password: pass, email: email, pubKey: publicKey, privKey: privateKey };
+      computeRegisterBody: function(email, user, pass, managed, publicKey, privateKey) {
+        return { user: user, password: pass, email: email, managed: managed, pubKey: publicKey, privKey: privateKey };
       },
 
       computeLoginBody: function(user, pass) {
