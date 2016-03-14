@@ -129,11 +129,12 @@ module.exports = function(config) {
 
   connector.updateFriendship = function(fId, confirm, user, cb) {
     if(confirm) {
-      var q = "UPDATE friends SET pending = FALSE WHERE id = ? AND user2 = ?;";
+      var q = "UPDATE friends SET pending = FALSE WHERE id = :id AND user2 = :user;";
     } else {
-      var q = "DELETE FROM friends where id = ? AND user2 = ? ";
+      var q = "DELETE FROM friends where id = :id";
     }
-    conn.query(q, [fId, user], function(err, results) {
+    conn.query(q, { id: fId, user: user }, function(err, results) {
+      console.log(results)
       if(err)
         return cb({error: "DATABASE_ERROR"})
       if(results != undefined && results.changedRows > 0)
@@ -223,8 +224,8 @@ module.exports = function(config) {
   }
 
   connector.getMessages = function(sender, highest, cb) {
-    var q = "SELECT id, sender, message, recipient FROM messages WHERE recipient = ? AND id > ? OR sender = ? AND id > ?";
-    conn.query(q, [sender, highest, sender, highest], function(err, results) {
+    var q = "SELECT id, sender, message, recipient FROM messages WHERE recipient = :sender AND id > :highest OR sender = :sender AND id > :highest";
+    conn.query(q, { sender: sender, highest: highest}, function(err, results) {
       if(err) {
         console.log(err);
         cb({error: "DATABASE_ERROR"});
@@ -257,20 +258,20 @@ module.exports = function(config) {
   }
     // friendshipId: users[i].id, id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false, initiatedBySelf
   connector.getFriends = function (sender, cb) {
-    var q = `SELECT CASE
+    var q = `SELECT friends.pending, users.username, keypairs.public, friends.id as friendshipId, CASE
               WHEN friends.pending = 1 AND friends.user1 = :user THEN true
               WHEN friends.pending = 1 THEN false
               ELSE FALSE
             END AS "initiatedBySelf",
             CASE
               WHEN friends.user1 = :user THEN friends.user2
-              ELSE friends.user2
-            END AS "id", friends.pending, users.username, keypairs.public, friends.id as friendshipId
+              ELSE friends.user1
+            END AS "id"
             FROM friends
             LEFT JOIN users ON
               friends.user1=users.id AND users.id != :user OR friends.user2=users.id AND users.id != :user
             LEFT JOIN keypairs ON
-              friends.user1=keypairs.id AND keypairs.id!=:user OR friends.user2=keypairs.id AND keypairs.id!=:user
+              friends.user1=keypairs.id AND keypairs.id != :user OR friends.user2=keypairs.id AND keypairs.id != :user
             WHERE friends.user1=:user OR friends.user2=:user`;
     conn.query(q, {user: sender}, function(err, results) {
       if(err || !results) {
@@ -282,16 +283,8 @@ module.exports = function(config) {
           return cb({error: "ERROR_NO_FRIENDS"});
         }
         for(var i = 0 ; i < results.length; i++) {
-          if(results[i].pending) {
-            results[i].pending = true;
-            if(results[i].initiatedBySelf) {
-              results[i].initiatedBySelf = true;
-            } else {
-              results[i].initiatedBySelf = false;
-            }
-          } else {
-            results[i].pending = false;
-          }
+          results[i].pending = results[i].pending == 1 ? true : false;
+          results[i].initiatedBySelf = results[i].initiatedBySelf == 1 ? true : false;
         }
         return cb(results)
       }
@@ -299,11 +292,14 @@ module.exports = function(config) {
   }
 
   connector.checkFriendship = function(user1, user2, cb) {
-    var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? OR user1 = ? AND user2 = ?"
-    conn.query(q, [user1, user2, user2, user1] , function(err, results) {
+    var q = "SELECT * FROM friends WHERE user1 = :first AND user2 = :second OR user1 = :second AND user2 = :first"
+    conn.query(q, {first: user1, second: user2} , function(err, results) {
       if(err) {
         return cb({error: "DATABASE_ERROR"});
       } else {
+        console.log(user1)
+        console.log(user2);
+        console.log(results)
         return cb(results != undefined && results.length > 0);
       }
     })
@@ -315,8 +311,8 @@ module.exports = function(config) {
       cb({error: "ERROR_ADD_SELF"});
       return;
     }
-    var q = "SELECT * FROM friends WHERE user1 = ? AND user2 = ? AND pending = 0 OR user2 = ? AND user1 = ? AND pending = 0";
-    conn.query(q, [user1, user2, user2, user1], function(err, results) {
+    var q = "SELECT * FROM friends where user1 = :friend AND user2 = :self OR user1 = :self AND user2 = :friend";
+    conn.query(q, {self: user1, friend: user2}, function(err, results) {
       if(err || ! results) {
         cb({ error: "DATABASE_ERROR"});
       } else if(results && results.length > 0) {
