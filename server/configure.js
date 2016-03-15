@@ -65,11 +65,6 @@ function buildDatabase() {
   });
 }
 
-function buildKeys(cb) {
-  console.log("Coming soon to a messenger near you. Encryption!");
-  cb();
-}
-
 function buildTables() {
   var table = `CREATE TABLE users (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                                    username VARCHAR(100) UNIQUE NOT NULL,
@@ -81,7 +76,8 @@ function buildTables() {
                                       sender INT UNSIGNED NOT NULL,
                                       recipient INT UNSIGNED NOT NULL,
                                       messageSender TEXT(60000) NOT NULL,
-                                      messageRecipient TEXT(60000) NOT NULL);
+                                      messageRecipient TEXT(60000) NOT NULL,
+                                      ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
                CREATE TABLE tokens (user INT UNSIGNED NOT NULL,
                                     token VARCHAR(100) NOT NULL,
                                     expiry DATETIME NOT NULL);
