@@ -231,7 +231,7 @@ module.exports = function(config) {
 
   connector.getMessages = function(sender, highest, cb) {
     // var q = "SELECT id, sender, message, recipient FROM messages WHERE recipient = :sender AND id > :highest OR sender = :sender AND id > :highest";
-    var q = `SELECT id, sender, recipient, CASE
+    var q = `SELECT id, sender, recipient, ts, CASE
               WHEN sender = :sender THEN messageSender
               WHEN recipient = :sender THEN messageRecipient
               ELSE NULL
@@ -252,12 +252,12 @@ module.exports = function(config) {
           if(item.sender != sender) {
             if(!messages[item.sender])
               messages[item.sender] = [];
-            messages[item.sender].push({id: item.id, message: item.message, fromSelf: false});
+            messages[item.sender].push({id: item.id, message: item.message, sent: item.ts, fromSelf: false});
           }
           else {
             if(!messages[item.recipient])
               messages[item.recipient] = [];
-            messages[item.recipient].push({id: item.id, message: item.message, fromSelf: true});
+            messages[item.recipient].push({id: item.id, message: item.message, sent: item.ts, fromSelf: true});
           }
         }
       }
