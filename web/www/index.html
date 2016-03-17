@@ -21703,16 +21703,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               console.log("pushing friend", tmp[i]);
             } else {
               console.log("not pushing friend");
+              var friend = this.getFriend(tmp[i].id);
+              if(friend) {
+                friend.pending = tmp[i].pending;
+              }
             }
           }
           this.notifyPath("friends", this.friends.slice());
-          console.log("===================================")
-          console.log(this.friends)
-          console.log("===================================")
+          this.notifyPath("friends.*.pending", this.friends.slice());
         } else if (res.response && res.response.error === "ERROR_NO_FRIENDS") {
           this.set("friends", []);
           console.log("Clearing friends");
         }
+      },
+      getFriend: function(id) {
+        for(var i = 0 ; i < this.friends.length; i++) {
+          if(this.friends[i].id == id)
+            return this.friends[i];
+        }
+        return undefined;
       },
       loggedIn: function() {
         // this.$.pollajax.generateRequest();
