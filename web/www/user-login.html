@@ -222,10 +222,13 @@
           return;
         this.checkEmail(this.registerEmail);
         var enc = new JSEncrypt({default_key_size: 2048});
-        enc.getKey();
-        this.privateKey = enc.getPrivateKey();
-        this.publicKey = enc.getPublicKey();
-        this.$.registerAjax.generateRequest();
+        console.log("Starting to generate keys");
+        var self = this;
+        enc.getKey(function() {
+          this.privateKey = enc.getPrivateKey();
+          this.publicKey = enc.getPublicKey();
+          self.$.registerAjax.generateRequest();
+        });
       },
 
       computeRegisterBody: function(email, user, pass, managed, publicKey, privateKey) {
