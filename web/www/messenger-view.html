@@ -39,7 +39,22 @@
       cursor: pointer;
     }
     .selfMessage {
-      background-color: #eee;
+      background-color: #4caf50;
+      text-align: right;
+      float: right;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .friendMessage {
+      width: 100%;
+      padding: 4px;
+    }
+    .messageContainer {
+      display: block;
+      clear: both;
+    }
+    #messagesContainer {
+      width: 1000px;
     }
     .collapse {
       cursor: pointer;
@@ -127,15 +142,51 @@
             <div>
               <paper-dialog-scrollable id="messages">
                 <div id="messagesContainer">
+                  <!--<div class="messageContainer">
+                    <div class="selfMessage">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="friendMessage">Donec volutpat ante placerat eros consequat, sit amet porta lectus accumsan.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="SelfMessage">Morbi vel augue et libero bibendum facilisis.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="friendMessage">Proin et quam in sem congue dictum nec commodo neque.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="SelfMessage">Morbi a lacus at tellus pellentesque congue sed nec sapien.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="friendMessage">Suspendisse eleifend ipsum nec justo efficitur aliquam.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="SelfMessage">Vivamus laoreet elit sed sem tincidunt, vitae fringilla velit porttitor.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="friendMessage">Efficitur aliquam.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="SelfMessage">Vitae porttitor.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="friendMessage">Eleifend ipsum.</div>
+                  </div>
+                  <div class="messageContainer">
+                    <div class="SelfMessage">Vivamus laoreet.</div>
+                  </div>-->
+
                   <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
-                  <template is="dom-if" if="{{item.fromSelf}}">
-                    <div class="selfMessage">{{item.message}}</div>
+                    <div class="messageContainer">
+                      <template is="dom-if" if="{{item.fromSelf}}">
+                        <div class="selfMessage">{{item.message}}</div>
+                      </template>
+                      <template is="dom-if" if="{{!item.fromSelf}}">
+                        <div class="friendMessage">{{item.message}}</div>
+                      </template>
+                    </div>
                   </template>
-                  <template is="dom-if" if="{{!item.fromSelf}}">
-                    <div class="friendMessage">{{item.message}}</div>
-                  </template>
-                </template>
-              </div>
+                </div>
               </paper-dialog-scrollable>
               <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
                 <div>
