@@ -21209,21 +21209,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }
     .selfMessage {
       background-color: #4caf50;
-      text-align: right;
+      text-align: justify;
       float: right;
       padding: 4px;
       border-radius: 4px;
+      max-width:70%;
     }
     .friendMessage {
-      width: 100%;
+      max-width: 70%;
       padding: 4px;
     }
     .messageContainer {
       display: block;
       clear: both;
     }
-    #messagesContainer {
-      width: 1000px;
+    .messageViewAndSend {
+      width:1000px;
     }
     .collapse {
       cursor: pointer;
@@ -21298,10 +21299,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-card class="tip-card">{{tip}}</paper-card>
           </template>
           <template is="dom-if" if="{{!isPending(selectedContact)}}">
-            <div>
+            <div class="messageViewAndSend">
               <paper-dialog-scrollable id="messages">
                 <div id="messagesContainer">
-                  <!--<div class="messageContainer">
+                  <div class="messageContainer">
                     <div class="selfMessage">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
                   </div>
                   <div class="messageContainer">
@@ -21332,8 +21333,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <div class="friendMessage">Eleifend ipsum.</div>
                   </div>
                   <div class="messageContainer">
-                    <div class="SelfMessage">Vivamus laoreet.</div>
-                  </div>-->
+                    <div class="SelfMessage">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut ultricies erat facilisis orci ultricies accumsan. In hac habitasse platea dictumst. In hac habitasse platea dictumst. Donec iaculis eget ipsum in luctus. Ut nec gravida mauris, sed vehicula sapien. Sed tempus felis purus, non fringilla quam ullamcorper eu. Fusce luctus, dui vel aliquam venenatis, ligula lacus gravida mi, vel luctus erat leo vel nulla. Mauris at tortor sed lectus varius aliquet quis vitae tortor. Sed vitae dictum sem. Morbi vestibulum sapien vel quam fermentum, eget fermentum risus dignissim. Nullam malesuada efficitur nisl, eu tempus turpis pretium mattis. Pellentesque auctor sit amet ligula at tristique. Donec vestibulum, urna ac euismod dapibus, sem ex aliquam odio, sed laoreet velit felis at orci. Duis ut turpis mi. Nulla sed interdum velit, nec semper eros.</div>
+                  </div>
 
                   <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
                     <div class="messageContainer">
