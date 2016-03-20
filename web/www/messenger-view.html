@@ -179,7 +179,7 @@
                 <div class="messageViewAndSend">
                   <paper-dialog-scrollable id="messages">
                     <div id="messagesContainer">
-                      <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
+                      <template is="dom-repeat" on-dom-change="scrollToBottom" items="{{currentMessages}}">
                         <div class="messageContainer">
                           <template is="dom-if" if="{{item.fromSelf}}">
                             <div class="selfMessage message">{{item.message}}</div>
@@ -346,7 +346,7 @@
         this.showWelcome = false;
       },
       messageSentResponse: function() {
-        this.$.pollajax.generateRequest();
+        // this.$.pollajax.generateRequest();
       },
       friendSearchEmpty: function(results) {
         console.log(!(results === undefined || results.users === undefined || results.users.length < 1 ||
@@ -448,11 +448,20 @@
         console.log(res.response);
         this.$.friendsajax.generateRequest();
       },
-      scrollTest: function() {
+      scrollToBottom: function() {
         console.log("it works")
-        if(!this.$.messagesContainer)
+        var el = this.$$("#messages");
+        if(!el) {
+          console.log(this.$$.messagesContainer)
+          console.log("not exists");
+          console.log(this);
           return;
-        this.$.messagesContainer.scrollTop = this.$.messagesContainer.scrollHeight + 10000;
+        }
+        var self = this;
+        this.async(function() {
+          el.scrollTarget.scrollTop = el.scrollTarget.scrollHeight;
+        },1)
+
       },
       doSearch: function() {
         this.$.searchAjax.generateRequest();
