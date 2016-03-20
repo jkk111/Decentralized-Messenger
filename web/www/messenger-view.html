@@ -20,6 +20,20 @@
 
 <dom-module id="messenger-view">
   <style>
+    :host {
+
+    }
+    #main {
+      width: 75%;
+      height: 90%;
+      top: 5%;
+      bottom: 5%;
+      left: 12.5%;
+      right: 12.5%;
+      box-sizing: border-box;
+      border: 1px solid #efefef;
+      background-color: white;
+    }
     .tip-card {
       padding: 14px;
     }
@@ -30,7 +44,8 @@
       padding-top: 0;
     }
     paper-dialog-scrollable {
-      height:400px;
+      height: 90%;
+
     }
     paper-toolbar {
       background-color: #4CAF50;
@@ -38,27 +53,40 @@
     .searchFriend {
       cursor: pointer;
     }
+    .message {
+      min-width: 100px;
+      margin: 8px;
+      padding: 8px;
+      box-sizing: border-box;
+      border-radius: 15px;
+      max-width: 70%;
+      display: inline-block;
+      font-size: 1.2em;
+    }
     .selfMessage {
       background-color: #4caf50;
       text-align: justify;
       float: right;
-      padding: 4px;
-      border-radius: 4px;
-      max-width:70%;
     }
     .friendMessage {
-      max-width: 70%;
-      padding: 4px;
+      background-color: #E6E7E8;
     }
     .messageContainer {
       display: block;
       clear: both;
     }
     .messageViewAndSend {
-      width:1000px;
+      /*width:1000px;*/
     }
     .collapse {
       cursor: pointer;
+    }
+
+    #messageInput {
+      position: absolute;
+      bottom: 0;
+      width: 95%;
+      margin: 0 2.5%;
     }
 
   </style>
@@ -84,7 +112,7 @@
     <iron-ajax id="cancelFriendAjax" url="/cancelFriend" method="POST" content-type="application/x-www-form-urlencoded"
                body="{{cancelFriendBody}}" handle-as="json" on-response="requestCancelled">
     </iron-ajax>
-    <paper-drawer-panel>
+    <paper-drawer-panel id="main">
       <paper-header-panel drawer>
         <paper-toolbar>
           <div class="title">
@@ -143,47 +171,13 @@
             <div class="messageViewAndSend">
               <paper-dialog-scrollable id="messages">
                 <div id="messagesContainer">
-                  <div class="messageContainer">
-                    <div class="selfMessage">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="friendMessage">Donec volutpat ante placerat eros consequat, sit amet porta lectus accumsan.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="SelfMessage">Morbi vel augue et libero bibendum facilisis.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="friendMessage">Proin et quam in sem congue dictum nec commodo neque.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="SelfMessage">Morbi a lacus at tellus pellentesque congue sed nec sapien.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="friendMessage">Suspendisse eleifend ipsum nec justo efficitur aliquam.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="SelfMessage">Vivamus laoreet elit sed sem tincidunt, vitae fringilla velit porttitor.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="friendMessage">Efficitur aliquam.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="SelfMessage">Vitae porttitor.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="friendMessage">Eleifend ipsum.</div>
-                  </div>
-                  <div class="messageContainer">
-                    <div class="SelfMessage">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut ultricies erat facilisis orci ultricies accumsan. In hac habitasse platea dictumst. In hac habitasse platea dictumst. Donec iaculis eget ipsum in luctus. Ut nec gravida mauris, sed vehicula sapien. Sed tempus felis purus, non fringilla quam ullamcorper eu. Fusce luctus, dui vel aliquam venenatis, ligula lacus gravida mi, vel luctus erat leo vel nulla. Mauris at tortor sed lectus varius aliquet quis vitae tortor. Sed vitae dictum sem. Morbi vestibulum sapien vel quam fermentum, eget fermentum risus dignissim. Nullam malesuada efficitur nisl, eu tempus turpis pretium mattis. Pellentesque auctor sit amet ligula at tristique. Donec vestibulum, urna ac euismod dapibus, sem ex aliquam odio, sed laoreet velit felis at orci. Duis ut turpis mi. Nulla sed interdum velit, nec semper eros.</div>
-                  </div>
-
                   <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
                     <div class="messageContainer">
                       <template is="dom-if" if="{{item.fromSelf}}">
-                        <div class="selfMessage">{{item.message}}</div>
+                        <div class="selfMessage message">{{item.message}}</div>
                       </template>
                       <template is="dom-if" if="{{!item.fromSelf}}">
-                        <div class="friendMessage">{{item.message}}</div>
+                        <div class="friendMessage message">{{item.message}}</div>
                       </template>
                     </div>
                   </template>
@@ -191,7 +185,7 @@
               </paper-dialog-scrollable>
               <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
                 <div>
-                  <paper-input on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
+                  <paper-input id="messageInput" on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
                 </div>
               </template>
             </div>
