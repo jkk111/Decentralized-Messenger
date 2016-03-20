@@ -1,9 +1,4 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
+package encTest;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -17,38 +12,30 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.PKCS8Generator;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
-import org.bouncycastle.util.io.pem.PemWriter;
 
 public class Encrypt {
 	public static final int KEY_SIZE = 2048;
-
+	
 	public static void main(String[] args) throws Exception {
 		Encrypt e = new Encrypt();
 		Security.addProvider(new BouncyCastleProvider()); // Very important, registers bouncycastle as a security provider
@@ -62,36 +49,63 @@ public class Encrypt {
 		System.out.println("Hello => " + dec);
 
 		StringKeyPair keys = e.generatePrivateKey();
-		String enc2 = e.encrypt("testing", keys.getPublicKey());
+		String enc2 = e.encrypt("testingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtesting", keys.getPublicKey());
 		String dec2 = e.decrypt(enc2, keys.getPrivateKey());
 		System.out.println(dec2);
 	}
 
+
+    public String[] chunkString(String str, int chunkSize) { 
+        char[] data = str.toCharArray();
+        ArrayList<String> chunks = new ArrayList<String>();
+        int base = 0;
+        while(base < str.length()) {
+        	String tmp = new String(data, base, Math.min(chunkSize, data.length - base));
+        	chunks.add(tmp);
+        	base += chunkSize;
+        }
+        String[] result = new String[chunks.size()];
+        chunks.toArray(result);
+        return result;
+    }
+
+	
 	public String encrypt(String message, String publicKey)  throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException  {
+		String[] chunks = chunkString(message, 100);
+		String encStr = "";
 		PublicKey pubKey = toPubKey(publicKey);
-		byte[] tmp = message.getBytes();
 		Cipher encrypter = Cipher.getInstance("RSA");
 		encrypter.init(Cipher.ENCRYPT_MODE, pubKey);
-		tmp = encrypter.doFinal(tmp);
 		Encoder encoder = Base64.getEncoder();
-		tmp = encoder.encode(tmp);
-		return new String(tmp);
+		for(int i = 0 ; i < chunks.length; i++) {
+			if(i > 0)
+				encStr += ",";
+			byte[] tmp = chunks[i].getBytes();
+			tmp = encrypter.doFinal(tmp);
+			tmp = encoder.encode(tmp);
+			encStr += new String(tmp);
+		}
+		return encStr;
 	}
 
 	public String decrypt(String message, String privateKey) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+		String[] chunks = message.split(",");
 		PrivateKey privKey = toPrivKey(privateKey);
-		byte[] tmp = message.getBytes();
 		Decoder decoder = Base64.getDecoder();
-		tmp = decoder.decode(tmp);
 		Cipher decrypter = Cipher.getInstance("RSA");
 		decrypter.init(Cipher.DECRYPT_MODE, privKey);
-		tmp = decrypter.doFinal(tmp);
-		return new String(tmp);
+		String decStr = "";
+		for(int i = 0; i < chunks.length; i++) {
+			byte[] tmp = chunks[i].getBytes();
+			tmp = decoder.decode(tmp);
+			tmp = decrypter.doFinal(tmp);
+			decStr += new String(tmp);
+		}
+		return decStr;
 	}
 
 	public PublicKey toPubKey(String str) throws InvalidKeySpecException, NoSuchAlgorithmException {
 		Decoder d = Base64.getDecoder();
-		System.out.println(str);
 		str = str.replace("-----BEGIN PUBLIC KEY-----",  "").replace("-----END PUBLIC KEY-----","");
 		str = str.replace(((char) 0xa)+ "", "");
 		str = str.replace(((char) 0xd)+ "", "");
@@ -102,8 +116,6 @@ public class Encrypt {
 	}
 
 	public PrivateKey toPrivKey(String str) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
-		//	  str = str.replace('\r' + '\n' + "", ""+'\n');
-		System.out.println(str);
 		PemReader pemReader = new PemReader(new StringReader(str));
 		PEMParser p = new PEMParser(pemReader);
 		Object key = p.readObject();
@@ -112,8 +124,6 @@ public class Encrypt {
 			tmp = ((PrivateKeyInfo) key).getEncoded();
 		else
 			tmp = (byte[])((PEMKeyPair) key).getPrivateKeyInfo().getEncoded();
-		//    System.exit(0);;
-		//    byte[] tmp = ((PEMKeyPair) p.readObject()).getPrivateKeyInfo().getEncoded();
 		p.close();
 		KeyFactory kf = KeyFactory.getInstance("RSA");
 		PKCS8EncodedKeySpec keyspec = new PKCS8EncodedKeySpec(tmp);
@@ -140,15 +150,12 @@ public class Encrypt {
 		keyData = encoder.encode(keyData);
 		String keyString = "";
 		String keyStringData = new String(keyData);
-		System.out.println(keyStringData.length());
-		System.out.println(") " + keyStringData);
 		while(keyStringData.length() > 0) {
 			int sublen = Math.min(64, keyStringData.length());
 			String sub = keyStringData.substring(0, sublen);
 			keyStringData = keyStringData.substring(sublen);
 			keyString += sub + '\n';
 		}
-		System.out.println(keyString);
 		return keyString;
 	}
 
