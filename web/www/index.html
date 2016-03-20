@@ -21353,7 +21353,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   </paper-dialog-scrollable>
                   <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
                     <div>
-                      <paper-input id="messageInput" maxlength="240" on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
+                      <paper-input id="messageInput" on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
                     </div>
                   </template>
                 </div>
@@ -21669,14 +21669,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return encStr;
       },
       decryptMessage: function(message) {
-        var chunks = message.split(",");
+        var chunks = message.message.split(",");
         var dec = new JSEncrypt();
         var decStr = "";
         dec.setPrivateKey(this.privateKey);
         for(var i = 0 ; i < chunks.length; i++) {
           decStr += dec.decrypt(chunks[i]);
         }
-        return { id: message.id, message: dec.decrypt(message.message) || "COULDNT DECRYPT", fromSelf: message.fromSelf };
+        return { id: message.id, message: decStr || "COULDNT DECRYPT", fromSelf: message.fromSelf };
       },
       getSelectedFriend: function(contact) {
         return this.friends[contact]
