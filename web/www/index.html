@@ -21657,14 +21657,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return friends[contact].messages;
       },
       encryptMessage: function(message, key) {
+        var chunks = message.match(/(.|[\r\n]){1,100}/g);
+        var encStr = "";
         var enc = new JSEncrypt();
         enc.setPublicKey(key);
-        return enc.encrypt(message);
+        for(var i = 0 ; i < chunks.length; i++) {
+          if(i > 0)
+            encStr += ","
+          encStr += enc.encrypt(chunks[i]);
+        }
+        return encStr;
       },
       decryptMessage: function(message) {
+        var chunks = message.split(",");
         var dec = new JSEncrypt();
+        var decStr = "";
         dec.setPrivateKey(this.privateKey);
-        console.log(message)
+        for(var i = 0 ; i < chunks.length; i++) {
+          decStr += dec.decrypt(chunks[i]);
+        }
         return { id: message.id, message: dec.decrypt(message.message) || "COULDNT DECRYPT", fromSelf: message.fromSelf };
       },
       getSelectedFriend: function(contact) {
