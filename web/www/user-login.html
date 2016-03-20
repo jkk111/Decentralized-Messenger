@@ -225,8 +225,13 @@
         console.log("Starting to generate keys");
         var self = this;
         enc.getKey(function() {
-          this.privateKey = enc.getPrivateKey();
-          this.publicKey = enc.getPublicKey();
+
+          self.privateKey = enc.getPrivateKey();
+          self.publicKey = enc.getPublicKey();
+          console.log(enc.getPublicKey())
+          console.log("******************");
+          console.log(self.registerBody);
+          console.log("******************");
           self.$.registerAjax.generateRequest();
         });
       },

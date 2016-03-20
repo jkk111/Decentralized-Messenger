@@ -21193,14 +21193,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     }
     #main {
-      width: 75%;
-      height: 90%;
-      top: 5%;
-      bottom: 5%;
-      left: 12.5%;
-      right: 12.5%;
       box-sizing: border-box;
-      border: 1px solid #efefef;
+      /*border: 1px solid #efefef;*/
       background-color: white;
     }
     .tip-card {
@@ -21213,7 +21207,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       padding-top: 0;
     }
     paper-dialog-scrollable {
-      height: 90%;
+      height: 87.5%;
 
     }
     paper-toolbar {
@@ -21224,13 +21218,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }
     .message {
       min-width: 100px;
-      margin: 8px;
+      margin: 4px;
       padding: 8px;
       box-sizing: border-box;
-      border-radius: 15px;
+      border-radius: 6px;
       max-width: 70%;
       display: inline-block;
       font-size: 1.2em;
+      word-wrap: break-word;
     }
     .selfMessage {
       background-color: #4caf50;
@@ -21257,113 +21252,128 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       width: 95%;
       margin: 0 2.5%;
     }
-
+    #wrapper {
+      height: 90%;
+    }
+    #elevation {
+      position: absolute;
+      width: 75%;
+      height: 90%;
+      top: 5%;
+      bottom: 5%;
+      left: 12.5%;
+      right: 12.5%;
+    }
   </style>
   <template>
-    <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponse">
-               </iron-ajax>
-    <iron-ajax id="friendsajax" url="/getFriends" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="friendsResponse">
-               </iron-ajax>
-    <iron-ajax id="messageAjax" url="/message" method="Post" content-type="application/x-www-form-urlencoded" body="{{messageBody}}" handle-as="json" on-response="messageSentResponse">
-    </iron-ajax>
-    <iron-ajax id="searchAjax" url="/search" method="POST" content-type="application/x-www-form-urlencoded" body="{{searchBody}}" handle-as="json" on-response="searchResultsReceived">
-    </iron-ajax>
-    <iron-ajax id="addFriendAjax" url="/addFriend" method="POST" content-type="application/x-www-form-urlencoded" body="{{addFriendBody}}" handle-as="json" on-response="friendAdded">
-    </iron-ajax>
-    <iron-ajax id="confirmFriendAjax" url="/confirmFriend" method="POST" content-type="application/x-www-form-urlencoded" body="{{confirmFriendBody}}" handle-as="json" on-response="friendConfirmed">
-               </iron-ajax>
-    <iron-ajax id="cancelFriendAjax" url="/cancelFriend" method="POST" content-type="application/x-www-form-urlencoded" body="{{cancelFriendBody}}" handle-as="json" on-response="requestCancelled">
-    </iron-ajax>
-    <paper-drawer-panel id="main">
-      <paper-header-panel drawer="">
-        <paper-toolbar>
-          <div class="title">
-            {{drawerTitle}}
-          </div>
-        </paper-toolbar>
-        <div id="drawerContent">
-          <paper-item class="collapse" on-tap="toggleMessages"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
-          <iron-collapse id="collapseMessages" opened="">
-            <div>
-              <paper-menu selected="{{selectedContact}}">
-                <template is="dom-repeat" items="{{friends}}">
-                  <paper-item>
-                    <contact-element name="{{item.username}}" online="{{item.online}}" img="{{item.img}}">
-                    </contact-element>
-                  </paper-item>
-                </template>
-              </paper-menu>
+      <paper-material id="elevation" elevation="1">
+      <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponse">
+                 </iron-ajax>
+      <iron-ajax id="friendsajax" url="/getFriends" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="friendsResponse">
+                 </iron-ajax>
+      <iron-ajax id="messageAjax" url="/message" method="Post" content-type="application/x-www-form-urlencoded" body="{{messageBody}}" handle-as="json" on-response="messageSentResponse">
+      </iron-ajax>
+      <iron-ajax id="searchAjax" url="/search" method="POST" content-type="application/x-www-form-urlencoded" body="{{searchBody}}" handle-as="json" on-response="searchResultsReceived">
+      </iron-ajax>
+      <iron-ajax id="addFriendAjax" url="/addFriend" method="POST" content-type="application/x-www-form-urlencoded" body="{{addFriendBody}}" handle-as="json" on-response="friendAdded">
+      </iron-ajax>
+      <iron-ajax id="confirmFriendAjax" url="/confirmFriend" method="POST" content-type="application/x-www-form-urlencoded" body="{{confirmFriendBody}}" handle-as="json" on-response="friendConfirmed">
+                 </iron-ajax>
+      <iron-ajax id="cancelFriendAjax" url="/cancelFriend" method="POST" content-type="application/x-www-form-urlencoded" body="{{cancelFriendBody}}" handle-as="json" on-response="requestCancelled">
+      </iron-ajax>
+      <paper-drawer-panel id="main">
+        <paper-header-panel drawer="">
+          <paper-toolbar>
+            <div class="title">
+              {{drawerTitle}}
             </div>
-          </iron-collapse>
-          <paper-item class="collapse" on-tap="toggleFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
-          <iron-collapse id="collapseFriendSearch">
-            <paper-item>
-            <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
-            <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
-            </paper-item>
-            <template is="dom-if" if="{{hasFriendSearchResults}}">
-              <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
-                <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, friends, userId)}}">
-                  <div userid="{{itemId}}">
-                    <paper-item on-tap="addFriend" user-id="{{item.id}}" class="searchFriend">
-                      {{item.username}}
+          </paper-toolbar>
+          <div id="drawerContent">
+            <paper-item class="collapse" on-tap="toggleMessages"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
+            <iron-collapse id="collapseMessages" opened="">
+              <div>
+                <paper-menu selected="{{selectedContact}}">
+                  <template is="dom-repeat" items="{{friends}}">
+                    <paper-item>
+                      <contact-element name="{{item.username}}" online="{{item.online}}" img="{{item.img}}">
+                      </contact-element>
                     </paper-item>
-                  </div>
+                  </template>
+                </paper-menu>
+              </div>
+            </iron-collapse>
+            <paper-item class="collapse" on-tap="toggleFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
+            <iron-collapse id="collapseFriendSearch">
+              <paper-item>
+              <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
+              <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
+              </paper-item>
+              <template is="dom-if" if="{{hasFriendSearchResults}}">
+                <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
+                  <template is="dom-repeat" items="{{getValidSearchFriends(friendSearchResults, friends, userId)}}">
+                    <div userid="{{itemId}}">
+                      <paper-item on-tap="addFriend" user-id="{{item.id}}" class="searchFriend">
+                        {{item.username}}
+                      </paper-item>
+                    </div>
+                  </template>
+                </template>
+                <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
+                  <div>No Results</div>
+                  <paper-button on-tap="returnToSearch">
+                    Return
+                  </paper-button>
                 </template>
               </template>
-              <template is="dom-if" if="{{friendSearchEmpty(friendSearchResults)}}">
-                <div>No Results</div>
-                <paper-button on-tap="returnToSearch">
-                  Return
-                </paper-button>
-              </template>
+            </iron-collapse>
+          </div>
+        </paper-header-panel>
+        <paper-header-panel main="">
+          <div id="mainContent">
+            <template is="dom-if" if="{{noneSelected(selectedContact)}}">
+              <paper-card class="tip-card">{{tip}}</paper-card>
             </template>
-          </iron-collapse>
-        </div>
-      </paper-header-panel>
-      <paper-header-panel main="">
-        <div id="mainContent">
-          <template is="dom-if" if="{{noneSelected(selectedContact)}}">
-            <paper-card class="tip-card">{{tip}}</paper-card>
-          </template>
-          <template is="dom-if" if="{{!isPending(selectedContact)}}">
-            <div class="messageViewAndSend">
-              <paper-dialog-scrollable id="messages">
-                <div id="messagesContainer">
-                  <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
-                    <div class="messageContainer">
-                      <template is="dom-if" if="{{item.fromSelf}}">
-                        <div class="selfMessage message">{{item.message}}</div>
+            <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
+              <template is="dom-if" if="{{!isPending(selectedContact)}}">
+                <div class="messageViewAndSend">
+                  <paper-dialog-scrollable id="messages">
+                    <div id="messagesContainer">
+                      <template is="dom-repeat" on-dom-change="scrollTest" items="{{currentMessages}}">
+                        <div class="messageContainer">
+                          <template is="dom-if" if="{{item.fromSelf}}">
+                            <div class="selfMessage message">{{item.message}}</div>
+                          </template>
+                          <template is="dom-if" if="{{!item.fromSelf}}">
+                            <div class="friendMessage message">{{item.message}}</div>
+                          </template>
+                        </div>
                       </template>
-                      <template is="dom-if" if="{{!item.fromSelf}}">
-                        <div class="friendMessage message">{{item.message}}</div>
-                      </template>
+                    </div>
+                  </paper-dialog-scrollable>
+                  <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
+                    <div>
+                      <paper-input id="messageInput" max-length="240" on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
                     </div>
                   </template>
                 </div>
-              </paper-dialog-scrollable>
-              <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
-                <div>
-                  <paper-input id="messageInput" on-keydown="checkSubmit" value="{{message}}" label="send a message"></paper-input>
-                </div>
               </template>
-            </div>
-          </template>
-          <template is="dom-if" if="{{isPending(selectedContact)}}">
-            <template is="dom-if" if="{{fromSelf(selectedContact)}}">
-              <div>Friend Request Pending</div>
-              <paper-button on-tap="cancelFriendRequest">Cancel Request</paper-button>
             </template>
-            <template is="dom-if" if="{{!fromSelf(selectedContact)}}">
-              <paper-button on-tap="acceptFriendRequest">Accept Friend Request</paper-button>
+            <template is="dom-if" if="{{isPending(selectedContact)}}">
+              <template is="dom-if" if="{{fromSelf(selectedContact)}}">
+                <div>Friend Request Pending</div>
+                <paper-button on-tap="cancelFriendRequest">Cancel Request</paper-button>
+              </template>
+              <template is="dom-if" if="{{!fromSelf(selectedContact)}}">
+                <paper-button on-tap="acceptFriendRequest">Accept Friend Request</paper-button>
+              </template>
             </template>
-          </template>
-        </div>
-        <paper-toolbar>
-          <div class="title">{{generateContactName(selectedContact)}}</div>
-        </paper-toolbar>
-      </paper-header-panel>
-    </paper-drawer-panel>
+          </div>
+          <paper-toolbar>
+            <div class="title">{{generateContactName(selectedContact)}}</div>
+          </paper-toolbar>
+        </paper-header-panel>
+      </paper-drawer-panel>
+      </paper-material>
   </template>
   <script>
     Polymer({
@@ -24876,8 +24886,13 @@ Custom property | Description | Default
         console.log("Starting to generate keys");
         var self = this;
         enc.getKey(function() {
-          this.privateKey = enc.getPrivateKey();
-          this.publicKey = enc.getPublicKey();
+
+          self.privateKey = enc.getPrivateKey();
+          self.publicKey = enc.getPublicKey();
+          console.log(enc.getPublicKey())
+          console.log("******************");
+          console.log(self.registerBody);
+          console.log("******************");
           self.$.registerAjax.generateRequest();
         });
       },
@@ -26225,9 +26240,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     #underlay {
       position: absolute;
       width: 100%;
-      height: 20%;
+      height: 0;
+      transition: height 0.5s;
       background-color: #8BC34A;
       z-index: -1;
+    }
+    .loaded {
+      height: 20%!important;
     }
 
   </style>
@@ -26375,6 +26394,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         var self = this;
         // TODO (john): Implement loading actual data, and replace the hard-coded timeout
         setTimeout(function() {
+          self.$.underlay.classList.add("loaded");
           self.$.messenger.style.display = "block";
           self.playAnimation("openMessenger", "openMessenger");
         }, 5000);

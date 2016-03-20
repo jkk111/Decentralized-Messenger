@@ -75,8 +75,8 @@ function buildTables() {
                CREATE TABLE messages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                                       sender INT UNSIGNED NOT NULL,
                                       recipient INT UNSIGNED NOT NULL,
-                                      messageSender TEXT(60000) NOT NULL,
-                                      messageRecipient TEXT(60000) NOT NULL,
+                                      messageSender MEDIUMTEXT NOT NULL,
+                                      messageRecipient MEDIUMTEXT NOT NULL,
                                       ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
                CREATE TABLE tokens (user INT UNSIGNED NOT NULL,
                                     token VARCHAR(100) NOT NULL,
