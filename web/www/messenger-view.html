@@ -496,10 +496,6 @@
           }
         }
         var maxDistance = el.scrollTarget.clientHeight / 2;
-        console.log( el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight));
-        console.log( el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight));
-        console.log(this.fetchingMessages, this.$.scrollajax.loading);
-        console.log(maxDistance)
         if(this.newContactSelected || el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight) <= maxDistance) {
           this.newContactSelected = false;
           this.async(function() {

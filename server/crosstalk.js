@@ -1,9 +1,7 @@
 var hosts = [];
 var request = require("request");
 module.exports = function(config) {
-  if(!config.crosstalk) {
-    return (function(req, res, next) { next(); })();
-  }
+  config.crosstalk = config.crosstalk || {};
   hosts = config.crosstalk.hosts || [];
   return new initCrosstalk();
 }
@@ -12,7 +10,7 @@ function initCrosstalk() {
   this.forward = function(url, form, cb) {
     var pending = hosts.length;
     if(pending == 0)
-      cb({success: true});
+      return cb({success: true});
     for(var i = 0 ; i < hosts.length; i++) {
       form.crosstalk = true;
       var opt = {
@@ -22,10 +20,10 @@ function initCrosstalk() {
       sendRequest(opt, function(data) {
         pending--;
         if(data.error) {
-          cb(data);
+          return cb(data);
         }
         if(pending == 0)
-          cb({success: true});
+          return cb({success: true});
       });
     }
   }
@@ -33,7 +31,7 @@ function initCrosstalk() {
   this.login = function(form, cb) {
     var pending = hosts.length;
     if(pending == 0)
-      cb({success: true});
+      return cb({success: true});
     for(var i = 0 ; i < hosts.length; i++) {
       form.crosstalk = true;
       var opt = {
@@ -43,10 +41,10 @@ function initCrosstalk() {
       sendRequest(opt, function(data) {
         pending--;
         if(data.error) {
-          cb(data);
+          return cb(data);
         }
         if(pending == 0) {
-          cb({success: true});
+          return cb({success: true});
         }
       });
     }
