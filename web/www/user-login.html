@@ -91,7 +91,6 @@
  -->
 
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
-    <iron-ajax id="secretAjax" url="{{secretUrl}}" handle-as="json" on-response="secretReceived" method="GET"></iron-ajax>
     <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <paper-material elevation="1">
       <div id="background" on-tap="kek">
@@ -167,14 +166,6 @@
         loginBody: {
           type: Object,
           computed: 'computeLoginBody(loginUser, loginPassword)'
-        },
-        secretUrl: {
-          type: String,
-          value: "/secret"
-        },
-        secretBody: {
-          type: Object,
-          value: function() { return {}; }
         }
       },
 
@@ -202,11 +193,6 @@
           this.goToMessenger(response.response);
       },
 
-      secretReceived: function(e, response) {
-        if(response.response)
-          console.log("Received key: %s", response.response.key);
-      },
-
       doLogin: function() {
         if(this.loginUser == "" || this.loginPassword == "")
           return;
@@ -222,16 +208,10 @@
           return;
         this.checkEmail(this.registerEmail);
         var enc = new JSEncrypt({default_key_size: 2048});
-        console.log("Starting to generate keys");
         var self = this;
         enc.getKey(function() {
-
           self.privateKey = enc.getPrivateKey();
           self.publicKey = enc.getPublicKey();
-          console.log(enc.getPublicKey())
-          console.log("******************");
-          console.log(self.registerBody);
-          console.log("******************");
           self.$.registerAjax.generateRequest();
         });
       },
@@ -246,7 +226,6 @@
 
       attached: function() {
         console.log("ready");
-        this.$.secretAjax.generateRequest();
       }
     });
   </script>

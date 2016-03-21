@@ -39,6 +39,8 @@ module.exports = function(config) {
 
   this.getMessages = storageEngine.getMessages;
 
+  this.fetchMessages = storageEngine.fetchMessages;
+
   this.userExists = storageEngine.userExists;
 
   this.updateFriendship = storageEngine.updateFriendship;

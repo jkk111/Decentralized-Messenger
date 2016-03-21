@@ -21259,16 +21259,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     #elevation {
       position: absolute;
       width: 75%;
+      transition: height 0.5s, width 0.5s, left 0.5s, top 0.5s;
       height: 90%;
       top: 5%;
       bottom: 5%;
       left: 12.5%;
       right: 12.5%;
     }
+    @media(max-width: 1024px) {
+      #elevation {
+        height: 100%;
+        width: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+    }
   </style>
   <template>
       <paper-material id="elevation" elevation="1">
-      <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponse">
+      <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponseError">
                  </iron-ajax>
       <iron-ajax id="friendsajax" url="/getFriends" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="friendsResponse">
                  </iron-ajax>
@@ -21282,6 +21293,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                  </iron-ajax>
       <iron-ajax id="cancelFriendAjax" url="/cancelFriend" method="POST" content-type="application/x-www-form-urlencoded" body="{{cancelFriendBody}}" handle-as="json" on-response="requestCancelled">
       </iron-ajax>
+      <iron-ajax id="scrollajax" url="/fetchmessages" method="Post" content-type="application/x-www-form-urlencoded" body="{{scrollBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponseError">
+           </iron-ajax>
       <paper-drawer-panel id="main">
         <paper-header-panel drawer="">
           <paper-toolbar>
@@ -21383,7 +21396,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         selectedContact: {
           type: Number,
           value: -1,
-          notify: true
+          notify: true,
+          observer: 'selectedContactChanged'
         },
         self: {
           type: Object
@@ -21418,7 +21432,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         messagesBody: {
           type: Object,
-          computed: 'computeMessagesBody(token, userId, highestReceived)'
+          computed: 'computeMessagesBody(token, userId, highestReceived, lowestReceived)'
+        },
+        scrollBody: {
+          type: Object
         },
         messageBody: {
           type: Object,
@@ -21427,6 +21444,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         highestReceived: {
           type: Number,
           value: 0
+        },
+        lowestReceived: {
+          type: Number,
+          value: Number.MAX_SAFE_INTEGER - 1
         },
         currentMessages: {
           type: Array,
@@ -21485,12 +21506,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         showWelcome: {
           type: Boolean,
           value: true
+        },
+        newContactSelected: {
+          type: Boolean,
+          value: true
+        },
+        fetchingMessages: {
+          type: Boolean,
+          value: false
+        },
+        oldHeight: {
+          type: Number,
+          value: 0
         }
       },
       observers: [
         'friendsChanged(friends.*)',
         'friendsChanged(selectedContact)'
       ],
+      selectedContactChanged: function() {
+        this.newContactSelected = true;
+      },
       computeConfirmFriendBody: function(userId, token, selectedContact, confirmFriendRequest) {
         return { sender: userId, token: token, friendshipId: this.friends[selectedContact].friendshipId, response: confirmFriendRequest }
       },
@@ -21498,7 +21534,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return { sender: id, token: token, query: searchQuery }
       },
       friendConfirmed: function(e, res) {
-        console.log(res.response);
         this.$.friendsajax.generateRequest();
       },
       hideWelcome: function() {
@@ -21509,15 +21544,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // this.$.pollajax.generateRequest();
       },
       friendSearchEmpty: function(results) {
-        console.log(!(results === undefined || results.users === undefined || results.users.length < 1 ||
-                 results.users.length == 1 && this.isSelf(userId, results.users[0].id)));
         return !(results === undefined || results.users === undefined || results.users.length < 1 ||
                  results.users.length == 1 && this.isSelf(userId, results.users[0].id))
       },
       getValidSearchFriends: function(search, friends, self) {
-        console.log("==========================")
-        console.log(search);
-        console.log("==========================")
         var valid = [];
         for(var i = 0 ; i < search.length; i++) {
           if(this.isValidSearchFriend(self, friends, search[i].id))
@@ -21528,8 +21558,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       friendAdded: function(e, res) {
         if(!res || !res.response) {
           return;
-        } else {
-          console.log(res.results)
         }
         this.$.friendsajax.generateRequest();
       },
@@ -21595,8 +21623,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       friendsChanged: function(cr) {
         if(!this.currentMessages || !this.currentMessages.slice || this.currentMessages == undefined)
           return;
-        console.log(cr);
-        this.set("currentMessages", this.computeCurrentMessages(this.selectedContact, this.friends) || []);
+        this.set("currentMessages", this.sortCurrentMessages(this.computeCurrentMessages(this.selectedContact, this.friends) || []));
         this.notifyPath("currentMessages", this.currentMessages.slice());
       },
       computeCurrentMessages: function(i, friends) {
@@ -21605,23 +21632,46 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return friends[i].messages
       },
       requestCancelled: function(e, res) {
-        console.log(res.response);
         this.$.friendsajax.generateRequest();
       },
-      scrollToBottom: function() {
-        console.log("it works")
+      scrollToBottom: function(e) {
         var el = this.$$("#messages");
         if(!el) {
-          console.log(this.$$.messagesContainer)
-          console.log("not exists");
-          console.log(this);
           return;
         }
         var self = this;
-        this.async(function() {
-          el.scrollTarget.scrollTop = el.scrollTarget.scrollHeight;
-        },1)
-
+        if(el.scrollTarget.onscroll == null) {
+          el.scrollTarget.onscroll = function(e) {
+            var scrolledBy = el.scrollTarget.scrollTop + el.scrollTarget.clientHeight;
+            console.log(el.scrollTarget.scrollHeight+":"+scrolledBy)
+            // console.log(e)
+            if(e.srcElement.scrollTop == 0) {
+              self.fetchingMessages = true;
+              self.oldHeight = el.scrollTarget.scrollHeight;
+              self.scrollBody = self.computeScrollBody(self.userId, self.token, self.lowestReceived);
+              console.log(self.scrollBody);
+              self.$.scrollajax.generateRequest();
+            }
+          }
+        }
+        var maxDistance = el.scrollTarget.clientHeight / 2;
+        console.log( el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight));
+        console.log( el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight));
+        console.log(this.fetchingMessages, this.$.scrollajax.loading);
+        console.log(maxDistance)
+        if(this.newContactSelected || el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight) <= maxDistance) {
+          this.newContactSelected = false;
+          this.async(function() {
+            el.scrollTarget.scrollTop = el.scrollTarget.scrollHeight;
+            var self = this;
+          },1)
+        } else if(this.fetchingMessages && this.$.scrollajax.loading === false) {
+          console.log("im here")
+          this.fetchingMessages = false;
+          this.async(function() {
+            el.scrollTarget.scrollTop = el.scrollTarget.scrollHeight - self.oldHeight;
+          }, 1)
+        };
       },
       doSearch: function() {
         this.$.searchAjax.generateRequest();
@@ -21629,13 +21679,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       tokenChanged: function(newValue, old) {
         if(newValue != "") {
           this.loggedIn();
-          console.log(this);
-          console.log("Polling for updates");
-          console.log(this.messagesBody);
-          console.log(this);
           this.$.friendsajax.generateRequest();
           if(!this.polling) {
-            console.log("polling")
             this.polling = true;
             var self = this;
             setInterval(function() {
@@ -21652,13 +21697,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.set("friendSearchResults", res.response.users);
           this.hasFriendSearchResults = true;
         }
-        console.log(res.response);
       },
-      computeMessagesBody: function(token, id, h) {
-        console.log(token + ":" + id);
-        console.log(this.highestReceived)
-        console.log(token + "\n" + id + "\n" + this.highestReceived)
-        return { token: token, sender: id, highestReceived: this.highestReceived };
+      computeMessagesBody: function(token, id, h, l) {
+        return { token: token, sender: id, highestReceived: h};
+      },
+      computeScrollBody: function(id, token, l) {
+        return { token: token, sender: id, lowestReceived: l };
       },
       getMessages: function(friends, contact) {
         if(!friends || contact > friends.length || contact == -1)
@@ -21691,7 +21735,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return this.friends[contact]
       },
       generateContactName: function(friend) {
-        console.log(friend);
         if(friend < 0)
           return "";
         return this.getSelectedFriend(friend).name;
@@ -21703,41 +21746,40 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if(!res || !res.response || this.containsError(res.response)) {
           return;
         }
-        console.log(res.response);
-        var asString;
-        try {
-          asString = JSON.stringify(res.response);
-        } catch(e) {
-          asString = "{}";
-        }
-        if(asString == "{}") {
-          console.log("Increasing wait time");
+        var hasnew = this.hasNew(res.response, this.friends);
+        if(Object.keys(res.response).length === 0 || !hasnew) {
           this.pollTime = Math.min(this.pollTime * 2, this.MAX_POLL_TIME)
+          return;
         } else {
-          console.log("Resetting wait time");
           this.pollTime = 100;
-          this.addMessagesToFriends(res.response);
+          this.addMessagesToFriends(hasnew);
         }
+      },
+      findFriend: function(id) {
+        for(var i = 0 ; i < this.friends.length; i++) {
+          if(this.friends[i].id == id)
+            return i;
+        }
+        return undefined;
       },
       addMessagesToFriends: function(messages) {
         var ids = Object.keys(messages);
+        if(ids.length == 0)
+          return;
         for(var i = 0 ; i < ids.length; i++) {
           for(var j = 0 ; j < this.friends.length; j++) {
             if(ids[i] ==  this.friends[j].id) {
               if(!this.friends[j].messages)
                 this.friends[j].messages = [];
               for(var k = 0; k < messages[ids[i]].length; k++) {
-                if(this.hasMessage(ids[i], messages[ids[i]][k].id))
-                  continue;
-                console.log(messages[ids[i]][k].id)
+                this.highestReceived = Math.max(this.highestReceived, messages[ids[i]][k].id)
+                this.lowestReceived = Math.min(this.lowestReceived, messages[ids[i]][k].id);
                 if(messages[ids[i]][k].id > this.highestReceived || this.highestReceived == NaN || this.highestReceived === undefined) {
-                  console.log("changing highestReceived")
                   this.set("highestReceived", messages[ids[i]][k].id);
-                } else {
-                  console.log("not pushing %d, %d", this.highestReceived, messages[ids[i]][k].id);
-                  console.log(this.highestReceived)
                 }
-                console.log("friends."+j+".messages");
+                if(messages[ids[i]][k].id < this.lowestReceived || this.lowestReceived == NaN || this.lowestReceived === undefined) {
+                  this.set("lowestReceived", messages[ids[i]][k].id);
+                }
                 this.push("friends." + j + ".messages", this.decryptMessage(messages[ids[i]][k]));
                 this.notifyPath("friends", this.friends.slice());
                 this.notifyPath("friends."+j+".messages", this.friends[j].messages.slice());
@@ -21746,9 +21788,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         }
       },
+      hasNew: function(messages, friends) {
+        var newMessages = {};
+        var senders = Object.keys(messages) || {};
+        for(var i = 0 ; i < senders.length; i++) {
+          var senderMessages = messages[senders[i]];
+          for(var j = 0 ; j < senderMessages.length; j++) {
+            var message = senderMessages[j];
+            var friendIndex = this.findFriend(senders[i]);
+            if(friendIndex === false)
+              break;
+            if(!this.hasMessage(friendIndex, message.id)) {
+              if(!newMessages[senders[i]])
+                newMessages[senders[i]] = []
+              newMessages[senders[i]].push(message);
+            }
+          }
+        }
+        return Object.keys(newMessages).length == 0 ? false : newMessages;
+      },
       hasMessage: function(friend, id) {
-        if(!this.friends[friend] || ! this.friends[friend].messages || this.friends[friend].messages.length == 0)
+        if(!this.friends[friend] || ! this.friends[friend].messages || this.friends[friend].messages.length == 0) {
           return false;
+        }
         for(var i = 0 ; i < this.friends[friend].messages.length; i++) {
           if(this.friends[friend].messages[i].id == id)
             return true;
@@ -21763,7 +21825,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       },
       computeMessageBody: function() {
-        console.log({ sender: this.userId, dest: this.friends[this.selectedContact].id, message: this.message, token: this.token });
         return { sender: this.userId, dest: this.friends[this.selectedContact].id,
                  messageRecipient: this.encryptMessage(this.message, this.friends[this.selectedContact].public),
                  messageSender: this.encryptMessage(this.message, this.publicKey), message: "OUTDATED CLIENT", token: this.token }
@@ -21771,26 +21832,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       friendsResponse: function(e, res) {
         if(res.response && !res.response.error) {
+          var changed = false;
           var tmp = res.response;
-          console.log(tmp);
-          console.log("LENGTH: " + tmp.length)
           for(var i = 0 ; i < tmp.length; i++) {
             if(!this.haveFriend(tmp[i].id)) {
+              changed = true;
               this.friends.push(tmp[i]);
-              console.log("pushing friend", tmp[i]);
             } else {
-              console.log("not pushing friend");
               var friend = this.getFriend(tmp[i].id);
-              if(friend) {
+              if(friend.pending != tmp[i].pending) {
+                changed = true;
                 friend.pending = tmp[i].pending;
               }
             }
           }
-          this.notifyPath("friends", this.friends.slice());
-          this.notifyPath("friends.*.pending", this.friends.slice());
-        } else if (res.response && res.response.error === "ERROR_NO_FRIENDS") {
+          if(changed) {
+            this.notifyPath("friends", this.friends.slice());
+            this.notifyPath("friends.*.pending", this.friends.slice());
+          }
+        } else if (res.response && res.response.error === "ERROR_NO_FRIENDS" && this.friends != []) {
           this.set("friends", []);
-          console.log("Clearing friends");
         }
       },
       getFriend: function(id) {
@@ -21818,6 +21879,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.searchQuery = "";
         this.set("friendSearchResults", {});
         this.hasFriendSearchResults = false;
+      },
+      sortCurrentMessages: function(messages) {
+        return messages.sort(function(a, b) {
+          if(a.id < b.id)
+            return -1;
+          else if (a.id == b.id)
+            return 0;
+          return 1;
+        });
       },
       containsError: function(e) {
         if(e && e.error) {
@@ -24773,7 +24843,6 @@ Custom property | Description | Default
  -->
 
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
-    <iron-ajax id="secretAjax" url="{{secretUrl}}" handle-as="json" on-response="secretReceived" method="GET"></iron-ajax>
     <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <paper-material elevation="1">
       <div id="background" on-tap="kek">
@@ -24849,14 +24918,6 @@ Custom property | Description | Default
         loginBody: {
           type: Object,
           computed: 'computeLoginBody(loginUser, loginPassword)'
-        },
-        secretUrl: {
-          type: String,
-          value: "/secret"
-        },
-        secretBody: {
-          type: Object,
-          value: function() { return {}; }
         }
       },
 
@@ -24884,11 +24945,6 @@ Custom property | Description | Default
           this.goToMessenger(response.response);
       },
 
-      secretReceived: function(e, response) {
-        if(response.response)
-          console.log("Received key: %s", response.response.key);
-      },
-
       doLogin: function() {
         if(this.loginUser == "" || this.loginPassword == "")
           return;
@@ -24904,16 +24960,10 @@ Custom property | Description | Default
           return;
         this.checkEmail(this.registerEmail);
         var enc = new JSEncrypt({default_key_size: 2048});
-        console.log("Starting to generate keys");
         var self = this;
         enc.getKey(function() {
-
           self.privateKey = enc.getPrivateKey();
           self.publicKey = enc.getPublicKey();
-          console.log(enc.getPublicKey())
-          console.log("******************");
-          console.log(self.registerBody);
-          console.log("******************");
           self.$.registerAjax.generateRequest();
         });
       },
@@ -24928,7 +24978,6 @@ Custom property | Description | Default
 
       attached: function() {
         console.log("ready");
-        this.$.secretAjax.generateRequest();
       }
     });
   </script>
@@ -26269,7 +26318,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     .loaded {
       height: 20%!important;
     }
-
+    @media(max-width: 1024px) {
+      #underlay{
+        display: none;
+      }
+    }
   </style>
   <template>
     <div id="underlay">

@@ -42,6 +42,9 @@ try {
   console.error("Could not open configuration file!");
   process.exit();
 }
+var ct = require("./crosstalk.js")(conf);
+
+// app.use(ct(conf));
 
 const cluster = require('cluster');
 const numCPUs = conf.threads || require('os').cpus().length;
@@ -60,5 +63,5 @@ if(cluster.isMaster) {
     console.log("Webserver running on port: 443");
   });
   var storage = require("./storage.js")(conf);
-  var routes  = require("./routes.js")(app, storage, conf);
+  var routes  = require("./routes.js")(app, storage, conf, ct);
 }

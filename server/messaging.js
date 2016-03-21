@@ -47,7 +47,7 @@ setInterval(function() {
   RATE_LIMITS = {};
 }, 1000 * 60 * 60);
 
-module.exports = function(app, storage) {
+module.exports = function(app, storage, ct) {
   app.post("/refreshToken", function(req, res) {
     if(!hasRequirements(req, res, REQUIREMENTS.basic)) {
       return;
@@ -64,8 +64,18 @@ module.exports = function(app, storage) {
     }
     var user = req.body.user;
     var password = req.body.password;
-    storage.login(user, password, function(success) {
-      handleResult(success, res);
+    var cttoken = req.body.cttoken;
+    storage.login(user, password, cttoken, function(success) {
+      if(success.token) {
+        ct.login({user: user, password: password, cttoken: success.token}, function(data) {
+          if(data.error)
+            return handleResult(data, res);
+          else
+            return handleResult(success, res);
+        })
+      } else {
+        return handleResult(success, res);
+      }
     });
   })
 
@@ -109,10 +119,26 @@ module.exports = function(app, storage) {
     }
     var sender = req.body.sender;
     var token = req.body.token;
-    var highest = req.body.highestReceived || 0;
+    var highest = req.body.highestReceived;
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
         storage.getMessages(sender, highest, function(messages) {
+          res.send(messages);
+        });
+      });
+    });
+  })
+
+  app.post("/fetchmessages", function(req, res) {
+    if(!hasRequirements(req, res, REQUIREMENTS.basic)) {
+      return;
+    }
+    var sender = req.body.sender;
+    var token = req.body.token;
+    var lowest = req.body.lowestReceived;
+    storage.verifyToken(sender, token, function(success) {
+      handleResult(success, res, function() {
+        storage.fetchMessages(sender, lowest, function(messages) {
           res.send(messages);
         });
       });
@@ -277,6 +303,7 @@ function badKeys(res, keys, req, missing) {
 
 function handleResult(result, res, cb) {
   console.log(typeof result)
+  console.log(result);
   if(typeof result == "boolean") {
     if(result !== false) {
       if(cb)

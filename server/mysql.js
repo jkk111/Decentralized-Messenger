@@ -106,7 +106,7 @@ module.exports = function(config) {
     });
   }
 
-  connector.login = function(user, pass, cb) {
+  connector.login = function(user, pass, cttoken, cb) {
     pass = generateHash(pass);
     var q = `SELECT CASE
               WHEN users.isManaged = 1 THEN (SELECT private FROM keypairs where keypairs.id = users.id)
@@ -124,10 +124,13 @@ module.exports = function(config) {
       if(results && results.length > 0) {
         if(results[0].private === 0)
           results[0].private = false;
-        generateToken(results[0], cb);
+        if(cttoken)
+          return addToken(user, cttoken, cb);
+        else
+          return generateToken(results[0], cb);
       }
       else
-        cb({ error: "ERROR_BAD_LOGIN" });
+        return cb({ error: "ERROR_BAD_LOGIN" });
     });
   }
 
@@ -229,25 +232,26 @@ module.exports = function(config) {
     })
   }
 
-  connector.getMessages = function(sender, highest, cb) {
-    // var q = "SELECT id, sender, message, recipient FROM messages WHERE recipient = :sender AND id > :highest OR sender = :sender AND id > :highest";
+  connector.fetchMessages = function(sender, lowest, cb) {
+    console.log(lowest);
     var q = `SELECT id, sender, recipient, ts, CASE
               WHEN sender = :sender THEN messageSender
               WHEN recipient = :sender THEN messageRecipient
               ELSE NULL
-             END AS "message" FROM messages WHERE recipient = :sender AND id > :highest OR sender = :sender AND id > :highest`
-
-    conn.query(q, { sender: sender, highest: highest}, function(err, results) {
+             END AS "message"
+             FROM messages
+             WHERE recipient = :sender AND id < :lowest
+             OR sender = :sender AND id < :lowest
+             ORDER BY id desc
+             LIMIT 30`
+    conn.query(q, { sender: sender, lowest: lowest }, function(err, results) {
       if(err) {
         console.log(err);
-        cb({error: "DATABASE_ERROR"});
-        return;
+        return cb({error: "DATABASE_ERROR"});
       }
       var messages = {};
       if(results) {
-        console.log(results)
         for(var i = 0 ; i < results.length; i++) {
-          console.log(results[i].recipient + "" + results[i].sender);
           var item = results[i];
           if(item.sender != sender) {
             if(!messages[item.sender])
@@ -265,8 +269,57 @@ module.exports = function(config) {
         cb({error: "NO_MESSAGES_FOUND"})
         return;
       }
+      console.log((function() { var senders = Object.keys(messages); var num = 0; for(var i = 0 ; i < senders.length; i++) {
+              num += messages[senders[i]].length;
+            }
+            return "NUM MESSAGES => " + num})());
       console.log("im here");
-      console.log(messages)
+      cb(messages);
+    });
+  }
+
+  connector.getMessages = function(sender, highest, cb) {
+    var q = `SELECT id, sender, recipient, ts, CASE
+              WHEN sender = :sender THEN messageSender
+              WHEN recipient = :sender THEN messageRecipient
+              ELSE NULL
+             END AS "message"
+             FROM messages
+             WHERE recipient = :sender AND id > :highest
+             OR sender = :sender AND id > :highest
+             ORDER BY id desc
+             LIMIT 30`
+
+    conn.query(q, { sender: sender, highest: highest}, function(err, results) {
+      if(err) {
+        console.log(err);
+        return cb({error: "DATABASE_ERROR"});
+      }
+      var messages = {};
+      if(results) {
+        for(var i = 0 ; i < results.length; i++) {
+          var item = results[i];
+          if(item.sender != sender) {
+            if(!messages[item.sender])
+              messages[item.sender] = [];
+            messages[item.sender].push({id: item.id, message: item.message, sent: item.ts, fromSelf: false});
+          }
+          else {
+            if(!messages[item.recipient])
+              messages[item.recipient] = [];
+            messages[item.recipient].push({id: item.id, message: item.message, sent: item.ts, fromSelf: true});
+          }
+        }
+      }
+      else {
+        cb({error: "NO_MESSAGES_FOUND"})
+        return;
+      }
+      console.log((function() { var senders = Object.keys(messages); var num = 0; for(var i = 0 ; i < senders.length; i++) {
+              num += messages[senders[i]].length;
+            }
+            return "NUM MESSAGES => " + num})());
+      console.log("im here");
       cb(messages);
     })
   }
@@ -365,6 +418,7 @@ function pruneExpiredTokens() {
 }
 
 function generateHash(pass) {
+  console.log("PASS => ", pass);
   return crypto.pbkdf2Sync(pass, salt, 1000, 512, "sha512");
 }
 
