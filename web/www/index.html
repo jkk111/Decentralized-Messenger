@@ -21295,7 +21295,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </iron-ajax>
       <iron-ajax id="scrollajax" url="/fetchmessages" method="Post" content-type="application/x-www-form-urlencoded" body="{{scrollBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponseError">
            </iron-ajax>
-      <paper-drawer-panel id="main">
+      <paper-drawer-panel responsive-width="800px" id="main">
         <paper-header-panel drawer="">
           <paper-toolbar>
             <div class="title">
@@ -21362,7 +21362,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                           </template>
                         </div>
                       </template>
-                    </div>
+                     </div>
                   </paper-dialog-scrollable>
                   <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
                     <div>
@@ -21427,9 +21427,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           value: function() { return [] },
           notify: true
         },
-        messages: {
-          type: Array,
-        },
         messagesBody: {
           type: Object,
           computed: 'computeMessagesBody(token, userId, highestReceived, lowestReceived)'
@@ -21461,6 +21458,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         showMessagesList: {
           type: Boolean,
           value: false
+        },
+        decryptWorker: {
+          type: Object,
+          value: function() { return null }
         },
         showFriendList: {
           type: Boolean,
@@ -21655,10 +21656,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         }
         var maxDistance = el.scrollTarget.clientHeight / 2;
-        console.log( el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight));
-        console.log( el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight));
-        console.log(this.fetchingMessages, this.$.scrollajax.loading);
-        console.log(maxDistance)
         if(this.newContactSelected || el.scrollTarget.scrollHeight - (el.scrollTarget.scrollTop + el.scrollTarget.clientHeight) <= maxDistance) {
           this.newContactSelected = false;
           this.async(function() {
@@ -21721,7 +21718,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
         return encStr;
       },
-      decryptMessage: function(message) {
+      addMessage: function(message, friend) {
+        var self = this;
+        // console.log(self);
+        this.async(function() {
+          self.decryptMessage(message, friend, function(message, friend) {
+            self.addDecryptedMessage(message, friend);
+          });
+        }, 100);
+      },
+      addDecryptedMessage: function (message, friend) {
+        console.log(friend);
+        friend = this.findFriend(friend);
+        console.log(friend)
+        if(friend === false)
+          return;
+        console.log("adding message", message);
+        this.push("friends." + friend + ".messages", message);
+        // this.notifyPath("friends", this.friends.slice());
+        // this.notifyPath("friends."+friend+".messages", this.friends[friend].messages.slice());
+      },
+      decryptMessage: function(message, friend, cb) {
         var chunks = message.message.split(",");
         var dec = new JSEncrypt();
         var decStr = "";
@@ -21729,7 +21746,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         for(var i = 0 ; i < chunks.length; i++) {
           decStr += dec.decrypt(chunks[i]);
         }
-        return { id: message.id, message: decStr || "COULDNT DECRYPT", fromSelf: message.fromSelf };
+        cb({ id: message.id, message: decStr || "COULDNT DECRYPT", fromSelf: message.fromSelf }, friend);
       },
       getSelectedFriend: function(contact) {
         return this.friends[contact]
@@ -21780,9 +21797,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 if(messages[ids[i]][k].id < this.lowestReceived || this.lowestReceived == NaN || this.lowestReceived === undefined) {
                   this.set("lowestReceived", messages[ids[i]][k].id);
                 }
-                this.push("friends." + j + ".messages", this.decryptMessage(messages[ids[i]][k]));
-                this.notifyPath("friends", this.friends.slice());
-                this.notifyPath("friends."+j+".messages", this.friends[j].messages.slice());
+                this.addMessage(messages[ids[i]][k], ids[i]);
               }
             }
           }
