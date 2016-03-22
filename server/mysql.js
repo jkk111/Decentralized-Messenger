@@ -1,3 +1,6 @@
+/*
+ * Module to handle all required queries and return them in necessary format with necessary data.
+ */
 var mysql = require("mysql2");
 var crypto = require("crypto");
 var salt, databaseUser, databasePassword, databaseHost, databaseName, databasePort, connector, conn, tokenCache;
@@ -141,7 +144,6 @@ module.exports = function(config) {
       var q = "DELETE FROM friends where id = :id";
     }
     conn.query(q, { id: fId, user: user }, function(err, results) {
-      console.log(results)
       if(err)
         return cb({error: "DATABASE_ERROR"})
       if(results != undefined && results.changedRows > 0)
@@ -156,7 +158,6 @@ module.exports = function(config) {
     conn.query(q, [fId, user], function(err, results) {
       if(err)
         return cb({error: "DATABASE_ERROR"});
-      console.log(results);
       if(results != undefined && results.affectedRows > 0)
         return cb(true);
       else
@@ -164,10 +165,13 @@ module.exports = function(config) {
     })
   }
 
-  connector.setKeys = function(id, priv, pub, cb) {
-    console.log("THE ID IS: " +id);
-    var q = "INSERT INTO keypairs (id, private, public) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE private = VALUES(private), public = VALUES(public);";
-    conn.query(q, [id, priv, pub], function(err, results) {
+  connector.setKeys = function(id, priv, pub, managed, cb) {
+    var q;
+    if(managed)
+      q = "INSERT INTO keypairs (id, private, public) VALUES(:id, :private, :public) ON DUPLICATE KEY UPDATE private = :private, public = :public;";
+    else
+      q = "INSERT INTO keypairs (id, public) VALUES(:id, :public) ON DUPLICATE KEY UPDATE public = :public;";
+    conn.query(q, {id: id, private: priv, public: pub}, function(err, results) {
       if(err) {
         console.log(err);
         return cb({error: "DATABASE_ERROR"})
@@ -190,10 +194,8 @@ module.exports = function(config) {
   }
 
   connector.addMessage = function(sender, dest, messageSender, messageRecipient, cb) {
-    console.log("Equal: ", messageSender == messageRecipient);
     connector.userIdExists(dest, function(exists) {
       if(exists) {
-        console.log(messageSender, messageRecipient)
         var q = "INSERT INTO messages (sender, recipient, messageSender, messageRecipient) VALUES(?, ?, ?, ?)";
         conn.query(q, [sender, dest, messageSender, messageRecipient], function(err, results) {
           if(err) {
@@ -209,7 +211,6 @@ module.exports = function(config) {
 
   connector.receivedMessages = function(sender, highest, cb) {
     var q = "DELETE FROM messages WHERE recipient = ? AND id <= ?";
-    console.log("DELETE FROM messages WHERE recipient = %s AND id <= %s", sender, highest);
     conn.query(q, [sender, highest], function(err, results) {
       if(err) {
         return cb({error: "DATABASE_ERROR"});
@@ -232,19 +233,18 @@ module.exports = function(config) {
     })
   }
 
-  connector.fetchMessages = function(sender, lowest, cb) {
-    console.log(lowest);
+  connector.fetchMessages = function(sender, lowest, friend, cb) {
     var q = `SELECT id, sender, recipient, ts, CASE
-              WHEN sender = :sender THEN messageSender
-              WHEN recipient = :sender THEN messageRecipient
-              ELSE NULL
+             WHEN sender = :sender THEN messageSender
+             WHEN recipient = :sender THEN messageRecipient
+             ELSE NULL
              END AS "message"
              FROM messages
-             WHERE recipient = :sender AND id < :lowest
-             OR sender = :sender AND id < :lowest
+             WHERE recipient = :sender AND id < :lowest AND sender = :friend
+             OR sender = :sender AND id < :lowest AND recipient = :friend
              ORDER BY id desc
-             LIMIT 30`
-    conn.query(q, { sender: sender, lowest: lowest }, function(err, results) {
+             LIMIT 30`;
+    conn.query(q, { sender: sender, lowest: lowest, friend: friend }, function(err, results) {
       if(err) {
         console.log(err);
         return cb({error: "DATABASE_ERROR"});
@@ -269,27 +269,21 @@ module.exports = function(config) {
         cb({error: "NO_MESSAGES_FOUND"})
         return;
       }
-      console.log((function() { var senders = Object.keys(messages); var num = 0; for(var i = 0 ; i < senders.length; i++) {
-              num += messages[senders[i]].length;
-            }
-            return "NUM MESSAGES => " + num})());
-      console.log("im here");
       cb(messages);
     });
   }
 
   connector.getMessages = function(sender, highest, cb) {
     var q = `SELECT id, sender, recipient, ts, CASE
-              WHEN sender = :sender THEN messageSender
-              WHEN recipient = :sender THEN messageRecipient
-              ELSE NULL
+             WHEN sender = :sender THEN messageSender
+             WHEN recipient = :sender THEN messageRecipient
+             ELSE NULL
              END AS "message"
              FROM messages
              WHERE recipient = :sender AND id > :highest
              OR sender = :sender AND id > :highest
-             ORDER BY id desc
-             LIMIT 30`
-
+             ORDER BY id DESC
+             LIMIT 30`;
     conn.query(q, { sender: sender, highest: highest}, function(err, results) {
       if(err) {
         console.log(err);
@@ -315,15 +309,9 @@ module.exports = function(config) {
         cb({error: "NO_MESSAGES_FOUND"})
         return;
       }
-      console.log((function() { var senders = Object.keys(messages); var num = 0; for(var i = 0 ; i < senders.length; i++) {
-              num += messages[senders[i]].length;
-            }
-            return "NUM MESSAGES => " + num})());
-      console.log("im here");
       cb(messages);
     })
   }
-    // friendshipId: users[i].id, id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false, initiatedBySelf
   connector.getFriends = function (sender, cb) {
     var q = `SELECT friends.pending, users.username, keypairs.public, friends.id as friendshipId,
               CASE
@@ -364,16 +352,12 @@ module.exports = function(config) {
       if(err) {
         return cb({error: "DATABASE_ERROR"});
       } else {
-        console.log(user1)
-        console.log(user2);
-        console.log(results)
         return cb(results != undefined && results.length > 0);
       }
     })
   }
 
   connector.addFriend = function (user1, user2, secret, cb) {
-    console.log("first: ) %d,\n second: ) %d")
     if(user1 == user2) {
       cb({error: "ERROR_ADD_SELF"});
       return;
@@ -390,8 +374,6 @@ module.exports = function(config) {
           if(err) {
             cb({ error: "DATABASE_ERROR" });
           } else {
-            console.log(results2);
-            console.log(err);
             cb(results != undefined);
           }
         });
@@ -418,12 +400,10 @@ function pruneExpiredTokens() {
 }
 
 function generateHash(pass) {
-  console.log("PASS => ", pass);
   return crypto.pbkdf2Sync(pass, salt, 1000, 512, "sha512");
 }
 
 function addToken(user, token, cb) {
-  console.log("Adding token: %s", token);
   var q = "INSERT INTO tokens VALUES(?, ?, NOW() + INTERVAL 2 HOUR);"
   conn.query(q, [user.id, token], function(err, rows, fields) {
     if(err) {
@@ -446,42 +426,5 @@ function generateToken(user, cb) {
   var token = crypto.randomBytes(64).toString("base64");
   addToken(user, token, cb);
 }
-
-// function getUsernames(users, sender, cb) {
-//   console.log(users + ":"+ sender)
-//   var ids = [];
-//   for(var i = 0 ; i < users.length; i++) {
-//     var user;
-//     if(users[i]["user1"] != sender) {
-//      ids.push(users[i]["user1"]);
-//      users[i].isFirst = true
-//     }
-//     else
-//       ids.push(users[i]["user2"])
-//   }
-//   var q = "SELECT username, id from users where id in (";
-//   for(var i = 0 ; i < ids.length; i++) {
-//     if(i > 0)
-//       q += ",";
-//       q += "?";
-//   }
-//   q += ");";
-//   conn.query(q, ids, function(err, results) {
-//     if(err) {
-//       console.log(err);
-//       cb({ error: "DATABASE_ERROR", info: err});
-//       return
-//     }
-//     var response = [];
-//     for(var i = 0 ; i < results.length; i++) {
-//       var item = { friendshipId: users[i].id, id: results[i].id, username: results[i].username, pending: (users[i].pending == 1) ? true : false};
-//       if(item.pending)
-//         item.initiatedBySelf = users[i].isFirst !== true;
-//       response.push(item);
-//     }
-//     console.log(response);
-//     cb(response);
-//   })
-// }
 
 setInterval(pruneExpiredTokens, 1000 * 60);

@@ -4,7 +4,7 @@
 */
 
 var fs = require("fs");
-var mysql = require("mysql");
+var mysql = require("mysql2");
 var username, pass, dbaddr, dbname, dbport, conn;
 if(!module.parent) {
   fs.readFile("config.json", "utf-8", function(err, data) {
@@ -28,9 +28,7 @@ module.exports = function(data) {
   dbaddr = data.databaseHost;
   dbname = data.databaseName;
   dbport = data.databasePort || 3306;
-  buildDatabase(function() {
-    // can't quite recall what my goal was here, probably gonna do something when everything was initialized, 3am coding at its finest
-  });
+  buildDatabase();
 }
 
 function buildDatabase() {

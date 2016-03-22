@@ -21266,7 +21266,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       left: 12.5%;
       right: 12.5%;
     }
-    @media(max-width: 1024px) {
+    @media(max-width: 1280px) {
       #elevation {
         height: 100%;
         width: 100%;
@@ -21383,6 +21383,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </template>
           </div>
           <paper-toolbar>
+
+            <paper-icon-button icon="menu" paper-drawer-toggle=""></paper-icon-button>
             <div class="title">{{generateContactName(selectedContact)}}</div>
           </paper-toolbar>
         </paper-header-panel>
@@ -21404,7 +21406,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         MAX_POLL_TIME: {
           type: Number,
-          value: 1000 // 1 second
+          value: 100
         },
         pollTime: {
           type: Number,
@@ -21542,7 +21544,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.showWelcome = false;
       },
       messageSentResponse: function() {
-        // this.$.pollajax.generateRequest();
+
       },
       friendSearchEmpty: function(results) {
         return !(results === undefined || results.users === undefined || results.users.length < 1 ||
@@ -21644,13 +21646,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if(el.scrollTarget.onscroll == null) {
           el.scrollTarget.onscroll = function(e) {
             var scrolledBy = el.scrollTarget.scrollTop + el.scrollTarget.clientHeight;
-            console.log(el.scrollTarget.scrollHeight+":"+scrolledBy)
-            // console.log(e)
             if(e.srcElement.scrollTop == 0) {
               self.fetchingMessages = true;
               self.oldHeight = el.scrollTarget.scrollHeight;
               self.scrollBody = self.computeScrollBody(self.userId, self.token, self.lowestReceived);
-              console.log(self.scrollBody);
               self.$.scrollajax.generateRequest();
             }
           }
@@ -21660,10 +21659,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.newContactSelected = false;
           this.async(function() {
             el.scrollTarget.scrollTop = el.scrollTarget.scrollHeight;
-            var self = this;
           },1)
         } else if(this.fetchingMessages && this.$.scrollajax.loading === false) {
-          console.log("im here")
           this.fetchingMessages = false;
           this.async(function() {
             el.scrollTarget.scrollTop = el.scrollTarget.scrollHeight - self.oldHeight;
@@ -21720,7 +21717,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       addMessage: function(message, friend) {
         var self = this;
-        // console.log(self);
         this.async(function() {
           self.decryptMessage(message, friend, function(message, friend) {
             self.addDecryptedMessage(message, friend);
@@ -21728,15 +21724,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }, 100);
       },
       addDecryptedMessage: function (message, friend) {
-        console.log(friend);
         friend = this.findFriend(friend);
-        console.log(friend)
         if(friend === false)
           return;
-        console.log("adding message", message);
         this.push("friends." + friend + ".messages", message);
-        // this.notifyPath("friends", this.friends.slice());
-        // this.notifyPath("friends."+friend+".messages", this.friends[friend].messages.slice());
       },
       decryptMessage: function(message, friend, cb) {
         var chunks = message.message.split(",");
@@ -21752,9 +21743,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return this.friends[contact]
       },
       generateContactName: function(friend) {
+        console.log(friend);
         if(friend < 0)
           return "";
-        return this.getSelectedFriend(friend).name;
+        console.log(this.getSelectedFriend(friend));
+        return this.getSelectedFriend(friend).username;
       },
       noneSelected: function(friend) {
         return friend < 0;
@@ -21843,7 +21836,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return { sender: this.userId, dest: this.friends[this.selectedContact].id,
                  messageRecipient: this.encryptMessage(this.message, this.friends[this.selectedContact].public),
                  messageSender: this.encryptMessage(this.message, this.publicKey), message: "OUTDATED CLIENT", token: this.token }
-                 // this.friends[this.selectedContact].public
       },
       friendsResponse: function(e, res) {
         if(res.response && !res.response.error) {
@@ -21877,7 +21869,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return undefined;
       },
       loggedIn: function() {
-        // this.$.pollajax.generateRequest();
+
       },
       haveFriend: function(id) {
         for(var i = 0 ; i < this.friends.length; i++) {

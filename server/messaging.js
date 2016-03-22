@@ -1,3 +1,10 @@
+/*
+ * All Routes for the messenger
+ * Has methods to ensure all necessary values are passed in the body
+ * Implements simple per user rate limiting
+ * Has simple error handling
+ */
+
 var rateLimits = {
 
 }
@@ -11,6 +18,7 @@ var USAGE_VALUES = {
 var REQUIREMENTS = {
   message: ["sender", "dest", "message", "token"],
   basic: ["sender", "token"],
+  register: ["user", "password", "pubKey"],
   auth: ["user", "password"],
   addFriend: ["sender", "token", "client", "secret"],
   search: ["token", "sender", "query"],
@@ -80,33 +88,27 @@ module.exports = function(app, storage, ct) {
   })
 
   app.post("/register", function(req, res) {
-    if(!hasRequirements(req, res, REQUIREMENTS.auth)) {
+    if(!hasRequirements(req, res, REQUIREMENTS.register)) {
       return;
     }
     var user = req.body.user;
     var password = req.body.password;
     var privKey = req.body.privKey || null;
     var pubKey = req.body.pubKey || null;
+    var managed = req.body.managed;
+    if(managed === undefined)
+      managed = privKey !== undefined;
     storage.userExists(user, function(exists) {
       handleResult((exists === false) ? true : { error: "ERROR_USER_EXISTS" }, res, function() {
         storage.register(user, password, function(success) {
           handleResult(success, res, function() {
-            console.log("registered")
-            if(privKey && pubKey) {
-              storage.setKeys(success, privKey, pubKey, function(success) {
-                console.log(success);
-                handleResult(success, res, function() {
-                  storage.login(user, password, function(success) {
-                    handleResult(success, res);
-                  });
+            storage.setKeys(success, privKey, pubKey, managed, function() {
+              handleResult(success, res, function() {
+                storage.login(user, password, false, function(success) {
+                  handleResult(success, res);
                 });
               });
-            } else {
-              storage.login(user, password, function(success) {
-                console.log(success);
-                handleResult(success, res);
-              });
-            }
+            });
           });
         });
       });
@@ -135,10 +137,11 @@ module.exports = function(app, storage, ct) {
     }
     var sender = req.body.sender;
     var token = req.body.token;
+    var friend = req.body.dest;
     var lowest = req.body.lowestReceived;
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
-        storage.fetchMessages(sender, lowest, function(messages) {
+        storage.fetchMessages(sender, lowest, friend, function(messages) {
           res.send(messages);
         });
       });
@@ -257,17 +260,14 @@ module.exports = function(app, storage, ct) {
     }
     var sender = req.body.sender;
     var dest = req.body.dest;
-    var messageSender = req.body.messageSender || req.body.message;
-    var messageRecipient = req.body.messageRecipient || req.body.message;
+    var messageSender = req.body.messageSender || "DEPRECATED CLIENT";
+    var messageRecipient = req.body.messageRecipient || "DEPRECATED CLIENT";
     var token = req.body.token;
     storage.verifyToken(sender, token, function(success) {
-      console.log("verified: %s", success)
       handleResult(success, res, function() {
         storage.checkFriendship(sender, dest, function(success) {
-          console.log("friends: %s", success)
           handleResult(success, res, function() {
             storage.addMessage(sender, dest, messageSender, messageRecipient, function(success) {
-              console.log("message added: %s", success)
               handleResult(success, res);
             });
           });
@@ -302,8 +302,6 @@ function badKeys(res, keys, req, missing) {
 }
 
 function handleResult(result, res, cb) {
-  console.log(typeof result)
-  console.log(result);
   if(typeof result == "boolean") {
     if(result !== false) {
       if(cb)
@@ -319,7 +317,7 @@ function handleResult(result, res, cb) {
     if(cb)
       cb();
     else
-      res.send({error: "UNKNOWN_ERROR"});
+      res.send({error: "UNKNOWN_RESPONSE_ERROR"});
   }
 }
 
@@ -328,8 +326,6 @@ function hasRequirements(req, res, keys, silent) {
     if(!req.body[keys[i]]) {
       badKeys(res, keys, req, keys[i]);
       return false;
-    } else if(!silent) {
-      console.log(keys[i] + ") " + req.body[keys[i]]);
     }
   }
   return true;

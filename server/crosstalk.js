@@ -1,3 +1,8 @@
+/*
+ * Crosstalk module
+ * Allows communication accross a mesh network of servers.
+ */
+
 var hosts = [];
 var request = require("request");
 module.exports = function(config) {

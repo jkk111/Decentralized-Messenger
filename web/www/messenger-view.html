@@ -17,15 +17,10 @@
 <link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html">
 <link rel="import" href="bower_components/iron-collapse/iron-collapse.html">
 <link rel="import" href="contact-element.html">
-
 <dom-module id="messenger-view">
   <style>
-    :host {
-
-    }
     #main {
       box-sizing: border-box;
-      /*border: 1px solid #efefef;*/
       background-color: white;
     }
     .tip-card {
@@ -39,7 +34,6 @@
     }
     paper-dialog-scrollable {
       height: 87.5%;
-
     }
     paper-toolbar {
       background-color: #4CAF50;
@@ -70,9 +64,6 @@
       display: block;
       clear: both;
     }
-    .messageViewAndSend {
-      /*width:1000px;*/
-    }
     .collapse {
       cursor: pointer;
     }
@@ -96,7 +87,7 @@
       left: 12.5%;
       right: 12.5%;
     }
-    @media(max-width: 1024px) {
+    @media(max-width: 1280px) {
       #elevation {
         height: 100%;
         width: 100%;
@@ -224,6 +215,7 @@
             </template>
           </div>
           <paper-toolbar>
+            <paper-icon-button icon="menu" paper-drawer-toggle></paper-icon-button>
             <div class="title">{{generateContactName(selectedContact)}}</div>
           </paper-toolbar>
         </paper-header-panel>
@@ -245,7 +237,7 @@
         },
         MAX_POLL_TIME: {
           type: Number,
-          value: 1000
+          value: 100
         },
         pollTime: {
           type: Number,
@@ -582,9 +574,11 @@
         return this.friends[contact]
       },
       generateContactName: function(friend) {
+        console.log(friend);
         if(friend < 0)
           return "";
-        return this.getSelectedFriend(friend).name;
+        console.log(this.getSelectedFriend(friend));
+        return this.getSelectedFriend(friend).username;
       },
       noneSelected: function(friend) {
         return friend < 0;

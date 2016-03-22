@@ -1,3 +1,10 @@
+
+/*
+ * Storage interface module
+ * Can support new modules to support new databases.
+ * This may look redundant, but it allows a plugin to be specified in the configuration file,
+ * without modifying the api or anything that depends on it.
+ */
 var storageEngines = {
   "mysql": "./mysql.js"
 };
@@ -18,9 +25,6 @@ module.exports = function(config) {
     console.log("You didn't specify a storage method! exiting");
     process.exit(1);
   }
-  /*
-   * This may look redundant, but it allows a plugin to be specified in the configuration file, without modifying the api or anything that depends on it.
-   */
   var storageEngine = require(storageScript)(config);
 
   this.search = storageEngine.search;

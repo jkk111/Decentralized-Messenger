@@ -1,3 +1,7 @@
+/*
+ * Setup Script
+ * Simplifies setting up and configuring the server by generating the necessary configuration file.
+ */
 var prompt = require('prompt');
 var fs = require("fs");
 var crypto = require("crypto");
@@ -41,15 +45,19 @@ var options = {
       default: "PLEASE USE A GOOD PASSWORD"
     },
     serverPort: {
-      message: "Choose a port to run on",
+      message: "Choose a port to run http redirect on",
       default: 80
+    },
+    securePort: {
+      message: "Choose a port to run https on",
+      default: 443
     }
   }
 }
 
 prompt.get(options, function (err, result) {
   if (err) { console.log("on err"); return;}
-  result.salt = crypto.randomBytes(128).toString("base64");
+  result.salt = crypto.randomBytes(256).toString("base64");
   fs.writeFile("config.json", JSON.stringify(result, null, "\t"), "utf-8", function(err) {
     if(err)
       console.log(err);
