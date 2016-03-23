@@ -4,7 +4,6 @@
  * Implements simple per user rate limiting
  * Has simple error handling
  */
-
 var rateLimits = {
 
 }
@@ -16,7 +15,7 @@ var USAGE_VALUES = {
 }
 
 var REQUIREMENTS = {
-  message: ["sender", "dest", "message", "token"],
+  message: ["sender", "dest", "messageSender", "messageRecipient", "token"],
   basic: ["sender", "token"],
   register: ["user", "password", "pubKey"],
   auth: ["user", "password"],
@@ -30,7 +29,7 @@ var REQUIREMENTS = {
 
 
 var rateLimiting = function(req, res, next) {
-  if(!hasRequirements(req, res, REQUIREMENTS.basic, true)) {
+  if(!hasRequirements(req, res, REQUIREMENTS.basic, false)) {
     return;
   }
   var sender = req.body.sender;
@@ -206,7 +205,7 @@ module.exports = function(app, storage, ct) {
     var secret = req.body.secret || "";
     storage.verifyToken(sender, token, function(success) {
       handleResult(success, res, function() {
-        storage.userExists(client, function(exists) {
+        storage.userIdExists(client, function(exists) {
           handleResult(exists, res, function() {
             storage.addFriend(sender, client, secret, function(success) {
               handleResult(success, res);
@@ -228,27 +227,6 @@ module.exports = function(app, storage, ct) {
       handleResult(success, res, function() {
         storage.search(query, function(result) {
           res.send(result);
-        });
-      });
-    });
-  });
-  // TODO (johnkevink): Find alternative to this, perhaps search and add.
-  app.post("/addFriendName", function(req, res) {
-    if(!hasRequirements(req, res, REQUIREMENTS.addFriend)) {
-      return;
-    }
-    var sender = req.body.sender;
-    var token = req.body.token;
-    var client = req.body.client;
-    var secret = req.body.secret || "";
-    storage.verifyToken(sender, token, function(success) {
-      handleResult(success, res, function() {
-        storage.idFromName(client, function(id) {
-          handleResult(id.error === undefined, res, function() {
-            storage.addFriend(sender, id, secret, function(success) {
-              handleResult(success, res);
-            })
-          });
         });
       });
     });

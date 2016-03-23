@@ -47,6 +47,8 @@ module.exports = function(config) {
 
   this.userExists = storageEngine.userExists;
 
+  this.userIdExists = storageEngine.userIdExists;
+
   this.updateFriendship = storageEngine.updateFriendship;
 
   this.refreshToken = storageEngine.refreshToken;

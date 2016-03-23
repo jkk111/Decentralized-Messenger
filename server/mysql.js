@@ -33,8 +33,7 @@ module.exports = function(config) {
       var tokenObj = tokenCache[token]
       if(tokenObj.expiry <= new Date().getTime()) {
         tokenCache[token] = undefined;
-        connector.verifyToken(user, token, cb);
-        return;
+        return connector.verifyToken(user, token, cb);
       }
       return cb((tokenCache[token] && tokenCache[token].user == user) ? true : {error: "ERROR_BAD_TOKEN"});
     }
@@ -53,7 +52,10 @@ module.exports = function(config) {
             cb({error: "DATABASE_ERROR", type: "USER_STATUS_UPDATE_ERROR"});
           }
           if(results && results[0]) {
-            tokenCache[token] = { user: user, expiry: new Date(results[0].expiry) };
+            tokenCache[token] = { user: user, expiry: new Date(results[0].expiry), accessed: new Date().getTime() };
+            if(Object.keys(tokenCache).length > 50) {
+              pruneTokens();
+            }
             cb(!err && results != undefined)
           } else {
             cb({ error: "ERROR_BAD_TOKEN" });
@@ -64,7 +66,7 @@ module.exports = function(config) {
   }
 
   connector.userExists = function(user, cb) {
-    var q = "SELECT id FROM users WHERE id = ?";
+    var q = "SELECT username FROM users WHERE username = ?";
     conn.query(q, user, function(err, results) {
       if(err)
         return cb({error: "DATABASE_ERROR"});
@@ -146,7 +148,7 @@ module.exports = function(config) {
     conn.query(q, { id: fId, user: user }, function(err, results) {
       if(err)
         return cb({error: "DATABASE_ERROR"})
-      if(results != undefined && results.changedRows > 0)
+      if(results != undefined && results.changedRows > 0 || results != undefined && results.affectedRows > 0)
         return cb(true);
       else
         return cb({error: "FRIENDSHIP_NOT_EXISTS"});
@@ -374,7 +376,7 @@ module.exports = function(config) {
           if(err) {
             cb({ error: "DATABASE_ERROR" });
           } else {
-            cb(results != undefined);
+            cb(results2 != undefined ? {friendshipId: results2.insertId} : false);
           }
         });
       }
@@ -425,6 +427,25 @@ function generateExpiry() {
 function generateToken(user, cb) {
   var token = crypto.randomBytes(64).toString("base64");
   addToken(user, token, cb);
+}
+
+function pruneTokens() {
+  var tokens = Object.keys(tokenCache)
+  while(tokens.length > 50) {
+    var oldest, oldestTime;
+    for(var i = 0 ; i < tokens.length ;i++) {
+      if(!oldest) {
+        oldest = tokens[i];
+        oldestTime = tokenCache[tokens[i]].accessed;
+      }
+      else if (tokenCache[tokens[i]].accessed < oldestTime) {
+        oldest = tokens[i];
+        oldestTime = tokenCache[tokens[i]].accessed;
+      }
+    }
+    delete tokenCache[oldest];
+    tokens = Object.keys(tokenCache);
+  }
 }
 
 setInterval(pruneExpiredTokens, 1000 * 60);
