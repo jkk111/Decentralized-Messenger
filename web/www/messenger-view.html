@@ -177,7 +177,7 @@
         <paper-header-panel main>
           <div id="mainContent">
             <template is="dom-if" if="{{noneSelected(selectedContact)}}">
-              <paper-card class="tip-card">{{tip}}</paper-card>
+              <paper-card class="tip-card">Select a view from the menu on the left!</paper-card>
             </template>
             <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
               <template is="dom-if" if="{{!isPending(selectedContact)}}">
@@ -303,10 +303,6 @@
         drawerTitle: {
           type: String,
           value: ""
-        },
-        tip: {
-          type: String,
-          value: "Select a view from the menu on the left!"
         },
         hasFriendSearchResults: {
           type: Boolean,
