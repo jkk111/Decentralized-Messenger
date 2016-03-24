@@ -21132,25 +21132,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       border-radius: 50%;
       height: 72px;
     }
-    #name {
-      padding-left: 6px;
+    #contact {
+      padding-left: 40px;
     }
   </style>
   <template>
-    <div class="horizontal layout center">
+    <div class="horizontal layout center" id="contact">
       <div class="flex">
-        <img src$="{{_img}}">
+        <iron-icon icon="social:person"></iron-icon>
       </div>
       <div id="name" class="flex-6">
         {{name}}
-      </div>
-      <div class="flex">
-        <template float="right" is="dom-if" if="{{online}}">
-          <iron-icon style="fill:#4CAF50" icon="communication:chat-bubble"></iron-icon>
-        </template>
-        <template is="dom-if" if="{{!online}}">
-          <iron-icon style="fill:#9E9E9E" icon="communication:chat-bubble-outline"></iron-icon>
-        </template>
       </div>
     </div>
   </template>
@@ -21198,8 +21190,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     .tip-card {
       padding: 14px;
     }
+    paper-item {
+      padding: 0;
+    }
     paper-input {
-      color: #4caf50;
+      --paper-input-container-color: var(--paper-grey-500);
+      --paper-input-container-focus-color: var(--paper-green-500);
     }
     paper-menu {
       padding-top: 0;
@@ -21208,13 +21204,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       height: 87.5%;
     }
     paper-toolbar {
-      background-color: #4CAF50;
+      background-color: var(--paper-green-500);
     }
     .searchFriend {
       cursor: pointer;
     }
     .message {
-      min-width: 100px;
+      min-width: 10px;
       margin: 4px;
       padding: 8px;
       box-sizing: border-box;
@@ -21225,12 +21221,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       word-wrap: break-word;
     }
     .selfMessage {
-      background-color: #4CAF50;
+      background-color: var(--paper-green-500);
       text-align: justify;
       float: right;
     }
     .friendMessage {
-      background-color: var(--paper-grey-200);
+      background-color: var(--paper-grey-300);
     }
     .messageContainer {
       display: block;
@@ -21259,6 +21255,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       left: 12.5%;
       right: 12.5%;
     }
+    #searchbox {
+      padding-left:10px;
+      padding-top: 0;
+    }
     @media(max-width: 1280px) {
       #elevation {
         height: 100%;
@@ -21271,7 +21271,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }
   </style>
   <template>
-      <paper-material id="elevation" elevation="1">
+    <paper-material id="elevation" elevation="1">
       <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponseError">
                  </iron-ajax>
       <iron-ajax id="friendsajax" url="/getFriends" method="Post" content-type="application/x-www-form-urlencoded" body="{{messagesBody}}" handle-as="json" on-response="friendsResponse">
@@ -21296,7 +21296,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </div>
           </paper-toolbar>
           <div id="drawerContent">
-            <paper-item class="collapse" on-tap="toggleMessages"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
+            <paper-item class="collapse" on-tap="toggleMessages">
+              <paper-icon-button icon="communication:message"></paper-icon-button>
+              Messages
+            </paper-item>
             <iron-collapse id="collapseMessages" opened="">
               <div>
                 <paper-menu selected="{{selectedContact}}">
@@ -21309,11 +21312,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 </paper-menu>
               </div>
             </iron-collapse>
-            <paper-item class="collapse" on-tap="toggleFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
+            <paper-item class="collapse" on-tap="toggleFriendSearch">
+              <paper-icon-button icon="social:person-add"></paper-icon-button>
+              Add a Friend
+            </paper-item>
             <iron-collapse id="collapseFriendSearch">
-              <paper-item>
-              <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
-              <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
+              <paper-item id="searchbox">
+                <paper-input label="username" no-label-float="" value="{{searchQuery}}"></paper-input>
+                <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
               </paper-item>
               <template is="dom-if" if="{{hasFriendSearchResults}}">
                 <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
@@ -21381,8 +21387,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </paper-toolbar>
         </paper-header-panel>
       </paper-drawer-panel>
-      </paper-material>
+    </paper-material>
   </template>
+
   <script>
     Polymer({
       is: 'messenger-view',
@@ -21868,6 +21875,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       toggleMessages: function() {
         this.$.collapseMessages.toggle();
+        this.selectedContact = -1;
       },
       toggleFriendSearch: function() {
         this.$.collapseFriendSearch.toggle();
@@ -23063,7 +23071,6 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         cursor: pointer;
         --calculated-paper-checkbox-size: var(--paper-checkbox-size, 18px);
         @apply(--paper-font-common-base);
-        line-height: 0;
       }
 
       :host(:focus) {
@@ -23175,7 +23182,6 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         vertical-align: middle;
         padding-left: var(--paper-checkbox-label-spacing, 8px);
         white-space: normal;
-        line-height: normal;
         pointer-events: none;
         color: var(--paper-checkbox-label-color, --primary-text-color);
       }
@@ -24768,7 +24774,6 @@ Custom property | Description | Default
       }
     }
 
-
     :host {
       height: 100%;
       width: 100%;
@@ -24788,47 +24793,13 @@ Custom property | Description | Default
       transform: translateY(-50%);
     }
 
-    /*paper-material {
-      top: 0;
-      bottom: 0;
-      max-width: 400px;
-      /*margin: 10% 5%;*/
-      /*margin-left: 5%;
-      border-radius: 15px;
-      overflow: hidden;
-      text-align: center;
-      box-sizing: border-box;
-      /*padding: 16px;*/
-      /*max-height: 80%;
-      overflow: hidden;
-      position: relative;
-      top: 50%;
-      transform: translateY(-50%);
-      -webkit-transform-style: preserve-3d;
-      -moz-transform-style: preserve-3d;
-      transform-style: preserve-3d;
-    }
-
-    paper-material > * {
-      padding: 16px;
-    }*/
-
     paper-input {
       text-align: initial;
       padding: 0 10px 10px;
       --paper-input-container-color: var(--paper-grey-500);
       --paper-input-container-focus-color: var(--paper-green-500);
-      --paper-input-container-invalid-color: var(--paper-green-500);
+      --paper-input-container-invalid-color: var(--paper-red-500);
     }
-
-    /*#background {
-      width: 100vh;
-      height: 100vh;
-      padding: 0;
-      margin: 0;
-      /*z-index: 1;*/
-      /*pointer-events: none;
-    }*/
 
     #content {
       font-size: 1vw;
@@ -24874,10 +24845,8 @@ Custom property | Description | Default
   </style>
 
   <template>
-
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
-
     <div id="content">
       <div id="forms">
         <div class="container">
@@ -24898,7 +24867,6 @@ Custom property | Description | Default
         </div>
       </div>
     </div>
-
   </template>
 
   <script>
@@ -26351,7 +26319,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       width: 100%;
       height: 0;
       transition: height 0.5s;
-      background-color: #8BC34A;
+      background-color: var(--paper-green-400);
     }
     .loaded {
       height: 20%!important;
@@ -26362,6 +26330,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     }
   </style>
+
   <template>
     <div id="underlay">
     </div>
@@ -26371,6 +26340,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <paper-spinner id="loading"></paper-spinner>
     </div>
   </template>
+
   <script>
     Polymer({
       is: 'main-app',

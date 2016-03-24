@@ -27,7 +27,7 @@
       width: 100%;
       height: 0;
       transition: height 0.5s;
-      background-color: #8BC34A;
+      background-color: var(--paper-green-400);
     }
     .loaded {
       height: 20%!important;
@@ -38,6 +38,7 @@
       }
     }
   </style>
+
   <template>
     <div id="underlay">
     </div>
@@ -47,6 +48,7 @@
       <paper-spinner id="loading"></paper-spinner>
     </div>
   </template>
+
   <script>
     Polymer({
       is: 'main-app',

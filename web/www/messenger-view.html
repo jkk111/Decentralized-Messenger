@@ -26,8 +26,12 @@
     .tip-card {
       padding: 14px;
     }
+    paper-item {
+      padding: 0;
+    }
     paper-input {
-      color: #4caf50;
+      --paper-input-container-color: var(--paper-grey-500);
+      --paper-input-container-focus-color: var(--paper-green-500);
     }
     paper-menu {
       padding-top: 0;
@@ -36,13 +40,13 @@
       height: 87.5%;
     }
     paper-toolbar {
-      background-color: #4CAF50;
+      background-color: var(--paper-green-500);
     }
     .searchFriend {
       cursor: pointer;
     }
     .message {
-      min-width: 100px;
+      min-width: 10px;
       margin: 4px;
       padding: 8px;
       box-sizing: border-box;
@@ -53,12 +57,12 @@
       word-wrap: break-word;
     }
     .selfMessage {
-      background-color: #4CAF50;
+      background-color: var(--paper-green-500);
       text-align: justify;
       float: right;
     }
     .friendMessage {
-      background-color: var(--paper-grey-200);
+      background-color: var(--paper-grey-300);
     }
     .messageContainer {
       display: block;
@@ -87,6 +91,10 @@
       left: 12.5%;
       right: 12.5%;
     }
+    #searchbox {
+      padding-left:10px;
+      padding-top: 0;
+    }
     @media(max-width: 1280px) {
       #elevation {
         height: 100%;
@@ -99,7 +107,7 @@
     }
   </style>
   <template>
-      <paper-material id="elevation" elevation="1">
+    <paper-material id="elevation" elevation="1">
       <iron-ajax id="pollajax" url="/messages" method="Post" content-type="application/x-www-form-urlencoded"
                  body="{{messagesBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponseError">
                  </iron-ajax>
@@ -132,7 +140,10 @@
             </div>
           </paper-toolbar>
           <div id="drawerContent">
-            <paper-item class="collapse" on-tap="toggleMessages"><paper-icon-button icon="communication:message"></paper-icon-button>Messages</paper-item>
+            <paper-item class="collapse" on-tap="toggleMessages">
+              <paper-icon-button icon="communication:message"></paper-icon-button>
+              Messages
+            </paper-item>
             <iron-collapse id="collapseMessages" opened>
               <div>
                 <paper-menu selected="{{selectedContact}}">
@@ -148,11 +159,14 @@
                 </paper-menu>
               </div>
             </iron-collapse>
-            <paper-item class="collapse" on-tap="toggleFriendSearch"><paper-icon-button icon="social:person-add"></paper-icon-button>Add a Friend</paper-item>
+            <paper-item class="collapse" on-tap="toggleFriendSearch">
+              <paper-icon-button icon="social:person-add"></paper-icon-button>
+              Add a Friend
+            </paper-item>
             <iron-collapse id="collapseFriendSearch">
-              <paper-item>
-              <paper-input placeholder="username" value="{{searchQuery}}"></paper-input>
-              <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
+              <paper-item id="searchbox">
+                <paper-input label="username" no-label-float value="{{searchQuery}}"></paper-input>
+                <paper-icon-button icon="search" title="search" on-tap="doSearch"></paper-icon-button>
               </paper-item>
               <template is="dom-if" if="{{hasFriendSearchResults}}">
                 <template is="dom-if" if="{{!friendSearchEmpty(friendSearchResults)}}">
@@ -220,8 +234,9 @@
           </paper-toolbar>
         </paper-header-panel>
       </paper-drawer-panel>
-      </paper-material>
+    </paper-material>
   </template>
+
   <script>
     Polymer({
       is: 'messenger-view',
@@ -707,6 +722,7 @@
       },
       toggleMessages: function() {
         this.$.collapseMessages.toggle();
+        this.selectedContact = -1;
       },
       toggleFriendSearch: function() {
         this.$.collapseFriendSearch.toggle();

@@ -21,7 +21,6 @@
       }
     }
 
-
     :host {
       height: 100%;
       width: 100%;
@@ -41,45 +40,13 @@
       transform: translateY(-50%);
     }
 
-    /*paper-material {
-      top: 0;
-      bottom: 0;
-      max-width: 400px;
-      /*margin: 10% 5%;*/
-      /*margin-left: 5%;
-      border-radius: 15px;
-      overflow: hidden;
-      text-align: center;
-      box-sizing: border-box;
-      /*padding: 16px;*/
-      /*max-height: 80%;
-      overflow: hidden;
-      position: relative;
-      top: 50%;
-      transform: translateY(-50%);
-      -webkit-transform-style: preserve-3d;
-      -moz-transform-style: preserve-3d;
-      transform-style: preserve-3d;
-    }
-
-    paper-material > * {
-      padding: 16px;
-    }*/
-
     paper-input {
       text-align: initial;
       padding: 0 10px 10px;
       --paper-input-container-color: var(--paper-grey-500);
+      --paper-input-container-focus-color: var(--paper-green-500);
+      --paper-input-container-invalid-color: var(--paper-red-500);
     }
-
-    /*#background {
-      width: 100vh;
-      height: 100vh;
-      padding: 0;
-      margin: 0;
-      /*z-index: 1;*/
-      /*pointer-events: none;
-    }*/
 
     #content {
       font-size: 1vw;
@@ -125,10 +92,8 @@
   </style>
 
   <template>
-
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
-
     <div id="content">
       <div id="forms">
         <div class="container">
@@ -149,7 +114,6 @@
         </div>
       </div>
     </div>
-
   </template>
 
   <script>

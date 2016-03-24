@@ -1,6 +1,5 @@
 <link rel="import" href="bower_components/polymer/polymer.html">
 <link rel="import" href="bower_components/iron-icons/communication-icons.html">
-<link rel="import" href="bower_components/paper-input/paper-input.html">
 <link rel="import" href="bower_components/iron-flex-layout/classes/iron-flex-layout.html">
 <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
 <dom-module id="contact-element">
@@ -12,25 +11,17 @@
       border-radius: 50%;
       height: 72px;
     }
-    #name {
-      padding-left: 6px;
+    #contact {
+      padding-left: 40px;
     }
   </style>
   <template>
-    <div class="horizontal layout center">
+    <div class="horizontal layout center" id="contact">
       <div class="flex">
-        <img src$={{_img}}>
+        <iron-icon icon="social:person"></iron-icon>
       </div>
       <div id="name" class="flex-6">
         {{name}}
-      </div>
-      <div class="flex">
-        <template float="right" is="dom-if" if="{{online}}">
-          <iron-icon style="fill:#4CAF50" icon="communication:chat-bubble"></iron-icon>
-        </template>
-        <template is="dom-if" if="{{!online}}">
-          <iron-icon style="fill:#9E9E9E" icon="communication:chat-bubble-outline"></iron-icon>
-        </template>
       </div>
     </div>
   </template>
