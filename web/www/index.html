@@ -11250,13 +11250,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return;
       }
 
-      // Do not focus the selected tab if the deepest target is part of the
-      // menu element's local DOM and is focusable.
-      var rootTarget = Polymer.dom(event).rootTarget;
-      if (rootTarget !== this && typeof rootTarget.tabIndex !== "undefined" && !this.isLightDescendant(rootTarget)) {
-        return;
-      }
-
       this.blur();
 
       // clear the cached focus item
@@ -17242,34 +17235,6 @@ indicating there is more content above. It shows a bottom divider if it is scrol
 the last child in its parent container, indicating there is more content below. The bottom divider
 is hidden if it is scrolled to the bottom.
 
-If `paper-dialog-scrollable` is not a direct child of the element implementing `Polymer.PaperDialogBehavior`,
-remember to set the `dialogElement`:
-
-    <paper-dialog-impl id="myDialog">
-      <h2>Header</h2>
-      <div class="my-content-wrapper">
-        <h4>Sub-header</h4>
-        <paper-dialog-scrollable>
-          Lorem ipsum...
-        </paper-dialog-scrollable>
-      </div>
-      <div class="buttons">
-        <paper-button>OK</paper-button>
-      </div>
-    </paper-dialog-impl>
-
-    <script>
-      var scrollable = Polymer.dom(myDialog).querySelector('paper-dialog-scrollable');
-      scrollable.dialogElement = myDialog;
-    </script>
-
-### Styling
-The following custom properties and mixins are available for styling:
-
-Custom property | Description | Default
-----------------|-------------|----------
-`--paper-dialog-scrollable` | Mixin for the scrollable content | {}
-
 @group Paper Elements
 @element paper-dialog-scrollable
 @demo demo/index.html
@@ -17281,12 +17246,8 @@ Custom property | Description | Default
   <style>
 
     :host {
-      /* Needed for correct flex rendering on Firefox & Chrome Canary */
-      min-height: 0;
-      max-height: 100%;
-
-      @apply(--layout);
-      @apply(--layout-relative);
+      display: block;
+      position: relative;
     }
 
     :host(.is-scrolled:not(:first-child))::before {
@@ -17312,9 +17273,12 @@ Custom property | Description | Default
     .scrollable {
       padding: 0 24px;
 
-      @apply(--layout-flex);
       @apply(--layout-scroll);
       @apply(--paper-dialog-scrollable);
+    }
+
+    .fit {
+      @apply(--layout-fit);
     }
   </style>
 
@@ -17328,6 +17292,8 @@ Custom property | Description | Default
 
 <script>
 
+(function() {
+
   Polymer({
 
     is: 'paper-dialog-scrollable',
@@ -17339,13 +17305,17 @@ Custom property | Description | Default
        * @type {?Node}
        */
       dialogElement: {
-        type: Object
+        type: Object,
+        value: function() {
+          return this.parentNode;
+        }
       }
 
     },
 
     listeners: {
-      'scrollable.scroll': '_scroll'
+      'scrollable.scroll': '_onScroll',
+      'iron-resize': '_onIronResize'
     },
 
     /**
@@ -17355,14 +17325,18 @@ Custom property | Description | Default
       return this.$.scrollable;
     },
 
-    ready: function () {
-      this._ensureTarget();
-    },
-
     attached: function() {
       this.classList.add('no-padding');
-      this._ensureTarget();
-      requestAnimationFrame(this._scroll.bind(this));
+      // Set itself to the overlay sizing target
+      this.dialogElement.sizingTarget = this.scrollTarget;
+      // If the host is sized, fit the scrollable area to the container. Otherwise let it be
+      // its natural size.
+      requestAnimationFrame(function() {
+        if (this.offsetHeight > 0) {
+          this.$.scrollable.classList.add('fit');
+        }
+        this._scroll();
+      }.bind(this));
     },
 
     _scroll: function() {
@@ -17372,17 +17346,13 @@ Custom property | Description | Default
         this.scrollTarget.scrollTop + this.scrollTarget.offsetHeight >= this.scrollTarget.scrollHeight);
     },
 
-    _ensureTarget: function () {
-      // read parentNode on attached because if dynamically created,
-      // parentNode will be null on creation.
-      this.dialogElement = this.dialogElement || Polymer.dom(this).parentNode;
-      // Set itself to the overlay sizing target
-      if (this.dialogElement) {
-        this.dialogElement.sizingTarget = this.scrollTarget;
-      }
+    _onScroll: function() {
+      this._scroll();
     }
 
-  });
+  })
+
+})();
 
 </script>
 <!--
@@ -17665,16 +17635,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     this._minimumZ = 101;
 
     this._backdrops = [];
-
-    this._backdropElement = null;
-    Object.defineProperty(this, 'backdropElement', {
-      get: function() {
-        if (!this._backdropElement) {
-          this._backdropElement = document.createElement('iron-overlay-backdrop');
-        }
-        return this._backdropElement;
-      }.bind(this)
-    });
   }
 
   Polymer.IronOverlayManagerClass.prototype._applyOverlayZ = function(overlay, aboveZ) {
@@ -17755,6 +17715,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       this._backdrops.splice(index, 1);
     }
   };
+
+  Object.defineProperty(Polymer.IronOverlayManagerClass.prototype, "backdropElement", {
+    get: function() {
+      if (!this._backdropElement) {
+        this._backdropElement = document.createElement('iron-overlay-backdrop');
+      }
+      return this._backdropElement;
+    }
+  });
 
   Polymer.IronOverlayManagerClass.prototype.getBackdrops = function() {
     return this._backdrops;
@@ -21135,6 +21104,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     #contact {
       padding-left: 40px;
     }
+    #name {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
   </style>
   <template>
     <div class="horizontal layout center" id="contact">
@@ -23073,7 +23047,6 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         cursor: pointer;
         --calculated-paper-checkbox-size: var(--paper-checkbox-size, 18px);
         @apply(--paper-font-common-base);
-        line-height: 0;
       }
 
       :host(:focus) {
@@ -23185,7 +23158,6 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         vertical-align: middle;
         padding-left: var(--paper-checkbox-label-spacing, 8px);
         white-space: normal;
-        line-height: normal;
         pointer-events: none;
         color: var(--paper-checkbox-label-color, --primary-text-color);
       }
@@ -23359,28 +23331,39 @@ The `aria-labelledby` attribute will be set to the header element, if one exists
     properties: {
 
       /**
-       * If `modal` is true, this implies `no-cancel-on-outside-click`, `no-cancel-on-esc-key` and `with-backdrop`.
+       * If `modal` is true, this implies `no-cancel-on-outside-click` and `with-backdrop`.
        */
       modal: {
+        observer: '_modalChanged',
         type: Boolean,
         value: false
+      },
+
+      /** @type {?Node} */
+      _lastFocusedElement: {
+        type: Object
+      },
+
+      _boundOnFocus: {
+        type: Function,
+        value: function() {
+          return this._onFocus.bind(this);
+        }
+      },
+
+      _boundOnBackdropClick: {
+        type: Function,
+        value: function() {
+          return this._onBackdropClick.bind(this);
+        }
       }
 
     },
 
-    observers: [
-      '_modalChanged(modal, _readied)'
-    ],
-
     listeners: {
-      'tap': '_onDialogClick'
-    },
-
-    ready: function () {
-      // Only now these properties can be read.
-      this.__prevNoCancelOnOutsideClick = this.noCancelOnOutsideClick;
-      this.__prevNoCancelOnEscKey = this.noCancelOnEscKey;
-      this.__prevWithBackdrop = this.withBackdrop;
+      'tap': '_onDialogClick',
+      'iron-overlay-opened': '_onIronOverlayOpened',
+      'iron-overlay-closed': '_onIronOverlayClosed'
     },
 
     attached: function() {
@@ -23393,34 +23376,17 @@ The `aria-labelledby` attribute will be set to the header element, if one exists
       Polymer.dom(this).unobserveNodes(this._ariaObserver);
     },
 
-    _modalChanged: function(modal, readied) {
-      if (modal) {
+    _modalChanged: function() {
+      if (this.modal) {
         this.setAttribute('aria-modal', 'true');
       } else {
         this.setAttribute('aria-modal', 'false');
       }
-
-      // modal implies noCancelOnOutsideClick, noCancelOnEscKey and withBackdrop.
-      // We need to wait for the element to be ready before we can read the
-      // properties values.
-      if (!readied) {
-        return;
-      }
-
-      if (modal) {
-        this.__prevNoCancelOnOutsideClick = this.noCancelOnOutsideClick;
-        this.__prevNoCancelOnEscKey = this.noCancelOnEscKey;
-        this.__prevWithBackdrop = this.withBackdrop;
+      // modal implies noCancelOnOutsideClick and withBackdrop if true, don't overwrite
+      // those properties otherwise.
+      if (this.modal) {
         this.noCancelOnOutsideClick = true;
-        this.noCancelOnEscKey = true;
         this.withBackdrop = true;
-      } else {
-        // If the value was changed to false, let it false.
-        this.noCancelOnOutsideClick = this.noCancelOnOutsideClick &&
-          this.__prevNoCancelOnOutsideClick;
-        this.noCancelOnEscKey = this.noCancelOnEscKey &&
-          this.__prevNoCancelOnEscKey;
-        this.withBackdrop = this.withBackdrop && this.__prevWithBackdrop;
       }
     },
 
@@ -23450,21 +23416,57 @@ The `aria-labelledby` attribute will be set to the header element, if one exists
       this.closingReason.confirmed = confirmed;
     },
 
-    /**
-     * Will dismiss the dialog if user clicked on an element with dialog-dismiss
-     * or dialog-confirm attribute.
-     */
     _onDialogClick: function(event) {
-      // Search for the element with dialog-confirm or dialog-dismiss,
-      // from the root target until this (excluded).
-      var path = Polymer.dom(event).path;
-      for (var i = 0; i < path.indexOf(this); i++) {
-        var target = path[i];
-        if (target.hasAttribute && (target.hasAttribute('dialog-dismiss') || target.hasAttribute('dialog-confirm'))) {
-          this._updateClosingReasonConfirmed(target.hasAttribute('dialog-confirm'));
-          this.close();
-          event.stopPropagation();
-          break;
+      var target = Polymer.dom(event).rootTarget;
+      while (target && target !== this) {
+        if (target.hasAttribute) {
+          if (target.hasAttribute('dialog-dismiss')) {
+            this._updateClosingReasonConfirmed(false);
+            this.close();
+            event.stopPropagation();
+            break;
+          } else if (target.hasAttribute('dialog-confirm')) {
+            this._updateClosingReasonConfirmed(true);
+            this.close();
+            event.stopPropagation();
+            break;
+          }
+        }
+        target = Polymer.dom(target).parentNode;
+      }
+    },
+
+    _onIronOverlayOpened: function() {
+      if (this.modal) {
+        document.body.addEventListener('focus', this._boundOnFocus, true);
+        document.body.addEventListener('click', this._boundOnBackdropClick, true);
+      }
+    },
+
+    _onIronOverlayClosed: function() {
+      this._lastFocusedElement = null;
+      document.body.removeEventListener('focus', this._boundOnFocus, true);
+      document.body.removeEventListener('click', this._boundOnBackdropClick, true);
+    },
+
+    _onFocus: function(event) {
+      if (this.modal && this._manager.currentOverlay() === this) {
+        if (Polymer.dom(event).path.indexOf(this) !== -1) {
+          this._lastFocusedElement = event.target;
+        } else if (this._lastFocusedElement) {
+          this._lastFocusedElement.focus();
+        } else {
+          this._focusNode.focus();
+        }
+      }
+    },
+
+    _onBackdropClick: function(event) {
+      if (this.modal && this._manager.currentOverlay() === this && Polymer.dom(event).path.indexOf(this) === -1) {
+        if (this._lastFocusedElement) {
+          this._lastFocusedElement.focus();
+        } else {
+          this._focusNode.focus();
         }
       }
     }
@@ -23625,7 +23627,6 @@ element.
     },
 
     _renderOpened: function() {
-      this.cancelAnimation();
       if (this.withBackdrop) {
         this.backdropElement.open();
       }
@@ -23633,7 +23634,6 @@ element.
     },
 
     _renderClosed: function() {
-      this.cancelAnimation();
       if (this.withBackdrop) {
         this.backdropElement.close();
       }
