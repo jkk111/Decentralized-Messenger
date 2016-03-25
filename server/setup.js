@@ -7,6 +7,13 @@ var fs = require("fs");
 var crypto = require("crypto");
 prompt.start();
 prompt.message = "";
+
+try {
+  fs.accessSync("logs", fs.R_OK | fs.W_OK);
+} catch(e) {
+  fs.mkdirSync("logs");
+}
+
 prompt.delimiter = "";
 console.log("Warning if there is an existing datbase with the same name, \nit will be destroyed!");
 
