@@ -40,13 +40,13 @@
       height: 87.5%;
     }
     paper-toolbar {
-      background-color: var(--paper-green-500);
+      background-color: #4CAF50;
     }
     .searchFriend {
       cursor: pointer;
     }
     .message {
-      min-width: 10px;
+      min-width: 100px;
       margin: 4px;
       padding: 8px;
       box-sizing: border-box;
@@ -57,7 +57,7 @@
       word-wrap: break-word;
     }
     .selfMessage {
-      background-color: var(--paper-green-500);
+      background-color: #4CAF50;
       text-align: justify;
       float: right;
     }
@@ -725,7 +725,6 @@
       },
       toggleMessages: function() {
         this.$.collapseMessages.toggle();
-        this.selectedContact = -1;
       },
       toggleFriendSearch: function() {
         this.$.collapseFriendSearch.toggle();

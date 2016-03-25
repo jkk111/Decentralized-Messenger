@@ -32,6 +32,8 @@ app.use(function(req, res, next) {
   next();
 });
 
+// app.use(trackConnected)
+
 httpUpgrade.get("/*", function(req, res) {
   res.redirect("https://" + req.hostname + ":" + conf.securePort + req.url);
 });
