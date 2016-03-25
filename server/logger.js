@@ -19,7 +19,7 @@ module.exports = function(id, StartTime, silent) {
   return route
 }
 
-function getTimeString() {
+function getTimeString(d) {
   return fNum(d.getDate()) + "-"+ fNum(d.getMonth() + 1) + "-" + d.getUTCFullYear() + "-"
                + fNum(d.getHours()) + "-" + fNum(d.getMinutes()) + "-" + fNum(d.getSeconds())
 }
@@ -48,7 +48,7 @@ function formatString(str, o) {
   var res = "";
   var lines = str.split("\n");
   for(var i = 0 ; i < lines.length; i++) {
-    res += threadId + " " + getTimeString() + " " + o.file + "." + o.method + "." + o.line + ") " + lines[i] + "\n"
+    res += threadId + " " + getTimeString(new Date()) + " " + o.file + "." + o.method + "." + o.line + ") " + lines[i] + "\n"
   }
   return res;
 }
