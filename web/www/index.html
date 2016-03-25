@@ -21204,13 +21204,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       height: 87.5%;
     }
     paper-toolbar {
-      background-color: var(--paper-green-500);
+      background-color: #4CAF50;
     }
     .searchFriend {
       cursor: pointer;
     }
     .message {
-      min-width: 10px;
+      min-width: 100px;
       margin: 4px;
       padding: 8px;
       box-sizing: border-box;
@@ -21221,7 +21221,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       word-wrap: break-word;
     }
     .selfMessage {
-      background-color: var(--paper-green-500);
+      background-color: #4CAF50;
       text-align: justify;
       float: right;
     }
@@ -21878,7 +21878,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       toggleMessages: function() {
         this.$.collapseMessages.toggle();
-        this.selectedContact = -1;
       },
       toggleFriendSearch: function() {
         this.$.collapseFriendSearch.toggle();
@@ -23074,6 +23073,7 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         cursor: pointer;
         --calculated-paper-checkbox-size: var(--paper-checkbox-size, 18px);
         @apply(--paper-font-common-base);
+        line-height: 0;
       }
 
       :host(:focus) {
@@ -23185,6 +23185,7 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         vertical-align: middle;
         padding-left: var(--paper-checkbox-label-spacing, 8px);
         white-space: normal;
+        line-height: normal;
         pointer-events: none;
         color: var(--paper-checkbox-label-color, --primary-text-color);
       }
@@ -26322,7 +26323,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       width: 100%;
       height: 0;
       transition: height 0.5s;
-      background-color: var(--paper-green-400);
+      background-color: #8BC34A;
     }
     .loaded {
       height: 20%!important;
