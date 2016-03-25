@@ -7,7 +7,11 @@ var logFile;
 var threadId;
 var print = true;
 var d;
+var listeners = [];
 module.exports = function(id, StartTime, silent) {
+  this.addListener = function(listener) {
+    listeners.push(listener);
+  }
   print = silent === undefined ? true: !silent;
   d = new Date(StartTime);
   threadId = id;
@@ -31,7 +35,11 @@ function route(req, res, next) {
 function generateLog(req, res) {
   var logStr = "[" + req.method + "] " + req.path + " " + res.statusCode + " " + JSON.stringify(req.body || {}) + " " + ((new Date().getTime() - req.StartTime.getTime())  + "ms");
   var caller = getCaller();
-  logFile.write(formatString(logStr, caller));
+  var line = formatString(logStr, caller);
+  logFile.write(line);
+  if(listeners && listeners.length > 0) {
+   listeners[i](line)
+  }
   if(print)
     console.log(logStr);
 }
