@@ -276,6 +276,7 @@ module.exports = function(config) {
   }
 
   connector.getMessages = function(sender, highest, cb) {
+    var d = new Date().getTime();
     var q = `SELECT id, sender, recipient, ts, CASE
              WHEN sender = :sender THEN messageSender
              WHEN recipient = :sender THEN messageRecipient
@@ -283,9 +284,7 @@ module.exports = function(config) {
              END AS "message"
              FROM messages
              WHERE recipient = :sender AND id > :highest
-             OR sender = :sender AND id > :highest
-             ORDER BY id DESC
-             LIMIT 30`;
+             OR sender = :sender AND id > :highest`;
     conn.query(q, { sender: sender, highest: highest}, function(err, results) {
       if(err) {
         console.log(err);
@@ -311,10 +310,12 @@ module.exports = function(config) {
         cb({error: "NO_MESSAGES_FOUND"})
         return;
       }
+      console.log("Got messages in %dms", new Date().getTime() - d);
       cb(messages);
     })
   }
   connector.getFriends = function (sender, cb) {
+    var d = new Date().getTime();
     var q = `SELECT friends.pending, users.username, keypairs.public, friends.id as friendshipId,
               CASE
                 WHEN friends.pending = 1 AND friends.user1 = :user THEN true
@@ -343,6 +344,7 @@ module.exports = function(config) {
           results[i].pending = results[i].pending == 1 ? true : false;
           results[i].initiatedBySelf = results[i].initiatedBySelf == 1 ? true : false;
         }
+        console.log("got friends in %dms", new Date().getTime() - d);
         return cb(results)
       }
     })
