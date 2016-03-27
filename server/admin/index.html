@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <script type="text/javascript" src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+  <script type="text/javascript">
+    var socket = io.connect('https://localhost:8443', {secure: true});
+    var MAX_CHILDREN = 1000;
+    var mostActive = {
+
+    }
+    socket.on("log", function(data) {
+      var el = document.createElement("li")
+      el.innerHTML = JSON.stringify(data);
+      if(mostActive[data.worker])
+        mostActive[data.worker]++;
+      else
+        mostActive[data.worker] = 1;
+      updateActive();
+      var logs = document.getElementById("logs")
+      logs.appendChild(el);
+      if(logs.children.length > MAX_CHILDREN)
+        logs.removeChild(logs.children[0]);
+      var route = document.getElementById(data.route);
+      if(!route) {
+        route = document.createElement("li");
+        var name = document.createElement("span");
+        name.classList.add("latencyName");
+        name.innerHTML = data.route;
+        var latency = document.createElement("span")
+        route.id = data.route;
+        route.appendChild(name);
+        route.appendChild(latency);
+        document.getElementById("latency").appendChild(route);
+      }
+      route.children[1].innerHTML = data.latency;
+      var logs = document.getElementById("logs");
+      logs.scrollTop = logs.scrollHeight;
+    });
+    socket.on("connected", function(conn) {
+      document.getElementById("numConnected").innerHTML = conn + " Pending";
+    })
+    function updateActive() {
+      var keys = Object.keys(mostActive);
+      for(var i = 0 ; i < keys.length; i++) {
+        var el = document.getElementById("worker-" + keys[i]);
+        if(!el) {
+          el = document.createElement("li");
+          var id = document.createElement("span");
+          el.id = "worker-" + keys[i];
+          var count = document.createElement("span");
+          id.classList.add("activeId");
+          count.classList.add("countId");
+          el.appendChild(id);
+          id.innerHTML = keys[i];
+          el.appendChild(count);
+          count.innerHTML = 0;
+          document.getElementById("activeWorkers").appendChild(el);
+        }
+        el.children[1].innerHTML = mostActive[keys[i]];
+      }
+    }
+  </script>
+  <style type="text/css">
+    html, body {
+      margin: 0;
+      background-color: #eee;
+    }
+    li:nth-child(even) {
+      background-color: #aaa;
+    }
+    ul {
+      padding: 0;
+      margin: 0;
+      overflow: auto;
+      border: 1px solid black;
+      max-height: 12em;
+      max-width: 33%;
+    }
+    #logs {
+      max-height: 20em;
+      max-width: 66%;
+    }
+    .latencyName, .activeId {
+      padding-right: 20px;
+      font-weight: 900;
+    }
+    li {
+      list-style-type: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="numConnected">0</div>
+  <ul id="latency">
+  </ul>
+  <ul id="activeWorkers">
+
+  </ul>
+  <ul id="logs">
+  </ul>
+</body>
+</html>

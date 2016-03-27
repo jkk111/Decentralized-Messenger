@@ -43,7 +43,7 @@ var options = {
       message: "Enter database name",
       default: "dm"
     },
-    serverAdnin: {
+    serverAdmin: {
       message: "Enter a username for the administrator",
       default: "admin"
     },

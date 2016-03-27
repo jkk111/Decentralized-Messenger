@@ -9,14 +9,16 @@ var print = true;
 var d;
 var listeners = [];
 module.exports = function(id, StartTime, silent) {
-  this.addListener = function(listener) {
-    listeners.push(listener);
-  }
   print = silent === undefined ? true: !silent;
   d = new Date(StartTime);
   threadId = id;
   logFile = fs.createWriteStream("logs/" + getTimeString(d) +".log", { flags: "a", defaultEncoding: "utf8"});
-  return route
+  return {route: route, addListener: addListener};
+}
+
+
+function addListener (listener) {
+  listeners.push(listener);
 }
 
 function getTimeString(d) {
@@ -25,8 +27,26 @@ function getTimeString(d) {
 }
 
 function route(req, res, next) {
+  if(listeners && listeners.length > 0) {
+    for(var i = 0 ; i < listeners.length; i++) {
+      listeners[i]("conn", true);
+    }
+  }
   req.StartTime = new Date();
   res.on("finish", function() {
+    if(listeners && listeners.length > 0) {
+      for(var i = 0 ; i < listeners.length; i++) {
+        listeners[i]("disco", true);
+      }
+    }
+    generateLog(req, res);
+  })
+  res.on("close", function() {
+    if(listeners && listeners.length > 0) {
+      for(var i = 0 ; i < listeners.length; i++) {
+        listeners[i]("disco", true);
+      }
+    }
     generateLog(req, res);
   })
   next();
@@ -34,11 +54,14 @@ function route(req, res, next) {
 
 function generateLog(req, res) {
   var logStr = "[" + req.method + "] " + req.path + " " + res.statusCode + " " + JSON.stringify(req.body || {}) + " " + ((new Date().getTime() - req.StartTime.getTime())  + "ms");
+  var noBodyLog = "[" + req.method + "] " + req.path + " " + res.statusCode + " " + ((new Date().getTime() - req.StartTime.getTime())  + "ms");
   var caller = getCaller();
   var line = formatString(logStr, caller);
   logFile.write(line);
   if(listeners && listeners.length > 0) {
-   listeners[i](line)
+    for(var i = 0 ; i < listeners.length; i++) {
+      listeners[i]("log", formatString(noBodyLog, caller).reverseSubstring(1));
+    }
   }
   if(print)
     console.log(logStr);
@@ -80,3 +103,7 @@ function fNum(num) {
     return "0"+num;
   else return num;
 }
+
+String.prototype.reverseSubstring = function(num) {
+  return this.substring(0, this.length - num);
+};

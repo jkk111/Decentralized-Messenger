@@ -310,7 +310,6 @@ module.exports = function(config) {
         cb({error: "NO_MESSAGES_FOUND"})
         return;
       }
-      console.log("Got messages in %dms", new Date().getTime() - d);
       cb(messages);
     })
   }
@@ -344,7 +343,6 @@ module.exports = function(config) {
           results[i].pending = results[i].pending == 1 ? true : false;
           results[i].initiatedBySelf = results[i].initiatedBySelf == 1 ? true : false;
         }
-        console.log("got friends in %dms", new Date().getTime() - d);
         return cb(results)
       }
     })

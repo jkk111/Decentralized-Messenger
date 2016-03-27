@@ -21,7 +21,7 @@ var https = require("https");
 var logger = require("./logger.js")(process.pid, process.env.StartTime || d, true);
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
-app.use(logger);
+app.use(logger.route);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(function(req, res, next) {
   res.set({
@@ -53,19 +53,45 @@ const numCPUs = conf.threads || require('os').cpus().length;
 
 // Start a thread for each cpu core
 if(cluster.isMaster) {
+  var admin = require("./admin.js")(conf);
   for(var i = 0 ; i < numCPUs; i++) {
-    cluster.fork({StartTime: d});
+    var worker = cluster.fork({StartTime: d});
+    worker.on("message", function(data) {
+      logHandler(data, admin);
+    })
   }
   cluster.on("exit", function(worker, code, signal) {
     console.log("a worker died, restarting....");
-    cluster.fork();
+    var worker = cluster.fork({StartTime: d});
+    worker.on("message", function(data) {
+      logHandler(data, admin);
+    })
   });
-  require("./admin.js");
+
+  logger.addListener(function(data) {
+    logHandler(data, admin);
+  })
 } else {
+  logger.addListener(masterListener);
   http.createServer(httpUpgrade).listen(conf.serverPort);
   https.createServer(opts, app).listen(conf.securePort, function() {
     console.log("Webserver running on port: %d Process: %d", conf.securePort, process.pid);
   });
   var storage = require("./storage.js")(conf);
   var messaging = require("./messaging.js")(app, storage, ct, conf);
+}
+
+function masterListener(key, data) {
+  var el = {}
+  el[key] = data;
+  process.send(el);
+}
+
+function logHandler(data, admin) {
+  if(data.log)
+    admin.pushLog(data.log);
+  else if(data.conn)
+    admin.conn();
+  else if(data.disco)
+    admin.disco();
 }

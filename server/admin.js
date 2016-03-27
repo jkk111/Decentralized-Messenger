@@ -10,6 +10,7 @@ var httpUpgrade = express();
 var auth = require("./nodeAuth.js");
 var cookieParser = require("cookie-parser");
 app.use(cookieParser());
+var connected = 0;
 
 httpUpgrade.get("/*", function(req, res) {
   res.redirect("https://" + req.hostname + ":8443" + req.url);
@@ -22,9 +23,28 @@ var opts = {
 
 var http = require("http");
 var https = require("https");
+
 http.createServer(httpUpgrade).listen(8080);
-https.createServer(opts, app).listen(8443, function() {
+var server = https.createServer(opts, app).listen(8443, function() {
   console.log("Webserver running on port: %d Process: %d", 8443, process.pid);
+});
+var io = require("socket.io")(server);
+io.on("connection", function(socket) {
+
+  setInterval(function() {
+    if(socket.authenticated) {
+      getUpdateData(function(data) {
+        socket.emit("update", data);
+      })
+    }
+  }, 1000)
+
+  socket.on("authenticate", function(data) {
+    if(data.user == user && data.pass == pass) {
+      socket.authenticated = true;
+      socket.emit("authenticated");
+    }
+  });
 });
 
 module.exports = function(config) {
@@ -49,24 +69,30 @@ module.exports = function(config) {
   app.get("/", function(req, res) {
     res.send("It works");
   })
-  var io = require("socket.io")(https);
-  io.on("connection", function(socket) {
 
-    setInterval(function() {
-      if(socket.authenticated) {
-        getUpdateData(function(data) {
-          socket.emit("update", data);
-        })
-      }
-    }, 1000)
-
-    socket.on("authenticate", function(data) {
-      if(data.user == user && data.pass == pass) {
-        socket.authenticated = true;
-        socket.emit("authenticated");
-      }
-    });
-  });
+  this.pushLog = function(log) {
+    if(io) {
+      var logData = {}
+      var parts = log.split(" ");
+      logData.worker = parts[0];
+      logData.time = parts[1];
+      logData.caller = parts[2];
+      logData.method = parts[3].substring(1, parts[3].length - 1);
+      logData.route = parts[4];
+      logData.status = parts[5];
+      logData.latency = parts[6].substring(0, parts[6].length);
+      io.emit("log", logData);
+    }
+  }
+  this.conn = function() {
+    connected++;
+    io.emit("connected", connected);
+  }
+  this.disco = function() {
+    connected--;
+    io.emit("connected", connected);
+  }
+  return this;
 }
 
 function getUpdateData(cb) {
