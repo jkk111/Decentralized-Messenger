@@ -17,7 +17,7 @@ function genUser() {
   var pub = key.exportKey("pkcs8-public-pem");
   var opt = {
     url: "https://localhost/register",
-    timeout: 1000,
+    timeout: 10000,
     form: {
       user: id,
       password: id,
@@ -43,7 +43,7 @@ function findUser(body, id) {
     form: {
       sender: body.id,
       token: body.token,
-      query: "jkk1111"
+      query: "jkk111"
     }
   }
   var user = {};

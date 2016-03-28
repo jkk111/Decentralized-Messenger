@@ -21324,7 +21324,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <paper-card class="tip-card">Select a view from the menu on the left!</paper-card>
             </template>
             <template is="dom-if" if="{{!noneSelected(selectedContact)}}">
-              <template is="dom-if" if="{{!isPending(selectedContact)}}">
+              <template is="dom-if" if="{{!isPending(selectedContact, friends)}}">
                 <div class="messageViewAndSend">
                   <paper-dialog-scrollable id="messages">
                     <div id="messagesContainer">
@@ -21348,7 +21348,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 </div>
               </template>
             </template>
-            <template is="dom-if" if="{{isPending(selectedContact)}}">
+            <template is="dom-if" if="{{isPending(selectedContact, friends)}}">
               <template is="dom-if" if="{{fromSelf(selectedContact)}}">
                 <div>Friend Request Pending</div>
                 <paper-button on-tap="cancelFriendRequest">Cancel Request</paper-button>
@@ -21588,11 +21588,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.selectedContact = -1;
       },
       acceptFriendRequest: function() {
-        this.confirmFriendRequest = false;
+        this.confirmFriendRequest = true;
         this.$.confirmFriendAjax.generateRequest();
       },
       rejectFriendRequest: function() {
-        this.confirmFriendRequest = true;
+        this.confirmFriendRequest = false;
         this.$.confirmFriendAjax.generateRequest();
       },
       friendsChanged: function(cr) {
@@ -21820,6 +21820,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             } else {
               var friend = this.getFriend(tmp[i].id);
               if(friend.pending != tmp[i].pending) {
+                console.log("updated pending");
                 changed = true;
                 friend.pending = tmp[i].pending;
               }
