@@ -42,7 +42,8 @@ app.use(express.static("../web/www"));
 
 var opts = {
   key: fs.readFileSync("ssl.key"),
-  cert: fs.readFileSync("ssl.crt")
+  cert: fs.readFileSync("ssl.crt"),
+  ca: fs.readFileSync("root.crt")
 }
 
 var request = require("request");
