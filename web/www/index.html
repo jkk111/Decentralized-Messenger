@@ -26313,6 +26313,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       z-index: 1;
     }
 
+    user-login, messenger-view {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
     #loadingMessenger paper-spinner {
       position: absolute;
       top: 50%;
@@ -26454,6 +26462,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if(animation == "closeLogin") {
           console.log("closed");
           this.$.login.style.opacity = 0;
+          this.$.login.style.height = 0;
           this.$.login.style.zIndex = -1;
         } else if(animation == "openMessenger") {
           console.log("opening messenger")

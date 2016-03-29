@@ -10,7 +10,7 @@ var httpUpgrade = express();
 var auth = require("./nodeAuth.js");
 var cookieParser = require("cookie-parser");
 app.use(cookieParser());
-var connected = 0;
+var connected = 0, errors = 0;
 
 httpUpgrade.get("/*", function(req, res) {
   res.redirect("https://" + req.hostname + ":8443" + req.url);
@@ -77,10 +77,11 @@ module.exports = function(config) {
       logData.worker = parts[0];
       logData.time = parts[1];
       logData.caller = parts[2];
-      logData.method = parts[3].substring(1, parts[3].length - 1);
-      logData.route = parts[4];
-      logData.status = parts[5];
-      logData.latency = parts[6].substring(0, parts[6].length);
+      logData.ip = parts[3];
+      logData.method = parts[4].substring(1, parts[3].length - 1);
+      logData.route = parts[5];
+      logData.status = parts[6];
+      logData.latency = parts[7].substring(0, parts[7].length);
       io.emit("log", logData);
     }
   }
@@ -91,6 +92,10 @@ module.exports = function(config) {
   this.disco = function() {
     connected--;
     io.emit("connected", connected);
+  }
+  this.error = function() {
+    errors++;
+    io.emit("errors", errors);
   }
   return this;
 }

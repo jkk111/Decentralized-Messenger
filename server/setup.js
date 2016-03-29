@@ -49,7 +49,7 @@ var options = {
     },
     serverPassword: {
       message: "Enter a password for the administrator",
-      default: "PLEASE USE A GOOD PASSWORD"
+      default: "admin"
     },
     serverPort: {
       message: "Choose a port to run http redirect on",

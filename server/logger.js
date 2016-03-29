@@ -44,7 +44,7 @@ function route(req, res, next) {
   res.on("close", function() {
     if(listeners && listeners.length > 0) {
       for(var i = 0 ; i < listeners.length; i++) {
-        listeners[i]("disco", true);
+        listeners[i]("error", true);
       }
     }
     generateLog(req, res);
@@ -54,7 +54,8 @@ function route(req, res, next) {
 
 function generateLog(req, res) {
   var logStr = "[" + req.method + "] " + req.path + " " + res.statusCode + " " + JSON.stringify(req.body || {}) + " " + ((new Date().getTime() - req.StartTime.getTime())  + "ms");
-  var noBodyLog = "[" + req.method + "] " + req.path + " " + res.statusCode + " " + ((new Date().getTime() - req.StartTime.getTime())  + "ms");
+  var noBodyLog = req.ip + " [" + req.method + "] " + req.path + " " + res.statusCode + " " + ((new Date().getTime() - req.StartTime.getTime())  + "ms");
+  console.log(req.ip);
   var caller = getCaller();
   var line = formatString(logStr, caller);
   logFile.write(line);

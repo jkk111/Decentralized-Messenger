@@ -376,7 +376,7 @@ module.exports = function(config) {
           if(err) {
             cb({ error: "DATABASE_ERROR" });
           } else {
-            cb(results2 != undefined ? {friendshipId: results2.insertId} : false);
+            cb(results2 != undefined ? {friendshipId: results2.insertId, success: true} : false);
           }
         });
       }
