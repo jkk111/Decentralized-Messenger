@@ -1,6 +1,7 @@
 package com.maximus.dm.decentralizedmessenger;
 
 import android.content.Context;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -22,6 +23,9 @@ public class MainActivity extends AppCompatActivity implements ViewPager.OnPageC
     ViewPager viewPager;
     TabHost tabHost;
 
+    DialogsTab dialogsTab;
+    FriendsTab friendsTab;
+    ProfileTab profileTab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,11 +47,15 @@ public class MainActivity extends AppCompatActivity implements ViewPager.OnPageC
         }
         tabHost.setOnTabChangedListener(this);
 
+        dialogsTab = new DialogsTab();
+        friendsTab = new FriendsTab();
+        profileTab = new ProfileTab();
+
         //create tabs for viewpager
         List<Fragment> tabList = new ArrayList<Fragment>();
-        tabList.add(new DialogsTab());
-        tabList.add(new FriendsTab());
-        tabList.add(new ProfileTab());
+        tabList.add(dialogsTab);
+        tabList.add(friendsTab);
+        tabList.add(profileTab);
 
         //view pager create
         viewPager = (ViewPager) findViewById(R.id.view_pager);

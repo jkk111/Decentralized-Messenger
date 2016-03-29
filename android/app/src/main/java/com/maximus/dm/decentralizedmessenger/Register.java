@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -13,12 +14,14 @@ import android.widget.Toast;
 import com.maximus.dm.decentralizedmessenger.User.User;
 import com.maximus.dm.decentralizedmessenger.User.UserDatabase;
 import com.maximus.dm.decentralizedmessenger.helper.Encoder;
+import com.maximus.dm.decentralizedmessenger.helper.Encrypt;
 import com.maximus.dm.decentralizedmessenger.helper.Networking;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Register extends AppCompatActivity implements View.OnClickListener {
+    private static final String TAG = "Register";
 
     EditText etUsername, etPassword, etConfirmPassword;
     Button bRegister;
@@ -48,6 +51,20 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
                 String username = etUsername.getText().toString();
                 String password = etPassword.getText().toString();
                 String confirmPassword = etConfirmPassword.getText().toString();
+                Encrypt encrypt = new Encrypt();
+                Encrypt.StringKeyPair keyPair = null;
+                String privKey = null;
+                String pubKey = null;
+
+                try {
+                    keyPair = encrypt.generatePrivateKey();
+                    privKey = keyPair.getPrivateKey();
+                    pubKey = keyPair.getPublicKey();
+                    Log.d(TAG, "onClick, privKey " + privKey);
+                    Log.d(TAG, "onClick, pubKey " + pubKey);
+                } catch(Exception ee) {
+                    ee.printStackTrace();
+                }
 
                 if (username.length() > 0 && password.length() > 0 && confirmPassword.length() > 0) {
                     if(password.equals(confirmPassword)) {
@@ -57,10 +74,16 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
                         try {
                             jsonToSend.put("user", username);
                             jsonToSend.put("password", password);
+                            jsonToSend.put("privKey", privKey);
+                            jsonToSend.put("pubKey", pubKey);
+                            jsonToSend.put("managed", true);
 
                             Networking networking = new Networking(this);
                             String params = Encoder.jsonToUrl(jsonToSend);
+
                             String response = networking.connect(Networking.SERVER_PATH_REGISTER, params);
+                            Log.d(TAG, "onClick sending " + params);
+                            Log.d(TAG, "onClick server response " + response);
                             jsonResponse = new JSONObject(response);
 
                             // If user registered successfully
@@ -78,6 +101,7 @@ public class Register extends AppCompatActivity implements View.OnClickListener 
     }
 
     private boolean register(JSONObject jsonResponse) {
+        Log.d(TAG, "register: " + jsonResponse.toString());
         String successName = "success";
         try {
             if(jsonResponse.has(successName)) {

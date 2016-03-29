@@ -69,6 +69,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                             // Store everything in local db (SharedPrefs)
                             userDatabase.storeUser(enteredUsername, jsonResponse.getInt("id"));
                             userDatabase.setToken(jsonResponse.getString("token"));
+                            userDatabase.setPublicKey(jsonResponse.getString("public"));
 
                             Log.d(TAG, "onLogin, token " + jsonResponse.getString("token"));
 

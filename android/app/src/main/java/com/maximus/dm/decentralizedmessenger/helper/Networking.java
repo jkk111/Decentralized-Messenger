@@ -30,9 +30,14 @@ public class Networking {
     public static final String SERVER_PATH_LOGIN = "/login";
     public static final String SERVER_PATH_REGISTER = "/register";
     public static final String SERVER_PATH_GET_FRIENDS = "/getFriends";
+    public static final String SERVER_PATH_ADD_FRIEND = "/addFriend";
     public static final String SERVER_PATH_ADD_FRIEND_NAME = "/addFriendName";
-    public static final String SERVER_PATH_ADD_FRIEND_ID = "/addFriend";
     public static final String SERVER_PATH_REFRESH_TOKEN = "/refreshToken";
+    public static final String SERVER_PATH_CONFIRM_FRIEND = "/confirmFriend";
+    public static final String SERVER_PATH_CANCEL_FRIEND_REQUEST = "/cancelFriend";
+    public static final String SERVER_PATH_MESSAGE = "/message";
+    public static final String SERVER_PATH_MESSAGES = "/messages";
+    public static final String SERVER_PATH_SEARCH = "/search";
 
     private Context mContext;
 

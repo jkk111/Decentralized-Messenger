@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="right">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingLeft="50dp"
+        android:paddingRight="5dp"
+        android:gravity="right">
+
+        <TextView
+            android:id="@+id/tvChatMsgSentMessage"
+            android:background="#dddddd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hello world Hello worldHello worldHello world Hello worldHello world Hello world Hello worldHello world"
+            android:textColor="@color/black"
+            android:textSize="16dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvChatMsgSentTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:text="21:40" />
+
+</LinearLayout>

@@ -1,10 +1,13 @@
-package encTest;
+package com.maximus.dm.decentralizedmessenger.helper;
+
+import android.util.Base64;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -17,14 +20,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Base64.Decoder;
-import java.util.Base64.Encoder;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
@@ -39,9 +38,9 @@ public class Encrypt {
 	public static void main(String[] args) throws Exception {
 		Encrypt e = new Encrypt();
 		Security.addProvider(new BouncyCastleProvider()); // Very important, registers bouncycastle as a security provider
-		byte[] tmp = Files.readAllBytes(Paths.get("pubkey.txt")); // read in pub/private keys
+		byte[] tmp = fileToByteArray("pubkey.txt"); // read in pub/private keys
 		String pubkeyStr = new String(tmp, StandardCharsets.UTF_8);
-		tmp = Files.readAllBytes(Paths.get("privkey.txt"));
+		tmp = fileToByteArray("privkey.txt");
 		String privkeyStr = new String(tmp, StandardCharsets.UTF_8);
 
 		String enc = e.encrypt("Hello", pubkeyStr); // pass string, pubKeyStr to encrypt a string
@@ -76,13 +75,12 @@ public class Encrypt {
 		PublicKey pubKey = toPubKey(publicKey);
 		Cipher encrypter = Cipher.getInstance("RSA");
 		encrypter.init(Cipher.ENCRYPT_MODE, pubKey);
-		Encoder encoder = Base64.getEncoder();
 		for(int i = 0 ; i < chunks.length; i++) {
 			if(i > 0)
 				encStr += ",";
 			byte[] tmp = chunks[i].getBytes();
+			tmp = Base64.encode(tmp, Base64.DEFAULT);
 			tmp = encrypter.doFinal(tmp);
-			tmp = encoder.encode(tmp);
 			encStr += new String(tmp);
 		}
 		return encStr;
@@ -91,13 +89,12 @@ public class Encrypt {
 	public String decrypt(String message, String privateKey) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		String[] chunks = message.split(",");
 		PrivateKey privKey = toPrivKey(privateKey);
-		Decoder decoder = Base64.getDecoder();
 		Cipher decrypter = Cipher.getInstance("RSA");
 		decrypter.init(Cipher.DECRYPT_MODE, privKey);
 		String decStr = "";
 		for(int i = 0; i < chunks.length; i++) {
 			byte[] tmp = chunks[i].getBytes();
-			tmp = decoder.decode(tmp);
+			tmp = Base64.decode(tmp, Base64.DEFAULT);
 			tmp = decrypter.doFinal(tmp);
 			decStr += new String(tmp);
 		}
@@ -105,11 +102,10 @@ public class Encrypt {
 	}
 
 	public PublicKey toPubKey(String str) throws InvalidKeySpecException, NoSuchAlgorithmException {
-		Decoder d = Base64.getDecoder();
-		str = str.replace("-----BEGIN PUBLIC KEY-----",  "").replace("-----END PUBLIC KEY-----","");
+		str = str.replace("-----BEGIN PUBLIC KEY-----",  "").replace("-----END PUBLIC KEY-----", "");
 		str = str.replace(((char) 0xa)+ "", "");
 		str = str.replace(((char) 0xd)+ "", "");
-		byte[] tmp = d.decode(str.getBytes());
+		byte[] tmp = Base64.decode(str.getBytes(), Base64.DEFAULT);
 		X509EncodedKeySpec pub = new X509EncodedKeySpec(tmp);
 		KeyFactory kf = KeyFactory.getInstance("RSA");
 		return kf.generatePublic(pub);
@@ -146,8 +142,7 @@ public class Encrypt {
 	}
 
 	public String keyFormatter(byte[] keyData) {
-		Encoder encoder = Base64.getEncoder();
-		keyData = encoder.encode(keyData);
+		keyData = Base64.encode(keyData, Base64.DEFAULT);
 		String keyString = "";
 		String keyStringData = new String(keyData);
 		while(keyStringData.length() > 0) {
@@ -159,7 +154,7 @@ public class Encrypt {
 		return keyString;
 	}
 
-	private class StringKeyPair {
+	public class StringKeyPair {
 		private String publicKey, privateKey;
 
 		public StringKeyPair(String pub, String priv) {
@@ -174,5 +169,29 @@ public class Encrypt {
 		public String getPrivateKey() {
 			return privateKey;
 		}
+	}
+
+	private static byte[] fileToByteArray(String filename) {
+		FileInputStream fileInputStream=null;
+
+		File file = new File(filename);
+
+		byte[] bFile = new byte[(int) file.length()];
+
+		try {
+			//convert file into array of bytes
+			fileInputStream = new FileInputStream(file);
+			fileInputStream.read(bFile);
+			fileInputStream.close();
+
+			for (int i = 0; i < bFile.length; i++) {
+				System.out.print((char)bFile[i]);
+			}
+
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+
+		return bFile;
 	}
 }

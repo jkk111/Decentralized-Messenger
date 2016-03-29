@@ -5,12 +5,22 @@ package com.maximus.dm.decentralizedmessenger.User;
  */
 public class Friend extends User {
 
-    boolean pending, initiatedBySelf;
+    private int friendshipId;
+    private boolean pending, initiatedBySelf;
+    private String publicKey;
 
-    public Friend(int userId, String username, boolean pending, boolean initiatedBySelf) {
+    public Friend(int friendshipId, int userId, String username, boolean pending, boolean initiatedBySelf) {
         super(userId, username);
+        this.friendshipId = friendshipId;
         this.pending = pending;
         this.initiatedBySelf = initiatedBySelf;
+    }
+
+    public Friend(int friendshipId, int userId, String username, boolean pending, String publicKey) {
+        super(userId, username);
+        this.friendshipId = friendshipId;
+        this.pending = pending;
+        this.publicKey = publicKey;
     }
 
     // Getters / Setters
@@ -28,5 +38,13 @@ public class Friend extends User {
 
     public void setInitiatedBySelf(boolean initiatedBySelf) {
         this.initiatedBySelf = initiatedBySelf;
+    }
+
+    public int getFriendshipId() {
+        return friendshipId;
+    }
+
+    public String getPublicKey() {
+        return publicKey;
     }
 }

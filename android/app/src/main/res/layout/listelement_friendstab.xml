@@ -30,15 +30,4 @@
         android:textSize="20dp"
         android:text="Request sent"/>
 
-    <!--
-    <TextView
-        android:id="@+id/tvFriendsTabPending"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:paddingRight="10dp"
-        android:paddingLeft="10dp"
-        android:gravity="center_vertical"
-        android:textSize="20dp"
-        android:text="Accepted"/>
-    -->
 </LinearLayout>

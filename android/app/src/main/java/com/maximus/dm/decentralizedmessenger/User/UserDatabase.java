@@ -15,6 +15,7 @@ public class UserDatabase {
     public static final String USER_ID = "userId";
     public static final String USERNAME = "username";
     public static final String TOKEN = "token";
+    public static final String PUBLIC_KEY = "publicKey";
 
     SharedPreferences currentUserDatabse;
 
@@ -36,12 +37,19 @@ public class UserDatabase {
         spEditor.commit();
     }
 
+    public void setPublicKey(String publicKey) {
+        SharedPreferences.Editor spEditor = currentUserDatabse.edit();
+        spEditor.putString(USER_ID_LOCAL + PUBLIC_KEY, publicKey);
+        spEditor.commit();
+    }
+
     // GETTERS
     public String getCurrentUsername() { return currentUserDatabse.getString(USER_ID_LOCAL + USERNAME, ""); }
     public int getCurrentId() {
         return currentUserDatabse.getInt(USER_ID_LOCAL + USER_ID, -1);
     }
     public String getToken() { return currentUserDatabse.getString(USER_ID_LOCAL + TOKEN, ""); }
+    public String getPublicKey() { return currentUserDatabse.getString(USER_ID_LOCAL + PUBLIC_KEY, ""); }
 
     // Call on log out
     public void clearAll() {

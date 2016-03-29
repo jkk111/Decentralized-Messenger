@@ -1,26 +1,26 @@
 package com.maximus.dm.decentralizedmessenger.tabs;
 
 import android.content.Context;
-import android.support.v4.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.maximus.dm.decentralizedmessenger.R;
 import com.maximus.dm.decentralizedmessenger.User.Friend;
 import com.maximus.dm.decentralizedmessenger.User.UserDatabase;
-import com.maximus.dm.decentralizedmessenger.helper.Encoder;
-import com.maximus.dm.decentralizedmessenger.helper.Networking;
+import com.maximus.dm.decentralizedmessenger.UserProfile;
+import com.maximus.dm.decentralizedmessenger.helper.FriendsTabAdapter;
+import com.maximus.dm.decentralizedmessenger.helper.ServerQueries;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,8 +40,10 @@ public class FriendsTab extends Fragment implements AdapterView.OnItemClickListe
 
     ListView lvFriendsTab;
     List<Friend> friendsArray;
+    FriendsTabAdapter friendsTabAdapter;
 
     UserDatabase userDatabase;
+    ServerQueries serverQueries;
 
     // Sending friend request
     EditText etFriendsTabAddFriendUsername;
@@ -59,6 +61,7 @@ public class FriendsTab extends Fragment implements AdapterView.OnItemClickListe
         this.context = getContext();
         View v = this.getView();
 
+        serverQueries = new ServerQueries(context);
         userDatabase = new UserDatabase(context);
         friendsArray = new ArrayList<Friend>();
 
@@ -66,13 +69,14 @@ public class FriendsTab extends Fragment implements AdapterView.OnItemClickListe
         getFriendList();
 
         lvFriendsTab = (ListView) v.findViewById(R.id.lvFriendsTab);
-        FriendsTabAdapter friendsTabAdapter = new FriendsTabAdapter(
+        friendsTabAdapter = new FriendsTabAdapter(
                 context,
                 R.layout.listelement_friendstab,
                 friendsArray
         );
 
         lvFriendsTab.setAdapter(friendsTabAdapter);
+        lvFriendsTab.setOnItemClickListener(this);
     }
 
     private void initComponents(View v) {
@@ -82,33 +86,35 @@ public class FriendsTab extends Fragment implements AdapterView.OnItemClickListe
         bFriendsTabAddFriend.setOnClickListener(this);
     }
 
+    // Populates friends array to pass to adapter
+
     private void getFriendList() {
+        friendsArray.clear();
+
         int senderId = userDatabase.getCurrentId();
         String senderToken = userDatabase.getToken();
 
         JSONObject jsonObject = null;
         try {
-            jsonObject = new JSONObject();
-            jsonObject.put("sender", senderId);
-            jsonObject.put("token", senderToken);
-
-            //Log.d(TAG, "getFriendList, token " + senderToken);
-            String sentToken = Encoder.jsonToUrl(jsonObject);
-            Networking networking = new Networking(context);
-            String strResponse = networking.connect(Networking.SERVER_PATH_GET_FRIENDS, sentToken);
-            Log.d(TAG, "getFriendList, " + strResponse);
-
-            // TODO: Save friends to database
-            JSONArray receivedFriendsArray = new JSONArray(strResponse);
+            JSONArray receivedFriendsArray = serverQueries.getFriendList(senderId, senderToken);
             JSONObject currentFriend;
-            for(int i = 0; i < receivedFriendsArray.length(); i++) {
-                currentFriend = (JSONObject) receivedFriendsArray.get(i);
-                int id = currentFriend.getInt("id");
-                String username = currentFriend.getString("username");
-                boolean pending = currentFriend.getBoolean("pending");
-                boolean initiatedBySelf = currentFriend.getBoolean("initiatedBySelf");
+            if(receivedFriendsArray != null) {
+                for (int i = 0; i < receivedFriendsArray.length(); i++) {
+                    currentFriend = (JSONObject) receivedFriendsArray.get(i);
 
-                friendsArray.add(new Friend(id, username, pending, initiatedBySelf));
+                    int friendshipId = currentFriend.getInt("friendshipId");
+                    int id = currentFriend.getInt("id");
+                    String username = currentFriend.getString("username");
+                    boolean pending = currentFriend.getBoolean("pending");
+                    String publicKey = currentFriend.getString("public");
+
+                    if (pending) {
+                        boolean initiatedBySelf = currentFriend.getBoolean("initiatedBySelf");
+                        friendsArray.add(new Friend(friendshipId, id, username, pending, initiatedBySelf));
+                    } else {
+                        friendsArray.add(new Friend(friendshipId, id, username, pending, publicKey));
+                    }
+                }
             }
             Log.d(TAG, "getFriendList, friend array length " + friendsArray.size());
 
@@ -118,93 +124,79 @@ public class FriendsTab extends Fragment implements AdapterView.OnItemClickListe
 
     }
 
-    /*
-        {
-            sender: "The user to add friend to",
-            token: "user token",
-            client: "The client id to add as friend",
-            secretL "Not implemented yet send any value to prevent errors"
-        }
-    */
-    private void sendFriendRequest() {
-        String enteredUsername = etFriendsTabAddFriendUsername.getText().toString();
-        if (enteredUsername.length() > 0) {
-            JSONObject jsonObject = null;
-            try {
-                jsonObject = new JSONObject();
-                jsonObject.put("sender", userDatabase.getCurrentId());
-                jsonObject.put("token", userDatabase.getToken());
-                jsonObject.put("client", enteredUsername);
-                jsonObject.put("secret", "rofl");
+    private boolean sendFriendRequest() {
+        boolean methodSuccess = false;
 
-                Networking networking = new Networking(context);
-                String response = networking.connect(Networking.SERVER_PATH_ADD_FRIEND_ID, Encoder.jsonToUrl(jsonObject));
-                Log.d(TAG, "sendFriendRequest, senderToken " + userDatabase.getToken());
-                Log.d(TAG, "sendFriendRequest, response " + response);
-            } catch(JSONException e) {
+        // Search typed username and get all matched users
+        String query = etFriendsTabAddFriendUsername.getText().toString();
+        JSONArray results =  serverQueries.search(userDatabase.getCurrentId(), userDatabase.getToken(), query);
+        int friendId = -1;
+
+        //TODO: This is temporary functionality. Learn "Searchables" then change.
+        if (results.length() == 1) {
+            // accept
+            try {
+                // Get matched users id
+                JSONObject friend = results.getJSONObject(0);
+                 friendId = friend.getInt("id");
+            } catch (JSONException e) {
                 e.printStackTrace();
             }
+
+            boolean response = serverQueries.sendFriendRequest(
+                    userDatabase.getCurrentId(),
+                    userDatabase.getToken(),
+                    friendId,
+                    "rofl"
+            );
+
+            if (response) {
+                methodSuccess = true;
+                Toast.makeText(this.getContext(), "Friend request sent", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this.getContext(), "Friend exists", Toast.LENGTH_SHORT).show();
+            }
+
+        } else {
+            // reject
+            Toast.makeText(this.getContext(), "More than one user found", Toast.LENGTH_SHORT).show();
         }
+
+        return methodSuccess;
+    }
+
+    private void friendRequestResponse(int friendshipId, boolean response) {
+        serverQueries.confirmFriend(response, userDatabase.getToken(), userDatabase.getCurrentId(), friendshipId);
     }
 
     @Override
     public void onClick(View v) {
         switch(v.getId()) {
             case R.id.bFriendsTabAddFriend:
-                sendFriendRequest();
+                boolean reqSent = sendFriendRequest();
+                if (reqSent) {
+                    getFriendList();
+                    friendsTabAdapter.notifyDataSetChanged();
+                }
                 break;
         }
     }
 
+    /*
+        onItemClick create appropriate dialog
+        // Handle response in onFriendRequestDialog Positive/Negative Click
+     */
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Log.d(TAG, "ListView onItemClick, clicked");
-        switch(view.getId()) {
-            default:
-
-        }
+        Friend focusedFriend = friendsArray.get(position);
+        Intent intent = new Intent(this.getActivity(), UserProfile.class);
+        intent.putExtra(UserProfile.EXTRA_FRIENDS_ID, focusedFriend.getUserId());
+        intent.putExtra(UserProfile.EXTRA_FRIENDS_NAME, focusedFriend.getUsername());
+        intent.putExtra(UserProfile.EXTRA_FRIENDSHIP_ID, focusedFriend.getFriendshipId());
+        intent.putExtra(UserProfile.EXTRA_FRIENDSHIP_PENDING, focusedFriend.isPending());
+        intent.putExtra(UserProfile.EXTRA_FRIENDSHIP_INIT_BY_SELF, focusedFriend.isInitiatedBySelf());
+        intent.putExtra(UserProfile.EXTRA_FRIENDS_PUBLIC_KEY, focusedFriend.getPublicKey());
+        startActivity(intent);
     }
 
-    private class FriendsTabAdapter extends ArrayAdapter<Friend> {
-
-        private int layoutResource;
-
-        public FriendsTabAdapter(Context context, int resource, List<Friend> objects) {
-            super(context, resource, objects);
-            layoutResource = resource;
-        }
-
-        //TODO: Use one layout pending existing friendships.
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            View customView = convertView;
-            if (convertView == null) {
-                // Inflate layout onto customView
-                LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                customView = inflater.inflate(layoutResource, parent, false);
-
-                Friend currentFriend = getItem(position);
-                String username = currentFriend.getUsername();
-                boolean pending = currentFriend.isPending();
-                boolean initiatedBySelf = currentFriend.isInitiatedBySelf();
-
-                TextView tvFriendsName = (TextView) customView.findViewById(R.id.tvFriendsTabFriendName);
-                tvFriendsName.setText(username);
-
-                TextView tvFriendshipStatus = (TextView) customView.findViewById(R.id.tvFriendsTabFriendshipStatus);
-                if (pending) {
-                    if (initiatedBySelf) {
-                        tvFriendshipStatus.setText("Request sent");
-                    } else {
-                        tvFriendshipStatus.setText("Accept/Reject");
-                    }
-                } else {
-
-                }
-
-
-            }
-            return customView;
-        }
-    }
 }
