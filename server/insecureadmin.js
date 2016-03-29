@@ -12,24 +12,11 @@ var cookieParser = require("cookie-parser");
 app.use(cookieParser());
 var connected = 0, errors = 0;
 
-httpUpgrade.get("/*", function(req, res) {
-  if(req.hostname && req.hostname.indexOf(":") != - 1)
-    res.redirect("https://" + req.hostname.substring(0, req.hostname.indexOf(":")) + ":8443" + req.url);
-  else
-    res.redirect("https://" + req.hostname + ":8443" + req.url);
-});
-
-var opts = {
-  key: fs.readFileSync("ssl.key"),
-  cert: fs.readFileSync("ssl.crt")
-}
-
 var http = require("http");
 var https = require("https");
 
-http.createServer(httpUpgrade).listen(8080);
-var server = https.createServer(opts, app).listen(8443, function() {
-  console.log("Webserver running on port: %d Process: %d", 8443, process.pid);
+var server = http.createServer(app).listen(8080, function() {
+  console.log("Webserver running on port: %d Process: %d", 8080, process.pid);
 });
 var io = require("socket.io")(server);
 io.on("connection", function(socket) {
