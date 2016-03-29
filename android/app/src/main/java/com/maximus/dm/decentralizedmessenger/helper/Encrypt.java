@@ -1,6 +1,7 @@
 package com.maximus.dm.decentralizedmessenger.helper;
 
 import android.util.Base64;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,9 +34,10 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
 public class Encrypt {
+    public static final String TAG = "Encrypt";
 	public static final int KEY_SIZE = 2048;
-	
-	public static void main(String[] args) throws Exception {
+
+	public Encrypt() {
 		Encrypt e = new Encrypt();
 		Security.addProvider(new BouncyCastleProvider()); // Very important, registers bouncycastle as a security provider
 		byte[] tmp = fileToByteArray("pubkey.txt"); // read in pub/private keys
@@ -43,16 +45,21 @@ public class Encrypt {
 		tmp = fileToByteArray("privkey.txt");
 		String privkeyStr = new String(tmp, StandardCharsets.UTF_8);
 
-		String enc = e.encrypt("Hello", pubkeyStr); // pass string, pubKeyStr to encrypt a string
-		String dec = e.decrypt(enc, privkeyStr); // pass encrypted string and privKeyStr to decrypt a string
-		System.out.println("Hello => " + dec);
+        String dec2 = null;
+        try {
+            String enc = e.encrypt("Hello", pubkeyStr); // pass string, pubKeyStr to encrypt a string
+            String dec = e.decrypt(enc, privkeyStr); // pass encrypted string and privKeyStr to decrypt a string
+            System.out.println("Hello => " + dec);
 
-		StringKeyPair keys = e.generatePrivateKey();
-		String enc2 = e.encrypt("testingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtesting", keys.getPublicKey());
-		String dec2 = e.decrypt(enc2, keys.getPrivateKey());
-		System.out.println(dec2);
+            StringKeyPair keys = e.generatePrivateKey();
+            String enc2 = e.encrypt("testingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtesting", keys.getPublicKey());
+            dec2 = e.decrypt(enc2, keys.getPrivateKey());
+        } catch(Exception exceptin) {
+            exceptin.printStackTrace();
+        }
+
+        Log.d(TAG, "Constructor, " + dec2);
 	}
-
 
     public String[] chunkString(String str, int chunkSize) { 
         char[] data = str.toCharArray();
