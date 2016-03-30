@@ -3,7 +3,7 @@
  * Imports necessary modules, starts the admin panel,
  * Then creates multiple forks of the process to run the application
  */
-module.exports = function(logger, server) {
+module.exports = function(logger) {
   var fs = require("fs");
   var conf;
   try {
@@ -16,7 +16,6 @@ module.exports = function(logger, server) {
   var d = new Date();
   var express = require("express");
   var app = express();
-  // var logger = require("./logger.js")(process.pid, process.env.StartTime || d, true);
   var bodyParser = require("body-parser");
   var cookieParser = require("cookie-parser");
   app.use(logger.route);
@@ -42,16 +41,7 @@ module.exports = function(logger, server) {
   function masterListener(key, data) {
     var el = {}
     el[key] = data;
-    // logHandler(el, admin); Disabled temporarily, due to issues with threading when acting as a module.
-  }
-
-  function logHandler(data, admin) {
-    if(data.log)
-      admin.pushLog(data.log);
-    else if(data.conn)
-      admin.conn();
-    else if(data.disco)
-      admin.disco();
+    process.send(el);
   }
   return app;
 }
