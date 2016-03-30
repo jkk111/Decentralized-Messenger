@@ -30,34 +30,11 @@ module.exports = function(config, standalone, server) {
     server = https.createServer(opts, app).listen(config.securePort || 8443, function() {
       console.log("Webserver running on port: %d Process: %d", config.securePort || 8443, process.pid);
     });
-    var io = require("socket.io")(server);
-    io.on("connection", function(socket) {
-      setInterval(function() {
-        if(socket.authenticated) {
-          getUpdateData(function(data) {
-            socket.emit("update", data);
-          })
-        }
-      }, 1000);
-      socket.on("authenticate", function(data) {
-        if(data.user == user && data.pass == pass) {
-          socket.authenticated = true;
-          socket.emit("authenticated");
-        }
-      });
-    });
   } else {
     this.route = app;
   }
   var io = require("socket.io")(server);
   io.on("connection", function(socket) {
-    setInterval(function() {
-      if(socket.authenticated) {
-        getUpdateData(function(data) {
-          socket.emit("update", data);
-        })
-      }
-    }, 1000);
     socket.on("authenticate", function(data) {
       if(data.user == user && data.pass == pass) {
         socket.authenticated = true;
@@ -65,22 +42,22 @@ module.exports = function(config, standalone, server) {
       }
     });
   });
-  var mysql = require("mysql2");
-  databaseUser = config.databaseUser;
-  databasePassword = config.databasePassword;
-  databaseHost = config.databaseHost;
-  databasePort = config.databasePort;
-  databaseName = config.databaseName;
+  // var mysql = require("mysql2");
+  // databaseUser = config.databaseUser;
+  // databasePassword = config.databasePassword;
+  // databaseHost = config.databaseHost;
+  // databasePort = config.databasePort;
+  // databaseName = config.databaseName;
 
-  conn = mysql.createConnection({
-    user: databaseUser,
-    password: databasePassword,
-    host: databaseHost,
-    port: databasePort,
-    database: databaseName,
-    multipleStatements: true,
-    namedPlaceholders: true
-  });
+  // conn = mysql.createConnection({
+  //   user: databaseUser,
+  //   password: databasePassword,
+  //   host: databaseHost,
+  //   port: databasePort,
+  //   database: databaseName,
+  //   multipleStatements: true,
+  //   namedPlaceholders: true
+  // });
   app.use(auth({username: config.serverAdmin, password: config.serverPassword}))
   app.use(express.static("admin"));
   app.get("/", function(req, res) {
@@ -115,15 +92,4 @@ module.exports = function(config, standalone, server) {
     io.emit("errors", errors);
   }
   return this;
-}
-
-function getUpdateData(cb) {
-  cb = cb || function() {}
-  var q = "SELECT COUNT(*) as numMessages from messages";
-  conn.query(q, function(err, results) {
-    if(err) {
-      return cb({error: "DB"});
-    }
-    return cb(results);
-  })
 }
