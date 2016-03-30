@@ -42,22 +42,7 @@ module.exports = function(config, standalone, server) {
       }
     });
   });
-  // var mysql = require("mysql2");
-  // databaseUser = config.databaseUser;
-  // databasePassword = config.databasePassword;
-  // databaseHost = config.databaseHost;
-  // databasePort = config.databasePort;
-  // databaseName = config.databaseName;
 
-  // conn = mysql.createConnection({
-  //   user: databaseUser,
-  //   password: databasePassword,
-  //   host: databaseHost,
-  //   port: databasePort,
-  //   database: databaseName,
-  //   multipleStatements: true,
-  //   namedPlaceholders: true
-  // });
   app.use(auth({username: config.serverAdmin, password: config.serverPassword}))
   app.use(express.static(__dirname + "/admin"));
   app.get("/", function(req, res) {

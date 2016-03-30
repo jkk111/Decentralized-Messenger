@@ -32,8 +32,6 @@ module.exports = function(logger) {
   app.use(express.static(__dirname + "/../web/www"));
 
   var ct = require(__dirname +"/crosstalk.js")(conf);
-  // var admin = require(__dirname + "/admin.js")(conf, false, server);
-  // app.use("/admin", admin.route);
   logger.addListener(masterListener);
   var storage = require("./storage.js")(conf);
   var messaging = require("./messaging.js")(app, storage, ct, conf);
