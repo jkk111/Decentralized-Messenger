@@ -35,9 +35,6 @@ module.exports = function(cluster, logger) {
   var ct = require(__dirname +"/crosstalk.js")(conf);
   var admin = require(__dirname + "/admin.js")(conf, false);
   app.use("/admin", admin.route);
-  logger.addListener(function(data) {
-    logHandler(data, admin);
-  });
   logger.addListener(masterListener);
   var storage = require("./storage.js")(conf);
   var messaging = require("./messaging.js")(app, storage, ct, conf);
@@ -45,7 +42,7 @@ module.exports = function(cluster, logger) {
   function masterListener(key, data) {
     var el = {}
     el[key] = data;
-    process.send(el);
+    logHandler(el, admin);
   }
 
   function logHandler(data, admin) {
