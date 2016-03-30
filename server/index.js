@@ -29,7 +29,7 @@ module.exports = function(logger) {
     next();
   });
   app.use(cookieParser());
-  app.use(express.static(__dirname + "../web/www"));
+  app.use(express.static(__dirname + "/../web/www"));
 
   var ct = require(__dirname +"/crosstalk.js")(conf);
   // var admin = require(__dirname + "/admin.js")(conf, false, server);
