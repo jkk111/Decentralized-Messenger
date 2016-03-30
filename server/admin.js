@@ -11,7 +11,7 @@ var cookieParser = require("cookie-parser");
 app.use(cookieParser());
 var connected = 0, errors = 0;
 
-module.exports = function(config, standalone) {
+module.exports = function(config, standalone, server) {
   if(standalone || standalone === undefined) {
     var httpUpgrade = express();
     httpUpgrade.get("/*", function(req, res) {
@@ -27,7 +27,7 @@ module.exports = function(config, standalone) {
     var http = require("http");
     var https = require("https");
     http.createServer(httpUpgrade).listen(8080);
-    var server = https.createServer(opts, app).listen(8443, function() {
+    server = https.createServer(opts, app).listen(8443, function() {
       console.log("Webserver running on port: %d Process: %d", 8443, process.pid);
     });
     var io = require("socket.io")(server);
@@ -49,6 +49,22 @@ module.exports = function(config, standalone) {
   } else {
     this.route = app;
   }
+  var io = require("socket.io")(server);
+  io.on("connection", function(socket) {
+    setInterval(function() {
+      if(socket.authenticated) {
+        getUpdateData(function(data) {
+          socket.emit("update", data);
+        })
+      }
+    }, 1000);
+    socket.on("authenticate", function(data) {
+      if(data.user == user && data.pass == pass) {
+        socket.authenticated = true;
+        socket.emit("authenticated");
+      }
+    });
+  });
   var mysql = require("mysql2");
   databaseUser = config.databaseUser;
   databasePassword = config.databasePassword;

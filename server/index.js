@@ -3,7 +3,7 @@
  * Imports necessary modules, starts the admin panel,
  * Then creates multiple forks of the process to run the application
  */
-module.exports = function(cluster, logger) {
+module.exports = function(logger, server) {
   var fs = require("fs");
   var conf;
   try {
@@ -33,8 +33,8 @@ module.exports = function(cluster, logger) {
   app.use(express.static(__dirname + "../web/www"));
 
   var ct = require(__dirname +"/crosstalk.js")(conf);
-  var admin = require(__dirname + "/admin.js")(conf, false);
-  app.use("/admin", admin.route);
+  // var admin = require(__dirname + "/admin.js")(conf, false, server);
+  // app.use("/admin", admin.route);
   logger.addListener(masterListener);
   var storage = require("./storage.js")(conf);
   var messaging = require("./messaging.js")(app, storage, ct, conf);
@@ -42,7 +42,7 @@ module.exports = function(cluster, logger) {
   function masterListener(key, data) {
     var el = {}
     el[key] = data;
-    logHandler(el, admin);
+    // logHandler(el, admin); Disabled temporarily, due to issues with threading when acting as a module.
   }
 
   function logHandler(data, admin) {
