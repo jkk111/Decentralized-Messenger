@@ -6,7 +6,7 @@
 var fs = require("fs");
 var conf;
 try {
-  conf = JSON.parse(fs.readFileSync("config.json", "utf-8"));
+  conf = JSON.parse(fs.readFileSync(__dirname + "/config.json", "utf-8"));
 } catch(e) {
   console.log(e);
   console.error("Could not open configuration file!");
