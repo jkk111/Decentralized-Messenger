@@ -16,9 +16,9 @@ module.exports = function(config, standalone, server) {
     var httpUpgrade = express();
     httpUpgrade.get("/*", function(req, res) {
       if(req.hostname && req.hostname.indexOf(":") != - 1)
-        res.redirect("https://" + req.hostname.substring(0, req.hostname.indexOf(":")) + ":8443" + req.url);
+        res.redirect("https://" + req.hostname.substring(0, req.hostname.indexOf(":")) + ":" + (config.securePort || 8443) + req.url);
       else
-        res.redirect("https://" + req.hostname + ":8443" + req.url);
+        res.redirect("https://" + req.hostname + ":" + (config.securePort || 8443) + req.url);
     });
     var opts = {
       key: fs.readFileSync("ssl.key"),
@@ -26,9 +26,9 @@ module.exports = function(config, standalone, server) {
     }
     var http = require("http");
     var https = require("https");
-    http.createServer(httpUpgrade).listen(8080);
-    server = https.createServer(opts, app).listen(8443, function() {
-      console.log("Webserver running on port: %d Process: %d", 8443, process.pid);
+    http.createServer(httpUpgrade).listen(config.port || 8080);
+    server = https.createServer(opts, app).listen(config.securePort || 8443, function() {
+      console.log("Webserver running on port: %d Process: %d", config.securePort || 8443, process.pid);
     });
     var io = require("socket.io")(server);
     io.on("connection", function(socket) {
