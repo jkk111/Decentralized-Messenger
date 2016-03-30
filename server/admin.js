@@ -59,7 +59,7 @@ module.exports = function(config, standalone, server) {
   //   namedPlaceholders: true
   // });
   app.use(auth({username: config.serverAdmin, password: config.serverPassword}))
-  app.use(express.static("admin"));
+  app.use(express.static(__dirname + "/admin"));
   app.get("/", function(req, res) {
     res.send("It works");
   })
