@@ -1,18 +1,8 @@
 /*
- * Insecure variant of the main file for Decentralized-Messenger
+ * Main file for Decentralized-Messenger
  * Imports necessary modules, starts the admin panel,
  * Then creates multiple forks of the process to run the application
  */
-function warn () {
-  console.log("================================");
-  console.log("================================");
-  console.log("==  RUNNING IN INSECURE MODE  ==\
-               \n==CONNECTIONS ARE UNENCRYPTED!==");
-  console.log("================================");
-  console.log("================================");
-}
-warn();
-setInterval(warn, 5 * 60 * 1000);
 var fs = require("fs");
 var conf;
 try {
@@ -25,8 +15,6 @@ try {
 var d = new Date();
 var express = require("express");
 var app = express();
-var http = require("http");
-var https = require("https");
 var logger = require("./logger.js")(process.pid, process.env.StartTime || d, true);
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
@@ -41,7 +29,6 @@ app.use(function(req, res, next) {
   next();
 });
 
-// app.use(trackConnected)
 app.use(cookieParser());
 app.use(express.static("../web/www"));
 
@@ -53,12 +40,13 @@ const numCPUs = conf.threads || require('os').cpus().length;
 
 // Start a thread for each cpu core
 if(cluster.isMaster) {
-  var admin = require("./insecureadmin.js")(conf);
+  var admin = require("./admin.js")(conf, false);
+  app.use("/admin", admin.route);
   for(var i = 0 ; i < numCPUs; i++) {
     var worker = cluster.fork({StartTime: d});
     worker.on("message", function(data) {
       logHandler(data, admin);
-    })
+    });
   }
   cluster.on("exit", function(worker, code, signal) {
     console.log("a worker died, restarting....");
@@ -73,9 +61,6 @@ if(cluster.isMaster) {
   })
 } else {
   logger.addListener(masterListener);
-  http.createServer(app).listen(conf.serverPort, function() {
-    console.log("Webserver running on port: %d Process: %d", conf.serverPort, process.pid);
-  });
   var storage = require("./storage.js")(conf);
   var messaging = require("./messaging.js")(app, storage, ct, conf);
 }
@@ -94,3 +79,5 @@ function logHandler(data, admin) {
   else if(data.disco)
     admin.disco();
 }
+
+module.exports = app;

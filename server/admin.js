@@ -6,51 +6,49 @@ var conn;
 var fs = require("fs");
 var express = require("express");
 var app = express();
-var httpUpgrade = express();
 var auth = require("./nodeAuth.js");
 var cookieParser = require("cookie-parser");
 app.use(cookieParser());
 var connected = 0, errors = 0;
 
-httpUpgrade.get("/*", function(req, res) {
-  if(req.hostname && req.hostname.indexOf(":") != - 1)
-    res.redirect("https://" + req.hostname.substring(0, req.hostname.indexOf(":")) + ":8443" + req.url);
-  else
-    res.redirect("https://" + req.hostname + ":8443" + req.url);
-});
-
-var opts = {
-  key: fs.readFileSync("ssl.key"),
-  cert: fs.readFileSync("ssl.crt")
-}
-
-var http = require("http");
-var https = require("https");
-
-http.createServer(httpUpgrade).listen(8080);
-var server = https.createServer(opts, app).listen(8443, function() {
-  console.log("Webserver running on port: %d Process: %d", 8443, process.pid);
-});
-var io = require("socket.io")(server);
-io.on("connection", function(socket) {
-
-  setInterval(function() {
-    if(socket.authenticated) {
-      getUpdateData(function(data) {
-        socket.emit("update", data);
-      })
+module.exports = function(config, standalone) {
+  if(standalone || standalone === undefined) {
+    var httpUpgrade = express();
+    httpUpgrade.get("/*", function(req, res) {
+      if(req.hostname && req.hostname.indexOf(":") != - 1)
+        res.redirect("https://" + req.hostname.substring(0, req.hostname.indexOf(":")) + ":8443" + req.url);
+      else
+        res.redirect("https://" + req.hostname + ":8443" + req.url);
+    });
+    var opts = {
+      key: fs.readFileSync("ssl.key"),
+      cert: fs.readFileSync("ssl.crt")
     }
-  }, 1000)
-
-  socket.on("authenticate", function(data) {
-    if(data.user == user && data.pass == pass) {
-      socket.authenticated = true;
-      socket.emit("authenticated");
-    }
-  });
-});
-
-module.exports = function(config) {
+    var http = require("http");
+    var https = require("https");
+    http.createServer(httpUpgrade).listen(8080);
+    var server = https.createServer(opts, app).listen(8443, function() {
+      console.log("Webserver running on port: %d Process: %d", 8443, process.pid);
+    });
+    var io = require("socket.io")(server);
+    io.on("connection", function(socket) {
+      setInterval(function() {
+        if(socket.authenticated) {
+          getUpdateData(function(data) {
+            socket.emit("update", data);
+          })
+        }
+      }, 1000);
+      socket.on("authenticate", function(data) {
+        if(data.user == user && data.pass == pass) {
+          socket.authenticated = true;
+          socket.emit("authenticated");
+        }
+      });
+    });
+  } else {
+    this.route = app;
+  }
   var mysql = require("mysql2");
   databaseUser = config.databaseUser;
   databasePassword = config.databasePassword;
