@@ -38,7 +38,7 @@ httpUpgrade.get("/*", function(req, res) {
   res.redirect("https://" + req.hostname + ":" + conf.securePort + req.url);
 });
 app.use(cookieParser());
-app.use(express.static("../web/www"));
+app.use(express.static(__dirname + "/../web/www"));
 
 var opts = {
   key: fs.readFileSync("ssl.key"),
