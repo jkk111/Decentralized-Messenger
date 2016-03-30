@@ -46,8 +46,6 @@ var opts = {
   ca: fs.readFileSync("root.crt")
 }
 
-var request = require("request");
-
 var ct = require("./crosstalk.js")(conf);
 const cluster = require('cluster');
 const numCPUs = conf.threads || require('os').cpus().length;
