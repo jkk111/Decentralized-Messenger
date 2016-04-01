@@ -31,7 +31,7 @@ module.exports = function(logger) {
   app.use(cookieParser());
   app.use(express.static(__dirname + "/../web/www"));
 
-  var ct = require(__dirname +"/crosstalk.js")(conf);
+  var ct = require(__dirname + "/crosstalk.js")(conf);
   logger.addListener(masterListener);
   var storage = require("./storage.js")(conf);
   var messaging = require("./messaging.js")(app, storage, ct, conf);
