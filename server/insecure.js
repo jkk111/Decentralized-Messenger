@@ -1,8 +1,18 @@
 /*
- * Main file for Decentralized-Messenger
+ * Insecure variant of the main file for Decentralized-Messenger
  * Imports necessary modules, starts the admin panel,
  * Then creates multiple forks of the process to run the application
  */
+function warn () {
+  console.log("================================");
+  console.log("================================");
+  console.log("==  RUNNING IN INSECURE MODE  ==\
+               \n==CONNECTIONS ARE UNENCRYPTED!==");
+  console.log("================================");
+  console.log("================================");
+}
+warn();
+setInterval(warn, 5 * 60 * 1000);
 var fs = require("fs");
 var conf;
 try {
@@ -15,7 +25,6 @@ try {
 var d = new Date();
 var express = require("express");
 var app = express();
-var httpUpgrade = express();
 var http = require("http");
 var https = require("https");
 var logger = require("./logger.js")(process.pid, process.env.StartTime || d, true);
@@ -33,18 +42,10 @@ app.use(function(req, res, next) {
 });
 
 // app.use(trackConnected)
-
-httpUpgrade.get("/*", function(req, res) {
-  res.redirect("https://" + req.hostname + ":" + conf.securePort + req.url);
-});
 app.use(cookieParser());
-app.use(express.static(__dirname + "/../web/www"));
+app.use(express.static("../web/www"));
 
-var opts = {
-  key: fs.readFileSync("ssl.key"),
-  cert: fs.readFileSync("ssl.crt"),
-  ca: fs.readFileSync("root.crt")
-}
+var request = require("request");
 
 var ct = require("./crosstalk.js")(conf);
 const cluster = require('cluster');
@@ -52,7 +53,7 @@ const numCPUs = conf.threads || require('os').cpus().length;
 
 // Start a thread for each cpu core
 if(cluster.isMaster) {
-  var admin = require("./admin.js")(conf);
+  var admin = require("./insecureadmin.js")(conf);
   for(var i = 0 ; i < numCPUs; i++) {
     var worker = cluster.fork({StartTime: d});
     worker.on("message", function(data) {
@@ -72,9 +73,8 @@ if(cluster.isMaster) {
   })
 } else {
   logger.addListener(masterListener);
-  http.createServer(httpUpgrade).listen(conf.serverPort);
-  https.createServer(opts, app).listen(conf.securePort, function() {
-    console.log("Webserver running on port: %d Process: %d", conf.securePort, process.pid);
+  http.createServer(app).listen(conf.serverPort, function() {
+    console.log("Webserver running on port: %d Process: %d", conf.serverPort, process.pid);
   });
   var storage = require("./storage.js")(conf);
   var messaging = require("./messaging.js")(app, storage, ct, conf);

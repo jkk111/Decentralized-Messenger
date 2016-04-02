@@ -12,7 +12,7 @@ module.exports = function(id, StartTime, silent) {
   print = silent === undefined ? true: !silent;
   d = new Date(StartTime);
   threadId = id;
-  logFile = fs.createWriteStream("logs/" + getTimeString(d) +".log", { flags: "a", defaultEncoding: "utf8"});
+  logFile = fs.createWriteStream(__dirname + "/logs/" + getTimeString(d) +".log", { flags: "a", defaultEncoding: "utf8"});
   return {route: route, addListener: addListener};
 }
 
