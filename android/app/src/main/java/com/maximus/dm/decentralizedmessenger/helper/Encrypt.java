@@ -66,7 +66,7 @@ public class Encrypt {
 				encStr += ",";
 			byte[] tmp = chunks[i].getBytes();
 			tmp = encrypter.doFinal(tmp);
-			tmp = Base64.encode(tmp, Base64.DEFAULT);
+			tmp = Base64.encode(tmp, Base64.NO_WRAP);
 			encStr += new String(tmp);
 		}
 		Log.d("encres", "About to encrypt");
@@ -83,7 +83,7 @@ public class Encrypt {
 		for(int i = 0; i < chunks.length; i++) {
 			byte[] tmp = chunks[i].getBytes();
 			tmp = decrypter.doFinal(tmp);
-			tmp = Base64.decode(tmp, Base64.DEFAULT);
+			tmp = Base64.decode(tmp, Base64.NO_WRAP);
 			decStr += new String(tmp);
 		}
 		Log.d("decres", decStr);
@@ -94,7 +94,7 @@ public class Encrypt {
 		str = str.replace("-----BEGIN PUBLIC KEY-----",  "").replace("-----END PUBLIC KEY-----", "");
 		str = str.replace(((char) 0xa)+ "", "");
 		str = str.replace(((char) 0xd)+ "", "");
-		byte[] tmp = Base64.decode(str.getBytes(), Base64.DEFAULT);
+		byte[] tmp = Base64.decode(str.getBytes(), Base64.NO_WRAP);
 		X509EncodedKeySpec pub = new X509EncodedKeySpec(tmp);
 		KeyFactory kf = KeyFactory.getInstance("RSA");
 		return kf.generatePublic(pub);
@@ -131,7 +131,7 @@ public class Encrypt {
 	}
 
 	public String keyFormatter(byte[] keyData) {
-		keyData = Base64.encode(keyData, Base64.DEFAULT);
+		keyData = Base64.encode(keyData, Base64.NO_WRAP);
 		String keyString = "";
 		String keyStringData = new String(keyData);
 		while(keyStringData.length() > 0) {
