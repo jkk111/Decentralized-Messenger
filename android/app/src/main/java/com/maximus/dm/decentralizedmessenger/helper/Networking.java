@@ -26,7 +26,7 @@ import javax.net.ssl.TrustManagerFactory;
  */
 public class Networking {
 
-    public static final String SERVER_DOMAIN = "https://john-kevin.me";
+    public static final String SERVER_DOMAIN = "https://dm.john-kevin.me";
     public static final String SERVER_PATH_LOGIN = "/login";
     public static final String SERVER_PATH_REGISTER = "/register";
     public static final String SERVER_PATH_GET_FRIENDS = "/getFriends";

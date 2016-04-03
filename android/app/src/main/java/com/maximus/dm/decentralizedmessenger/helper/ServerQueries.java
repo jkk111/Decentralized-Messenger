@@ -170,9 +170,9 @@ public class ServerQueries {
 
             Log.d(TAG, "sendMessage publicKeySender " + publicKeySender);
             String testEnc = "Hello World!";
-            testEnc = encrypt.encrypt(testEnc, publicKeySender);
-            testEnc = encrypt.decrypt(testEnc, publicKeySender);
-            Log.d(TAG, "sendMessage testEnc " + testEnc);
+//            testEnc = encrypt.encrypt(testEnc, publicKeySender);
+//            testEnc = encrypt.decrypt(testEnc, publicKeySender);
+//            Log.d(TAG, "sendMessage testEnc " + testEnc);
 
             Log.d(TAG, "sendMessage, message " + message + " publicKeySender " + publicKeySender + " publicKeyRecepient " + publicKeyRecipient);
 

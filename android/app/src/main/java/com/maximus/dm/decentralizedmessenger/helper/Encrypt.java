@@ -38,27 +38,6 @@ public class Encrypt {
 	public static final int KEY_SIZE = 2048;
 
 	public Encrypt() {
-		Encrypt e = new Encrypt();
-		Security.addProvider(new BouncyCastleProvider()); // Very important, registers bouncycastle as a security provider
-		byte[] tmp = fileToByteArray("pubkey.txt"); // read in pub/private keys
-		String pubkeyStr = new String(tmp, StandardCharsets.UTF_8);
-		tmp = fileToByteArray("privkey.txt");
-		String privkeyStr = new String(tmp, StandardCharsets.UTF_8);
-
-        String dec2 = null;
-        try {
-            String enc = e.encrypt("Hello", pubkeyStr); // pass string, pubKeyStr to encrypt a string
-            String dec = e.decrypt(enc, privkeyStr); // pass encrypted string and privKeyStr to decrypt a string
-            System.out.println("Hello => " + dec);
-
-            StringKeyPair keys = e.generatePrivateKey();
-            String enc2 = e.encrypt("testingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtesting", keys.getPublicKey());
-            dec2 = e.decrypt(enc2, keys.getPrivateKey());
-        } catch(Exception exceptin) {
-            exceptin.printStackTrace();
-        }
-
-        Log.d(TAG, "Constructor, " + dec2);
 	}
 
     public String[] chunkString(String str, int chunkSize) { 
@@ -139,7 +118,7 @@ public class Encrypt {
 		KeyPair keypair = keygen.generateKeyPair();
 		PrivateKeyInfo pkInfo = PrivateKeyInfo.getInstance(keypair.getPrivate().getEncoded());
 		String priv = "-----BEGIN RSA PRIVATE KEY-----\n" + keyFormatter(pkInfo.parsePrivateKey().toASN1Primitive().getEncoded())
-		+"-----END RSA PRIVATE KEY-----";	  
+		+"-----END RSA PRIVATE KEY-----";
 		StringWriter publicKey = new StringWriter();
 		JcaPEMWriter publicWriter = new JcaPEMWriter(publicKey);
 		publicWriter.writeObject(new PemObject("PUBLIC KEY", keypair.getPublic().getEncoded()));
