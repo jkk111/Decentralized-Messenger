@@ -65,10 +65,12 @@ public class Encrypt {
 			if(i > 0)
 				encStr += ",";
 			byte[] tmp = chunks[i].getBytes();
-			tmp = Base64.encode(tmp, Base64.DEFAULT);
 			tmp = encrypter.doFinal(tmp);
+			tmp = Base64.encode(tmp, Base64.DEFAULT);
 			encStr += new String(tmp);
 		}
+		Log.d("encres", "About to encrypt");
+		Log.d("encres", encStr);
 		return encStr;
 	}
 
@@ -80,10 +82,11 @@ public class Encrypt {
 		String decStr = "";
 		for(int i = 0; i < chunks.length; i++) {
 			byte[] tmp = chunks[i].getBytes();
-			tmp = Base64.decode(tmp, Base64.DEFAULT);
 			tmp = decrypter.doFinal(tmp);
+			tmp = Base64.decode(tmp, Base64.DEFAULT);
 			decStr += new String(tmp);
 		}
+		Log.d("decres", decStr);
 		return decStr;
 	}
 
