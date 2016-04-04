@@ -171,7 +171,9 @@
           console.log("opening messenger")
           this.$.messenger.style.opacity = 1;
           this.$.messenger.style.zIndex = 1;
+          this.$.messenger.checkKey();
           this.$.loading.active = false;
+
           // // this.$.messenger.loggedIn.bind(this.$.messenger);
           // console.log(this);
           // console.log(this.$.messenger)

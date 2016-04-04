@@ -138,6 +138,9 @@
       <iron-ajax id="scrollajax" url="/fetchmessages" method="Post" content-type="application/x-www-form-urlencoded"
            body="{{scrollBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponseError">
            </iron-ajax>
+      <template is="dom-if" if="{{keyInputVisible}}">
+        <key-selector header-message="Import private Key" on-key-entered="privateKeyEntered" paste-placeholder="Paste private key here"></key-selector>
+      </template>
       <paper-drawer-panel responsive-width="800px" id="main">
         <paper-header-panel drawer>
           <paper-toolbar>
@@ -300,6 +303,7 @@
           type: Number,
           value: Number.MAX_SAFE_INTEGER - 1
         },
+
         currentMessages: {
           type: Array,
           value: function() { return []; },
@@ -358,6 +362,10 @@
           type: Boolean,
           value: true
         },
+        keyInputVisible: {
+          type: Boolean,
+          value: false
+        },
         newContactSelected: {
           type: Boolean,
           value: true
@@ -393,6 +401,10 @@
       },
       messageSentResponse: function() {
 
+      },
+      privateKeyEntered: function(e, detail) {
+        this.privateKey = detail;
+        this.keyInputVisible = false;
       },
       friendSearchEmpty: function(results) {
         return !(results === undefined || results.users === undefined || results.users.length < 1 ||
@@ -476,6 +488,11 @@
           return;
         this.set("currentMessages", this.sortCurrentMessages(this.computeCurrentMessages(this.selectedContact, this.friends) || []));
         this.notifyPath("currentMessages", this.currentMessages.slice());
+      },
+      checkKey: function() {
+        if(this.privateKey === null) {
+          this.keyInputVisible = true;
+        }
       },
       computeCurrentMessages: function(i, friends) {
         if(friends && i > friends.length || i == -1)
@@ -601,7 +618,7 @@
         return friend < 0;
       },
       pollResponse: function(e, res) {
-        if(!res || !res.response || this.containsError(res.response)) {
+        if(!res || !res.response || this.containsError(res.response) || this.privateKey === null) {
           return;
         }
         var hasnew = this.hasNew(res.response, this.friends);

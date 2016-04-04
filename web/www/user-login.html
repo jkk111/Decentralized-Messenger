@@ -11,6 +11,7 @@
 <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html" />
 <link rel="import" href="bower_components/iron-icons/iron-icons.html"/>
 <link rel="import" href="bower_components/iron-icons/social-icons.html"/>
+<link rel="import" href="key-selector.html">
 <dom-module id="user-login">
   <style>
 
@@ -94,6 +95,9 @@
   <template>
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
+    <template is="dom-if" if="{{keyInputVisible}}">
+      <key-selector header-message="Import public Key" on-key-entered="publicKeyEntered" paste-placeholder="Paste public key here"></key-selector>
+    </template>
     <div id="content">
       <div id="forms">
         <div class="container">
@@ -139,6 +143,10 @@
         registerEmail: {
           type: String,
           value: ""
+        },
+        keyInputVisible: {
+          type: Boolean,
+          value: false
         },
         serverSecret: {
           type: String,
@@ -214,11 +222,27 @@
         this.checkEmail(this.registerEmail);
         var enc = new JSEncrypt({default_key_size: 2048});
         var self = this;
-        enc.getKey(function() {
-          self.privateKey = enc.getPrivateKey();
-          self.publicKey = enc.getPublicKey();
-          self.$.registerAjax.generateRequest();
-        });
+        if(!this.registerManaged) {
+          this.showPublicKeyInput();
+        } else {
+          enc.getKey(function() {
+            self.privateKey = enc.getPrivateKey();
+            self.publicKey = enc.getPublicKey();
+            self.$.registerAjax.generateRequest();
+          });
+        }
+      },
+
+      publicKeyEntered: function(e, detail) {
+        this.publicKey = detail;
+        // this.privateKey = null;
+        console.log(this.registerBody);
+        this.keyInputVisible = false;
+        this.$.registerAjax.generateRequest();
+      },
+
+      showPublicKeyInput: function() {
+        this.keyInputVisible = true;
       },
 
       computeRegisterBody: function(email, user, pass, managed, publicKey, privateKey) {

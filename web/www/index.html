@@ -22300,6 +22300,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </iron-ajax>
       <iron-ajax id="scrollajax" url="/fetchmessages" method="Post" content-type="application/x-www-form-urlencoded" body="{{scrollBody}}" handle-as="json" on-response="pollResponse" on-error="pollResponseError">
            </iron-ajax>
+      <template is="dom-if" if="{{keyInputVisible}}">
+        <key-selector header-message="Import private Key" on-key-entered="privateKeyEntered" paste-placeholder="Paste private key here"></key-selector>
+      </template>
       <paper-drawer-panel responsive-width="800px" id="main">
         <paper-header-panel drawer="">
           <paper-toolbar>
@@ -22459,6 +22462,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: Number,
           value: Number.MAX_SAFE_INTEGER - 1
         },
+
         currentMessages: {
           type: Array,
           value: function() { return []; },
@@ -22517,6 +22521,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: Boolean,
           value: true
         },
+        keyInputVisible: {
+          type: Boolean,
+          value: false
+        },
         newContactSelected: {
           type: Boolean,
           value: true
@@ -22552,6 +22560,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       messageSentResponse: function() {
 
+      },
+      privateKeyEntered: function(e, detail) {
+        this.privateKey = detail;
+        this.keyInputVisible = false;
       },
       friendSearchEmpty: function(results) {
         return !(results === undefined || results.users === undefined || results.users.length < 1 ||
@@ -22635,6 +22647,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return;
         this.set("currentMessages", this.sortCurrentMessages(this.computeCurrentMessages(this.selectedContact, this.friends) || []));
         this.notifyPath("currentMessages", this.currentMessages.slice());
+      },
+      checkKey: function() {
+        if(this.privateKey === null) {
+          this.keyInputVisible = true;
+        }
       },
       computeCurrentMessages: function(i, friends) {
         if(friends && i > friends.length || i == -1)
@@ -22760,7 +22777,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return friend < 0;
       },
       pollResponse: function(e, res) {
-        if(!res || !res.response || this.containsError(res.response)) {
+        if(!res || !res.response || this.containsError(res.response) || this.privateKey === null) {
           return;
         }
         var hasnew = this.hasNew(res.response, this.friends);
@@ -25700,7 +25717,149 @@ Custom property | Description | Default
 <g id="whatshot"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"></path></g>
 </defs></svg>
 </iron-iconset-svg>
-<dom-module id="user-login" assetpath="/">
+<dom-module id="key-selector" assetpath="/">
+  <style>
+    :host {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 9;
+    }
+    #background {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-filter: blur(6px);
+      background-color: black;
+      opacity: 0.4
+    }
+    #content {
+      position: absolute;
+      width: 600px;
+      background-color: white;
+      border: 4px solid #4CAF50;
+      border-radius: 25px;
+      z-index: 999999;
+      text-align: center;
+      left: 50%;
+      top: 50%;
+      transform: translate3d(-50%, -50%, 0);
+      /*max-height: 80%;*/
+      overflow: hidden;
+    }
+    #fileSelector {
+      display: none;
+    }
+    #left {
+      float: left;
+    }
+    #right {
+      float: right;
+    }
+    paper-button {
+      background-color: #4caf50;
+      margin: 25px;
+    }
+    #pasteboxwrapper {
+      width: 95%;
+      margin-left: 2.5%;
+      text-align: left;
+      max-height: 600px;
+      overflow-y: hidden;
+    }
+    paper-textarea {
+      overflow: hidden!important;
+    }
+    #pasteBox::content > paper-input-container::content .input-content {
+      width: 100%;
+      /*max-height: 600px;*/
+    }
+    #pasteBox::content > paper-input-container {
+      overflow: hidden;
+    }
+    #pasteBox::content > paper-input-container::content #textarea {
+      max-height: 600px;
+    }
+  </style>
+  <template>
+    <input type="file" id="fileSelector">
+    <div>
+      <div id="content">
+        <h3>{{headerMessage}}</h3>
+        <template is="dom-if" if="{{!pasting}}">
+          <div id="selectButtons">
+            <paper-button id="left" on-tap="select">
+              Select File
+            </paper-button>
+            <paper-button id="right" on-tap="paste">
+              Paste File
+            </paper-button>
+          </div>
+        </template>
+        <template is="dom-if" if="{{pasting}}">
+          <div id="pasteboxwrapper">
+            <paper-textarea value="{{key}}" id="pasteBox" placeholder="{{pastePlaceholder}}"></paper-textarea>
+          </div>
+          <paper-button on-tap="cancel">Cancel</paper-button>
+          <paper-button on-tap="submitKey">Submit</paper-button>
+        </template>
+      </div>
+      <div id="background">
+      </div>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'key-selector',
+      properties: {
+        pasting: {
+          type: Boolean,
+          value: false
+        },
+        key: {
+          type: String,
+          value: ""
+        },
+        headerMessage: {
+          type: String,
+          value: "Header Message"
+        },
+        pastePlaceholder: {
+          type: String,
+          value: "Placeholder Message"
+        }
+      },
+      readFile: function(e) {
+        var reader = new FileReader();
+        var file = e.target.files[0];
+        var _ = this;
+        reader.onload = function(e) {
+          _.key = e.target.result;
+          _.pasting = true;
+        }
+        reader.readAsText(file);
+      },
+      select: function(e) {
+        this.$.fileSelector.click();
+      },
+      paste: function() {
+        this.pasting = true;
+      },
+      cancel: function() {
+        this.pasting = false;
+      },
+      attached: function() {
+        var _ = this;
+        this.$.fileSelector.addEventListener("change", function(e) {
+          _.readFile.call(_, e);
+        });
+      },
+      submitKey: function() {
+        this.fire("key-entered", this.key);
+      },
+    });
+  </script>
+</dom-module><dom-module id="user-login" assetpath="/">
   <style>
 
     @media(max-width: 600px) {
@@ -25783,6 +25942,9 @@ Custom property | Description | Default
   <template>
     <iron-ajax id="registerAjax" url="{{registerUrl}}" body="{{registerBody}}" handle-as="json" on-response="registered" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
     <iron-ajax id="loginAjax" url="{{loginUrl}}" body="{{loginBody}}" handle-as="json" on-response="loggedIn" method="POST" content-type="application/x-www-form-urlencoded"></iron-ajax>
+    <template is="dom-if" if="{{keyInputVisible}}">
+      <key-selector header-message="Import public Key" on-key-entered="publicKeyEntered" paste-placeholder="Paste public key here"></key-selector>
+    </template>
     <div id="content">
       <div id="forms">
         <div class="container">
@@ -25828,6 +25990,10 @@ Custom property | Description | Default
         registerEmail: {
           type: String,
           value: ""
+        },
+        keyInputVisible: {
+          type: Boolean,
+          value: false
         },
         serverSecret: {
           type: String,
@@ -25903,11 +26069,27 @@ Custom property | Description | Default
         this.checkEmail(this.registerEmail);
         var enc = new JSEncrypt({default_key_size: 2048});
         var self = this;
-        enc.getKey(function() {
-          self.privateKey = enc.getPrivateKey();
-          self.publicKey = enc.getPublicKey();
-          self.$.registerAjax.generateRequest();
-        });
+        if(!this.registerManaged) {
+          this.showPublicKeyInput();
+        } else {
+          enc.getKey(function() {
+            self.privateKey = enc.getPrivateKey();
+            self.publicKey = enc.getPublicKey();
+            self.$.registerAjax.generateRequest();
+          });
+        }
+      },
+
+      publicKeyEntered: function(e, detail) {
+        this.publicKey = detail;
+        // this.privateKey = null;
+        console.log(this.registerBody);
+        this.keyInputVisible = false;
+        this.$.registerAjax.generateRequest();
+      },
+
+      showPublicKeyInput: function() {
+        this.keyInputVisible = true;
       },
 
       computeRegisterBody: function(email, user, pass, managed, publicKey, privateKey) {
@@ -27422,7 +27604,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           console.log("opening messenger")
           this.$.messenger.style.opacity = 1;
           this.$.messenger.style.zIndex = 1;
+          this.$.messenger.checkKey();
           this.$.loading.active = false;
+
           // // this.$.messenger.loggedIn.bind(this.$.messenger);
           // console.log(this);
           // console.log(this.$.messenger)
