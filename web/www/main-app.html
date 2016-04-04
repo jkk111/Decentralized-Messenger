@@ -51,7 +51,7 @@
     <div id="underlay">
     </div>
     <user-login id="login" on-logged-in="openMessenger"></user-login>
-    <messenger-view id="messenger" on-relogin="relogin" user-id="{{userId}}" token="{{token}}" private-key="{{privateKey}}" public-key="{{publicKey}}"></messenger-view>
+    <messenger-view id="messenger" on-got-friends-first="openMessengerFinal" on-relogin="relogin" user-id="{{userId}}" token="{{token}}" private-key="{{privateKey}}" public-key="{{publicKey}}"></messenger-view>
     <div id="loadingMessenger">
       <paper-spinner id="loading"></paper-spinner>
     </div>
@@ -80,6 +80,11 @@
         publicKey: {
           type: String,
           value: ""
+        },
+        loginClosed:  {
+          type: Boolean,
+          value: false,
+          observer: 'loginClosedFinal'
         },
         animationConfig: {
           type: Object,
@@ -125,10 +130,6 @@
           "neon-animation-finish": "animationComplete"
       },
 
-      loginHidden: function() {
-
-      },
-
       relogin: function() {
         if(this.userHash && this.passHash) {
           this.$.login.hashLogin(this.userHash, this.passHash)
@@ -162,22 +163,29 @@
         var animation = e.detail;
         console.log(animation)
         console.log("here");
+        console.log("finished animation: %s", e.detail);
         if(animation == "closeLogin") {
           console.log("closed");
           this.$.login.style.opacity = 0;
           this.$.login.style.height = 0;
           this.$.login.style.zIndex = -1;
+          this.loginClosed = true;
         } else if(animation == "openMessenger") {
           console.log("opening messenger")
           this.$.messenger.style.opacity = 1;
           this.$.messenger.style.zIndex = 1;
           this.$.messenger.checkKey();
           this.$.loading.active = false;
+        }
+      },
 
-          // // this.$.messenger.loggedIn.bind(this.$.messenger);
-          // console.log(this);
-          // console.log(this.$.messenger)
-          // this.$.messenger.loggedIn.bind(this.$.messenger);
+      loginClosedFinal: function(closed, o) {
+        if(closed) {
+          if(this.openPending) {
+            console.log("hereeee")
+            this.openPending = false;
+            this.playAnimation("openMessenger", "openMessenger");
+          }
         }
       },
 
@@ -189,16 +197,17 @@
         this.token = data.token;
         this.privateKey = data.private;
         this.publicKey = data.public;
-        // this.$.login.style.display = "none";
-        // this.$.messenger.style.display = "block";
         this.playAnimation('closeLogin', 'closeLogin');
-        var self = this;
-        // TODO (john): Implement loading actual data, and replace the hard-coded timeout
-        setTimeout(function() {
-          self.$.underlay.classList.add("loaded");
-          self.$.messenger.style.display = "block";
-          self.playAnimation("openMessenger", "openMessenger");
-        }, 5000);
+      },
+
+      openMessengerFinal: function() {
+        this.$.underlay.classList.add("loaded");
+        this.$.messenger.style.display = "block";
+        console.log("here pre anim");
+        if(!this.loginClosed)
+          this.openPending = true;
+        else
+          this.playAnimation("openMessenger", "openMessenger");
       }
     })
   </script>

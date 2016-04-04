@@ -362,6 +362,10 @@
           type: Boolean,
           value: true
         },
+        gotFriends: {
+          type: Boolean,
+          value: false
+        },
         keyInputVisible: {
           type: Boolean,
           value: false
@@ -705,6 +709,10 @@
       },
       friendsResponse: function(e, res) {
         if(res.response && !res.response.error) {
+          if(!this.gotFriends) {
+            this.gotFriends = true;
+            this.fire("got-friends-first");
+          }
           var changed = false;
           var tmp = res.response;
           for(var i = 0 ; i < tmp.length; i++) {
@@ -725,6 +733,10 @@
             this.notifyPath("friends.*.pending", this.friends.slice());
           }
         } else if (res.response && res.response.error === "ERROR_NO_FRIENDS" && this.friends != []) {
+          if(!this.gotFriends) {
+            this.gotFriends = true;
+            this.fire("got-friends-first");
+          }
           this.set("friends", []);
         }
       },
