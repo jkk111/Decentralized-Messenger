@@ -284,7 +284,9 @@ module.exports = function(config) {
              END AS "message"
              FROM messages
              WHERE recipient = :sender AND id > :highest
-             OR sender = :sender AND id > :highest`;
+             OR sender = :sender AND id > :highest
+             ORDER BY id DESC
+             LIMIT 30`;
     conn.query(q, { sender: sender, highest: highest}, function(err, results) {
       if(err) {
         console.log(err);
