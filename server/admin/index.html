@@ -5,23 +5,29 @@
   <script type="text/javascript" src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
   <script type="text/javascript">
     var socket = io.connect(window.location.href, {secure: true});
-    var MAX_CHILDREN = 1000;
+    var last = 0;
+    var search = {};
+    var MAX_CHILDREN = 100;
+    var isPinned = true;
     var mostActive = {
 
     }
     socket.on("log", function(data) {
       var el = document.createElement("li")
-      el.innerHTML = JSON.stringify(data);
+      el.innerHTML = JSON.stringify(data).replace("<", "&lt;").replace(">", "&gt;");
       if(mostActive[data.worker])
         mostActive[data.worker]++;
       else
         mostActive[data.worker] = 1;
-      updateActive();
+      // el.classList.add("")
       var logs = document.getElementById("logs")
       logs.appendChild(el);
-      if(logs.children.length > MAX_CHILDREN)
-        logs.removeChild(logs.children[0]);
       var route = document.getElementById(data.route);
+      updateActive();
+      if(logs.children.length > MAX_CHILDREN) {
+        console.log("Removing: ", logs.children.length);
+        logs.children[0].parentElement.removeChild(logs.children[0]);
+      }
       if(!route) {
         route = document.createElement("li");
         var name = document.createElement("span");
@@ -35,7 +41,9 @@
       }
       route.children[1].innerHTML = data.latency;
       var logs = document.getElementById("logs");
-      logs.scrollTop = logs.scrollHeight;
+      if(isPinned)
+        logs.scrollTop = logs.scrollHeight;
+      updateStatus(el);
     });
     socket.on("connected", function(conn) {
       document.getElementById("numConnected").innerHTML = conn + " Pending";
@@ -60,6 +68,66 @@
         el.children[1].innerHTML = mostActive[keys[i]];
       }
     }
+    function updateStatus(el) {
+      var str = search.value;
+      if(str === "")
+        return;
+      console.log(str.toLowerCase());
+      if(el.innerHTML.toLowerCase().indexOf(str.toLowerCase()) != -1) {
+        el.innerHTML = el.innerHTML.replace(new RegExp("("+str+")", 'gi'), `<span class='selected'>$1</span>`)
+        el.classList.add("matches");
+        el.classList.add(last == 0 ? "odd":"even");
+        last = last == 0 ? 1 : 0;
+      } else {
+        el.classList.add("notmatches");
+      }
+    }
+    function updateMatches() {
+      var val = search.value;
+      var matches = document.querySelectorAll("span.selected");
+      for(var i = 0 ; i < matches.length; i++) {
+          matches[i].outerHTML = matches[i].innerHTML
+      }
+      var items = document.querySelectorAll("#logs li");
+      for(var i = 0 ; i < items.length; i++) {
+        testMatch(items[i], val);
+      }
+      if(val === "") {
+        return;
+      }
+      var fixed = document.querySelectorAll("li.matches");
+      for(var i = 0; i < fixed.length; i++) {
+        last = i % 2 ;
+        fixed[i].classList.remove(last == 0 ? "odd":"even");
+        fixed[i].classList.add(last ==0 ? "even":"odd");
+      }
+    }
+
+    function testMatch(el, str) {
+      if(str === undefined)
+        return;
+      if(str === "") {
+        el.classList.remove("matches")
+        el.classList.remove("notmatches");
+        el.classList.remove("even");
+        el.classList.remove("odd");
+        return
+      }
+      if(el.innerHTML.toLowerCase().indexOf(str.toLowerCase()) != -1) {
+        el.innerHTML = el.innerHTML.replace(new RegExp("("+str+")", 'gi'), `<span class='selected'>$1</span>`)
+        el.classList.add("matches");
+        el.classList.remove("notmatches");
+      } else {
+        el.classList.remove("matches");
+        el.classList.add("notmatches");
+      }
+    }
+    function pinChanged() {
+      isPinned = document.getElementById("pin").checked;
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+      search = document.getElementById("search");
+    })
   </script>
   <style type="text/css">
     html, body {
@@ -69,17 +137,23 @@
     li:nth-child(even) {
       background-color: #aaa;
     }
+    .odd {
+      background-color: white!important;
+    }
+    .even {
+      background-color: #aaa!important;
+    }
     ul {
       padding: 0;
       margin: 0;
       overflow: auto;
       border: 1px solid black;
-      max-height: 12em;
-      max-width: 33%;
+      height: 12em;
+      max-width: 80%;
     }
     #logs {
-      max-height: 20em;
-      max-width: 66%;
+      height: 20em;
+      max-width: 100%;
     }
     .latencyName, .activeId {
       padding-right: 20px;
@@ -87,17 +161,33 @@
     }
     li {
       list-style-type: none;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    li:hover {
+      white-space: normal;
+
+    }
+    .notmatches {
+      display: none;
+    }
+    .selected {
+      background-color: orange;
     }
   </style>
 </head>
 <body>
   <div id="numConnected">0</div>
+  <h3>Routes</h3>
   <ul id="latency">
   </ul>
+  <h3>Active Workers</h3>
   <ul id="activeWorkers">
-
   </ul>
   <ul id="logs">
   </ul>
+  <input id="search" type="text" placeholder="search" oninput="updateMatches()">
+  <label>Pin to bottom: </label> <input id="pin" type="checkbox" checked onchange="pinChanged()">
 </body>
 </html>

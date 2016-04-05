@@ -23,7 +23,12 @@ function addListener (listener) {
 
 function getTimeString(d) {
   return fNum(d.getDate()) + "-"+ fNum(d.getMonth() + 1) + "-" + d.getUTCFullYear() + "-"
-               + fNum(d.getHours()) + "-" + fNum(d.getMinutes()) + "-" + fNum(d.getSeconds())
+               + fNum(d.getHours()) + "-" + fNum(d.getMinutes()) + "-" + fNum(d.getSeconds()) + "-" + fNum(d.getMilliseconds(), 4);
+}
+
+function getTimeStringLine(d) {
+  return fNum(d.getDate()) + "-"+ fNum(d.getMonth() + 1) + "-" + d.getUTCFullYear() + "-"
+               + fNum(d.getHours()) + ":" + fNum(d.getMinutes()) + ":" + fNum(d.getSeconds()) + ":" + fNum(d.getMilliseconds(), 4);
 }
 
 function route(req, res, next) {
@@ -71,7 +76,7 @@ function formatString(str, o) {
   var res = "";
   var lines = str.split("\n");
   for(var i = 0 ; i < lines.length; i++) {
-    res += threadId + " " + getTimeString(new Date()) + " " + o.file + "." + o.method + "." + o.line + ") " + lines[i] + "\n"
+    res += threadId + " " + getTimeStringLine(new Date()) + " " + o.file + "." + o.method + "." + o.line + ") " + lines[i] + "\n"
   }
   return res;
 }
@@ -98,10 +103,12 @@ function getCaller() {
 }
 
 
-function fNum(num) {
-  if(num < 10)
-    return "0"+num;
-  else return num;
+function fNum(num, digits) {
+  digits = digits || 2;
+  var pre = "";
+  for(var i = 0; i < digits; i++)
+    pre += "0";
+  return String(pre + num).slice( -1 * digits);
 }
 
 String.prototype.reverseSubstring = function(num) {
