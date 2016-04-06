@@ -3,6 +3,8 @@
  * Imports necessary modules, starts the admin panel,
  * Then creates multiple forks of the process to run the application
  */
+
+// Warns the server admin every 5 minutes
 function warn () {
   console.log("================================");
   console.log("================================");
@@ -13,6 +15,8 @@ function warn () {
 }
 warn();
 setInterval(warn, 5 * 60 * 1000);
+
+// Load required config files and modules
 var fs = require("fs");
 var conf;
 try {

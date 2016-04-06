@@ -514,11 +514,12 @@
         var self = this;
         if(el.scrollTarget.onscroll == null) {
           el.scrollTarget.onscroll = function(e) {
+            console.dir(e);
             var scrolledBy = el.scrollTarget.scrollTop + el.scrollTarget.clientHeight;
-            if(e.srcElement.scrollTop == 0) {
+            if(e.target.scrollTop == 0) {
               self.fetchingMessages = true;
               self.oldHeight = el.scrollTarget.scrollHeight;
-              self.scrollBody = self.computeScrollBody(self.userId, self.token, self.lowestReceived);
+              self.scrollBody = self.computeScrollBody(self.userId, self.token, self.lowestReceived, self.friends[self.selectedContact].id);
               self.$.scrollajax.generateRequest();
             }
           }
@@ -564,8 +565,8 @@
       computeMessagesBody: function(token, id, h, l) {
         return { token: token, sender: id, highestReceived: h};
       },
-      computeScrollBody: function(id, token, l) {
-        return { token: token, sender: id, lowestReceived: l };
+      computeScrollBody: function(id, token, l, f) {
+        return { token: token, sender: id, lowestReceived: l, dest: f };
       },
       getMessages: function(friends, contact) {
         if(!friends || contact > friends.length || contact == -1)

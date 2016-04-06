@@ -11,8 +11,12 @@
       }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="bower_components/webcomponentsjs/CustomElements.min.js"></script>
+    <script src="bower_components/webcomponentsjs/MutationObserver.min.js"></script>
+    <script src="bower_components/webcomponentsjs/HTMLImports.min.js"></script>
     <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-    <script type="text/javascript" src="jsencrypt.js"></script>
+    <script src="bower_components/web-animations-js/web-animations.min.js"></script>
+     
     <title>Decentralized Messenger</title>
   </head>
   <body><div hidden="" by-vulcanize=""><!--
@@ -7668,7 +7672,7 @@ The complete set of contributors may be found at http://polymer.github.io/CONTRI
 Code distributed by Google as part of the polymer project is also
 subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
 -->
-<!--
+<script type="text/javascript" src="jsencrypt.js"></script><!--
 `iron-media-query` can be used to data bind to a CSS media query.
 The `query` property is a bare CSS media query.
 The `query-matches` property is a boolean representing whether the page matches that media query.
@@ -22673,11 +22677,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         var self = this;
         if(el.scrollTarget.onscroll == null) {
           el.scrollTarget.onscroll = function(e) {
+            console.dir(e);
             var scrolledBy = el.scrollTarget.scrollTop + el.scrollTarget.clientHeight;
-            if(e.srcElement.scrollTop == 0) {
+            if(e.target.scrollTop == 0) {
               self.fetchingMessages = true;
               self.oldHeight = el.scrollTarget.scrollHeight;
-              self.scrollBody = self.computeScrollBody(self.userId, self.token, self.lowestReceived);
+              self.scrollBody = self.computeScrollBody(self.userId, self.token, self.lowestReceived, self.friends[self.selectedContact].id);
               self.$.scrollajax.generateRequest();
             }
           }
@@ -22723,8 +22728,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       computeMessagesBody: function(token, id, h, l) {
         return { token: token, sender: id, highestReceived: h};
       },
-      computeScrollBody: function(id, token, l) {
-        return { token: token, sender: id, lowestReceived: l };
+      computeScrollBody: function(id, token, l, f) {
+        return { token: token, sender: id, lowestReceived: l, dest: f };
       },
       getMessages: function(friends, contact) {
         if(!friends || contact > friends.length || contact == -1)
@@ -27517,6 +27522,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: String,
           value: ""
         },
+        isWebkit: {
+          type: Boolean,
+          value: false
+        },
         publicKey: {
           type: String,
           value: ""
@@ -27590,6 +27599,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
 
       attached: function() {
+        this.isWebkit = true;//window.chrome !== undefined;
         if(window.location.hash) {
           var hashParams = this.getVals(window.location.hash.substring(1));
           console.log(hashParams);
@@ -27637,7 +27647,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.token = data.token;
         this.privateKey = data.private;
         this.publicKey = data.public;
-        this.playAnimation('closeLogin', 'closeLogin');
+        if(this.isWebkit)
+          this.playAnimation('closeLogin', 'closeLogin');
+        else
+          this.animationComplete({detail: "closeLogin"});
       },
 
       openMessengerFinal: function() {
@@ -27646,8 +27659,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         console.log("here pre anim");
         if(!this.loginClosed)
           this.openPending = true;
-        else
-          this.playAnimation("openMessenger", "openMessenger");
+        else {
+          if(this.isWebkit)
+            this.playAnimation("openMessenger", "openMessenger");
+          else {
+            this.animationComplete({detail: "openMessenger"});
+          }
+        }
       }
     })
   </script>

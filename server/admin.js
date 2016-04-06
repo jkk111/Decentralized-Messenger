@@ -10,8 +10,14 @@ var auth = require("./nodeAuth.js");
 var cookieParser = require("cookie-parser");
 app.use(cookieParser());
 var connected = 0, errors = 0;
+var keys = [];
 
 module.exports = function(config, standalone, server) {
+  try {
+    keys = JSON.parse(fs.readFileSync(__dirname + "/admin/conf.json", "utf8"));
+  } catch(e) {
+    keys = [];
+  }
   if(standalone || standalone === undefined) {
     var httpUpgrade = express();
     httpUpgrade.get("/*", function(req, res) {
@@ -48,6 +54,13 @@ module.exports = function(config, standalone, server) {
   app.get("/", function(req, res) {
     res.send("It works");
   })
+  app.get("/keys", function(req, res) {
+    res.json(keys);
+  });
+  app.post("/update", function(req, res) {
+    keys = req.body.keys;
+    fs.writeFileSync(__dirname + "/admin/conf.json", JSON.stringify(keys, null, "  "), "utf8");
+  });
 
   this.pushLog = function(log) {
     if(io) {
@@ -55,7 +68,6 @@ module.exports = function(config, standalone, server) {
       var parts = log.split(" ");
       logData.worker = parts[0];
       logData.time = parts[1];
-      // logData.caller = parts[2];
       logData.ip = parts[3];
       logData.method = parts[4].substring(1, parts[4].length - 1);
       logData.route = parts[5];

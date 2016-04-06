@@ -77,6 +77,10 @@
           type: String,
           value: ""
         },
+        isWebkit: {
+          type: Boolean,
+          value: false
+        },
         publicKey: {
           type: String,
           value: ""
@@ -150,6 +154,7 @@
       },
 
       attached: function() {
+        this.isWebkit = true;//window.chrome !== undefined;
         if(window.location.hash) {
           var hashParams = this.getVals(window.location.hash.substring(1));
           console.log(hashParams);
@@ -197,7 +202,10 @@
         this.token = data.token;
         this.privateKey = data.private;
         this.publicKey = data.public;
-        this.playAnimation('closeLogin', 'closeLogin');
+        if(this.isWebkit)
+          this.playAnimation('closeLogin', 'closeLogin');
+        else
+          this.animationComplete({detail: "closeLogin"});
       },
 
       openMessengerFinal: function() {
@@ -206,8 +214,13 @@
         console.log("here pre anim");
         if(!this.loginClosed)
           this.openPending = true;
-        else
-          this.playAnimation("openMessenger", "openMessenger");
+        else {
+          if(this.isWebkit)
+            this.playAnimation("openMessenger", "openMessenger");
+          else {
+            this.animationComplete({detail: "openMessenger"});
+          }
+        }
       }
     })
   </script>
