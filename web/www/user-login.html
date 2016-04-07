@@ -8,6 +8,7 @@
 <link rel="import" href="bower_components/paper-button/paper-button.html">
 <link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html" />
+<link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html" />
 <link rel="import" href="bower_components/iron-icons/iron-icons.html"/>
 <link rel="import" href="bower_components/iron-icons/social-icons.html"/>
@@ -89,6 +90,13 @@
       --paper-checkbox-unchecked-ink-color: var(--paper-green-900);
       --paper-checkbox-label-color: var(--paper-green-900);
     }
+    #keygenSpinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate3d(-50%, -50%, 0);
+      z-index: 999999;
+    }
 
   </style>
 
@@ -99,6 +107,7 @@
       <key-selector header-message="Import public Key" on-key-entered="publicKeyEntered" paste-placeholder="Paste public key here"></key-selector>
     </template>
     <div id="content">
+    <paper-spinner id="keygenSpinner" active="{{keygenActive}}"></paper-spinner>
       <div id="forms">
         <div class="container">
           <paper-card class="form" id="login" heading="Already Have An Account?">
@@ -179,6 +188,10 @@
         loginBody: {
           type: Object,
           computed: 'computeLoginBody(loginUser, loginPassword)'
+        },
+        keygenActive: {
+          type: Boolean,
+          value: false
         }
       },
 
@@ -223,9 +236,14 @@
         if(!this.registerManaged) {
           this.showPublicKeyInput();
         } else {
+          this.keygenActive = true;
+          if(self.privateKey != "" && self.publicKey != "") {
+            self.$.registerAjax.generateRequest();
+          }
           enc.getKey(function() {
             self.privateKey = enc.getPrivateKey();
             self.publicKey = enc.getPublicKey();
+            this.keygenActive = false;
             self.$.registerAjax.generateRequest();
           });
         }

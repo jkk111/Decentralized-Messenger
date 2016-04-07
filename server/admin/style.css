@@ -1,0 +1,45 @@
+html, body {
+  margin: 0;
+  background-color: #eee;
+}
+li:nth-child(even) {
+  background-color: #aaa;
+}
+.odd {
+  background-color: white!important;
+}
+.even {
+  background-color: #aaa!important;
+}
+ul {
+  padding: 0;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid black;
+  height: 12em;
+  max-width: 80%;
+}
+#logs {
+  height: 20em;
+  max-width: 100%;
+}
+.latencyName, .activeId {
+  padding-right: 20px;
+  font-weight: 900;
+}
+li {
+  list-style-type: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+li:hover {
+  white-space: normal;
+
+}
+.notmatches {
+  display: none;
+}
+.selected {
+  background-color: orange;
+}
